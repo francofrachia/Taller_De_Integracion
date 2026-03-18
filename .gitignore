@@ -1,0 +1,9 @@
+# Variables de entorno (Contraseñas de la BD)
+.env
+
+# Dependencias de Node (Son pesadas y se bajan con npm install)
+node_modules/
+
+# Archivos del sistema operativo o editores
+.DS_Store
+.vscode/
