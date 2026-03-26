@@ -7,3 +7,5 @@ node_modules/
 # Archivos del sistema operativo o editores
 .DS_Store
 .vscode/
+
+.gitignore
