@@ -12,15 +12,12 @@ async function obtenerProductos() {
     }
 }
 
-// 2. Funcion para dibujar los productos en el HTML
-
-// 2. FUNCION para dibujar los productos en el HTML
 
 // 2. FUNCION para dibujar los productos en el HTML
 function renderizarProductos(lista) {
     const contenedor = document.getElementById('contenedor-productos');
 
-    // Si no encuentra el contenedor (ej: estás en otra página), que no explote
+    // Si no encuentra el contenedor, cortamos para evitar errores
     if (!contenedor) return;
 
     contenedor.innerHTML = "";
@@ -29,15 +26,12 @@ function renderizarProductos(lista) {
         const card = document.createElement('div');
         card.classList.add('producto-card');
 
-        // --- ADAPTACIÓN DE VARIABLES ---
-        // 1. Buscamos el ID (si no existe id_producto, usamos id)
-        const idFinal = prod.id_producto || prod.id;
-
-        // 2. Buscamos la Imagen (si no existe imagen_url, usamos url)
+        // Foto genérica de repuesto por si algún link falla
         const imagenGenerica = 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=300&q=80';
-        const srcFinal = prod.imagen_url || prod.url || imagenGenerica;
 
-        // 3. Estructura de Agus con tus datos reales
+        // Usamos imagen_url que es lo que definió Agus en el modelo (SELECT i.url AS imagen_url)
+        const srcFinal = prod.imagen_url || imagenGenerica;
+
         card.innerHTML = `
             <div class="card-image">
                 <img src="${srcFinal}" alt="${prod.nombre}" onerror="this.src='${imagenGenerica}'">
@@ -45,7 +39,7 @@ function renderizarProductos(lista) {
             <div class="card-content">
                 <h3>${prod.nombre}</h3>
                 <span class="precio-actual">$${prod.precio}</span>
-                <button class="btn-add" onclick="agregarAlCarrito(${idFinal})">Añadir al carrito</button>
+                <button class="btn-add" onclick="agregarAlCarrito(${prod.id_producto})">Añadir al carrito</button>
             </div>
         `;
 
