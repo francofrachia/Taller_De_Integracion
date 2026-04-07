@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión | Bloque Mundo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f5f5f5;">
+
+    <div
+        style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 400px;">
+        <h2>Bloque Mundo 🧱</h2>
+        <p style="color: #666; margin-bottom: 30px;">Iniciá sesión para continuar</p>
+
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+        <div id="g_id_onload" data-client_id="TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com" data-context="signin"
+            data-ux_mode="popup" data-callback="manejarRespuestaGoogle" data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline"
+            data-text="signin_with" data-size="large" data-logo_alignment="center">
+        </div>
+
+        <div id="mensaje-login" style="margin-top: 25px; font-weight: bold; color: #0055AD;"></div>
+
+        <br>
+        <a href="../index.html" style="color: var(--lego-red); text-decoration: none; font-size: 0.9rem;">Volver a la
+            tienda</a>
+    </div>
+
+    <script>
+        function manejarRespuestaGoogle(response) {
+            console.log("Token JWT de Google:", response.credential);
+
+            // Truco rápido de JS para "desencriptar" los datos del token
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const datosDecodificados = JSON.parse(decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')));
+
+            // Corregimos el nombre de la variable a "datosDecodificados"
+            console.log("¡Éxito! Datos desencriptados:", datosDecodificados);
+
+            // Mostramos los datos en la pantalla
+            const divMensaje = document.getElementById('mensaje-login');
+            divMensaje.innerHTML = `
+        <img src="${datosDecodificados.picture}" alt="Foto de perfil" style="border-radius: 50%; width: 50px; margin-bottom: 10px;"><br>
+        ¡Hola, ${datosDecodificados.given_name}! <br>
+        <span style="font-size: 0.8rem; color: #666;">${datosDecodificados.email}</span>
+    `;
+
+            // Armamos el objeto exactamente con lo que necesita la función de Agus
+            const usuarioGoogle = {
+                nombre: datosDecodificados.given_name,
+                email: datosDecodificados.email
+            };
+
+            // Llamamos a la función que sincroniza con el backend (la que está en auth.js)
+            sincronizarUsuarioConBackend(usuarioGoogle);
+        }
+    </script>
+
+    <script src="../assets/js/config.js"></script>
+
+    <script src="../assets/js/auth.js"></script>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+
+</html>
