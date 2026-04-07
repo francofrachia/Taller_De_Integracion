@@ -13,37 +13,42 @@ async function obtenerProductos() {
 }
 
 // 2. Funcion para dibujar los productos en el HTML
+
+// 2. FUNCION para dibujar los productos en el HTML
+
+// 2. FUNCION para dibujar los productos en el HTML
 function renderizarProductos(lista) {
     const contenedor = document.getElementById('contenedor-productos');
-    contenedor.innerHTML = ""; // Limpiamos el "Cargando..."
+
+    // Si no encuentra el contenedor (ej: estás en otra página), que no explote
+    if (!contenedor) return;
+
+    contenedor.innerHTML = "";
 
     lista.forEach(prod => {
         const card = document.createElement('div');
         card.classList.add('producto-card');
 
-        // Usamos una foto genérica de LEGO de alta calidad si la BD no manda nada
+        // --- ADAPTACIÓN DE VARIABLES ---
+        // 1. Buscamos el ID (si no existe id_producto, usamos id)
+        const idFinal = prod.id_producto || prod.id;
+
+        // 2. Buscamos la Imagen (si no existe imagen_url, usamos url)
         const imagenGenerica = 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=300&q=80';
+        const srcFinal = prod.imagen_url || prod.url || imagenGenerica;
 
-        // Verificamos si 'prod.url' existe y no está vacío, sino usamos la genérica
-        const imagenUrl = (prod.url && prod.url !== "") ? prod.url : imagenGenerica;
-
+        // 3. Estructura de Agus con tus datos reales
         card.innerHTML = `
             <div class="card-image">
-                <img src="${imagenUrl}" alt="${prod.nombre}">
-                <span class="badge-nuevo">Nuevo</span>
+                <img src="${srcFinal}" alt="${prod.nombre}" onerror="this.src='${imagenGenerica}'">
             </div>
             <div class="card-content">
                 <h3>${prod.nombre}</h3>
-                <div class="precios">
-                    <span class="precio-actual">$${prod.precio}</span>
-                </div>
-                <p class="stock">Disponibles: ${prod.stock}</p>
-                <div class="estrellas">⭐⭐⭐⭐⭐</div>
-                <button class="btn-add" onclick="agregarAlCarrito(${prod.id_producto})">
-                    Agregar al Carrito
-                </button>
+                <span class="precio-actual">$${prod.precio}</span>
+                <button class="btn-add" onclick="agregarAlCarrito(${idFinal})">Añadir al carrito</button>
             </div>
         `;
+
         contenedor.appendChild(card);
     });
 }
