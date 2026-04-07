@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const pool = require('./config/db');
 const productoRoutes = require('./routes/productoRoutes');
+const authRoutes = require('./routes/authRoutes'); // Ruta de autenticación
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,8 +12,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use('/api/productos', productoRoutes);
+app.use('/api/auth', authRoutes) // Ruta de autenticación
 
-// Ruta de prueba para verificar que el servidor vive
+// Ruta de prueba para verificar que el servidor se lanzo
 app.get('/', (req, res) => {
     res.send('API de Bloque Mundo funcionando correctamente');
 });
