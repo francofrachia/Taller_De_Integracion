@@ -24,7 +24,7 @@ export default function ProductCard({ producto, onAgregar }) {
                 )}
                 <button 
                     className="btn-add" 
-                    onClick={() => onAgregar(producto.id_producto)}
+                    onClick={() => onAgregar(producto)}
                 >
                     Añadir al carrito
                 </button>

@@ -5,7 +5,7 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
     const [productos, setProductos] = useState([]);
     const [busqueda, setBusqueda] = useState('');
-    const [cartCount, setCartCount] = useState(0);
+    const [cartItems, setCartItems] = useState([]);
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -22,9 +22,13 @@ export function AppProvider({ children }) {
             }
         }
 
-        const carritoGuardado = localStorage.getItem('carrito_count');
+        const carritoGuardado = localStorage.getItem('carrito_items');
         if (carritoGuardado) {
-            setCartCount(parseInt(carritoGuardado, 10) || 0);
+            try {
+                setCartItems(JSON.parse(carritoGuardado));
+            } catch (e) {
+                console.error("Error al parsear el carrito", e);
+            }
         }
 
         obtenerProductos();
@@ -48,14 +52,27 @@ export function AppProvider({ children }) {
         }
     }
 
-    // 3. Función para añadir al carrito (incrementar contador de forma reactiva)
-    function agregarAlCarrito(id_producto) {
-        setCartCount(prevCount => {
-            const newCount = prevCount + 1;
-            localStorage.setItem('carrito_count', newCount.toString());
-            return newCount;
+    // 3. Función para añadir al carrito (guardar el ítem completo)
+    function agregarAlCarrito(producto) {
+        setCartItems(prevItems => {
+            const index = prevItems.findIndex(item => item.id === producto.id);
+            let newItems = [...prevItems];
+            if (index !== -1) {
+                // Si ya existe, incrementar cantidad
+                newItems[index].cantidad = (newItems[index].cantidad || 1) + 1;
+            } else {
+                // Si no existe, agregar con cantidad 1
+                newItems.push({ ...producto, cantidad: 1 });
+            }
+            localStorage.setItem('carrito_items', JSON.stringify(newItems));
+            return newItems;
         });
-        console.log(`Producto ${id_producto} añadido al carrito.`);
+        console.log(`Producto ${producto.nombre} añadido al carrito.`);
+    }
+
+    function vaciarCarrito() {
+        setCartItems([]);
+        localStorage.removeItem('carrito_items');
     }
 
     // 4. Función de sincronización de usuario al iniciar sesión con Google
@@ -102,8 +119,9 @@ export function AppProvider({ children }) {
             productos,
             busqueda,
             setBusqueda,
-            cartCount,
+            cartItems,
             agregarAlCarrito,
+            vaciarCarrito,
             usuario,
             setUsuario,
             sincronizarUsuarioConBackend,

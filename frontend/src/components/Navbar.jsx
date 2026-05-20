@@ -3,8 +3,10 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 
 export default function Navbar() {
-    const { busqueda, setBusqueda, cartCount, usuario, logout } = useContext(AppContext);
+    const { busqueda, setBusqueda, cartItems, usuario, logout } = useContext(AppContext);
     const navigate = useNavigate();
+
+    const totalItems = cartItems.reduce((acc, item) => acc + (item.cantidad || 1), 0);
 
     const handleLogout = () => {
         logout();
@@ -65,9 +67,9 @@ export default function Navbar() {
                     
                     <div className="icons">
                         <span className="icon-heart" role="img" aria-label="Favoritos">🤍</span>
-                        <span className="icon-cart" role="img" aria-label="Carrito">
-                            🛒 <small className="cart-count">{cartCount}</small>
-                        </span>
+                        <Link to="/carrito" className="icon-cart" style={{ textDecoration: 'none', color: 'inherit' }} aria-label="Carrito">
+                            🛒 <small className="cart-count">{totalItems}</small>
+                        </Link>
                         
                         {usuario ? (
                             <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
