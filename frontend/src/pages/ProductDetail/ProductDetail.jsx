@@ -19,6 +19,46 @@ const ProductDetail = () => {
 
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+
+  const handleBuyNow = async () => {
+    if (!product || product.stock <= 0) return;
+    
+    setIsProcessingPayment(true);
+    setPaymentError(null);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/mercadopago/create_preference', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id_producto: product.id,
+          quantity: quantity
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al procesar el pago');
+      }
+
+      const data = await response.json();
+      
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        throw new Error('No se recibió el punto de inicio de Mercado Pago');
+      }
+    } catch (err) {
+      console.error('Error al iniciar compra:', err);
+      setPaymentError(err.message);
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
 
   useEffect(() => {
     // Scroll to top on load
@@ -179,14 +219,25 @@ const ProductDetail = () => {
               <p className="quantity-label">Cantidad:</p>
               <div className="action-row">
                 <div className="quantity-selector">
-                  <button onClick={() => handleQuantityChange(-1)}>-</button>
+                  <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment}>-</button>
                   <input type="number" value={quantity} readOnly />
-                  <button className="plus-btn" onClick={() => handleQuantityChange(1)}>+</button>
+                  <button className="plus-btn" onClick={() => handleQuantityChange(1)} disabled={isProcessingPayment}>+</button>
                 </div>
                 
-                <button className="buy-now-btn">Comprar ahora</button>
+                <button 
+                  className="buy-now-btn" 
+                  onClick={handleBuyNow} 
+                  disabled={isProcessingPayment || product.stock <= 0}
+                >
+                  {isProcessingPayment ? 'Procesando...' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
+                </button>
                 <button className="favorite-btn-large" title="Agregar a favoritos">♡</button>
               </div>
+              {paymentError && (
+                <p className="payment-error-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '10px', fontWeight: '500' }}>
+                  ❌ {paymentError}
+                </p>
+              )}
             </div>
           </div>
         </div>

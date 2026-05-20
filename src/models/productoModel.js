@@ -46,6 +46,18 @@ const Producto = {
         `;
         const { rows } = await pool.query(query, [id]);
         return rows;
+    },
+
+    // Actualizar stock de un producto
+    updateStock: async (id, quantity) => {
+        const query = `
+            UPDATE producto 
+            SET stock = stock - $2 
+            WHERE id_producto = $1 AND stock >= $2
+            RETURNING stock
+        `;
+        const { rows } = await pool.query(query, [id, quantity]);
+        return rows[0];
     }
 };
 

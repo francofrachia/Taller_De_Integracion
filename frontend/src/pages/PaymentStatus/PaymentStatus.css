@@ -1,0 +1,151 @@
+.payment-status-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f7f9fc;
+}
+
+.status-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+
+.status-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  border-top: 6px solid #ccc;
+  animation: slideUp 0.5s ease-out;
+}
+
+.status-card.success {
+  border-top-color: #2e7d32;
+}
+
+.status-card.failure {
+  border-top-color: #d32f2f;
+}
+
+.status-card.pending {
+  border-top-color: #f57c00;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: bold;
+  margin: 0 auto 24px;
+}
+
+.success .status-icon {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.failure .status-icon {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.pending .status-icon {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.status-card h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 12px;
+}
+
+.status-message {
+  font-size: 16px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.status-details {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.status-details p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.status-details strong {
+  color: #1a202c;
+}
+
+.status-subtext {
+  font-size: 13px;
+  color: #718096;
+  margin-bottom: 30px;
+}
+
+.status-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.primary-btn {
+  display: inline-block;
+  background-color: #0080ff;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 12px 30px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.primary-btn:hover {
+  background-color: #0066cc;
+}
+
+.primary-btn-outline {
+  display: inline-block;
+  border: 2px solid #d32f2f;
+  color: #d32f2f;
+  font-weight: 600;
+  padding: 10px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.primary-btn-outline:hover {
+  background-color: #d32f2f;
+  color: #ffffff;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
