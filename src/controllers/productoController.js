@@ -10,4 +10,27 @@ const getProductos = async (req, res) => {
     }
 };
 
-module.exports = { getProductos };
+const getProductoById = async (req, res) => {
+    try {
+        const producto = await Producto.getById(req.params.id);
+        if (!producto) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        res.json(producto);
+    } catch (error) {
+        console.error('Error en getProductoById:', error);
+        res.status(500).json({ error: 'Error al obtener producto de Supabase' });
+    }
+};
+
+const getResenasByProductoId = async (req, res) => {
+    try {
+        const resenas = await Producto.getResenas(req.params.id);
+        res.json(resenas);
+    } catch (error) {
+        console.error('Error en getResenasByProductoId:', error);
+        res.status(500).json({ error: 'Error al obtener las reseñas del producto' });
+    }
+};
+
+module.exports = { getProductos, getProductoById, getResenasByProductoId };

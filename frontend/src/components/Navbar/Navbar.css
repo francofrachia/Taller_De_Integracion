@@ -1,0 +1,96 @@
+.navbar {
+  background-color: var(--primary-yellow);
+  padding: 15px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-logo h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-dark);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 30px;
+}
+
+.navbar-links a {
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.navbar-links a:hover {
+  text-decoration: underline;
+}
+
+.navbar-search {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 4px;
+  padding: 5px 10px;
+  width: 300px;
+}
+
+.navbar-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.search-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-gray);
+  padding: 5px;
+}
+
+.navbar-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  transition: transform 0.2s;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .navbar-search {
+    order: 3;
+    width: 100%;
+  }
+  .navbar-links {
+    display: none; /* In a real app, we'd add a hamburger menu */
+  }
+}
