@@ -52,10 +52,17 @@ const ProductDetail = () => {
             return r.json();
           }).catch(() => []) // También atrapamos errores de red o parseo
         ]).then(([allProducts, resenasData]) => {
-            const filteredData = allProducts.filter(item => 
+            let filteredData = allProducts.filter(item => 
               item.id_producto.toString() !== id.toString() && 
               item.id_categoria === data.id_categoria
             );
+
+            // Fallback: si no hay productos de la misma categoría, mostrar otros del catálogo
+            if (filteredData.length === 0) {
+              filteredData = allProducts.filter(item => 
+                item.id_producto.toString() !== id.toString()
+              );
+            }
             
             const mapped = filteredData.map(item => ({
               id: item.id_producto,
@@ -144,14 +151,12 @@ const ProductDetail = () => {
             <h1 className="product-detail-title">{product.title}</h1>
             
             <div className="product-meta">
-              <div className="product-rating">
-                <span className="stars">
-                  {'★'.repeat(calculateAverageRating(reviews)).padEnd(5, '☆')}
-                </span>
-                <span className="reviews-count">({reviews.length} Reseñas)</span>
-              </div>
-              <span className="meta-divider">|</span>
-              <span className="stock-status">
+              <span className="stars" style={{ color: '#FFB500', fontSize: '16px', verticalAlign: 'middle' }}>
+                {'★'.repeat(calculateAverageRating(reviews)).padEnd(5, '☆')}
+              </span>
+              <span className="reviews-count" style={{ color: 'var(--text-gray)', verticalAlign: 'middle' }}>({reviews.length} Reseñas)</span>
+              <span className="meta-divider" style={{ verticalAlign: 'middle' }}>|</span>
+              <span className="stock-status" style={{ verticalAlign: 'middle' }}>
                 {product.stock > 10 ? (
                   <span style={{ color: '#2e7d32' }}>En stock</span>
                 ) : product.stock > 0 ? (
@@ -191,7 +196,7 @@ const ProductDetail = () => {
           <SectionHeader title="Artículos relacionados" />
           <div className="carousel-wrapper">
             <button className="carousel-btn left" onClick={() => scrollCarousel('left')}>&lt;</button>
-            <div className="carousel-container" ref={carouselRef}>
+            <div className={`carousel-container ${relatedProducts.length === 1 ? 'carousel-centered' : ''}`} ref={carouselRef}>
               {relatedProducts.map(prod => (
                 <div className="carousel-item" key={prod.id}>
                   <ProductCard product={prod} />

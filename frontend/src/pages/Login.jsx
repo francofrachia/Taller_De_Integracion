@@ -1,17 +1,21 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
+import Navbar from '../components/Navbar/Navbar';
+import Footer from '../components/Footer/Footer';
+import './Login.css';
 
 export default function Login() {
     const { sincronizarUsuarioConBackend } = useContext(AppContext);
     const [mensaje, setMensaje] = useState('');
     const [perfil, setPerfil] = useState(null);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
     const CLIENT_ID = "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
 
     useEffect(() => {
-        // 1. Cargar dinámicamente el script de Google Identity Services
         const scriptId = 'google-gis-sdk';
         let script = document.getElementById(scriptId);
 
@@ -33,6 +37,7 @@ export default function Login() {
                         theme: "outline",
                         text: "signin_with",
                         size: "large",
+                        width: "100%",
                         logo_alignment: "center"
                     });
                 }
@@ -50,19 +55,10 @@ export default function Login() {
         } else {
             inicializarGoogle();
         }
-
-        return () => {
-            // No destruimos el script para que siga cargado si volvemos a la página,
-            // pero podemos limpiar el contenedor si se desmonta.
-        };
     }, []);
 
-    // 2. Callback cuando Google responde exitosamente
     async function manejarRespuestaGoogle(response) {
-        console.log("Token JWT de Google recibido:", response.credential);
-
         try {
-            // Decodificar el token JWT recibido en el cliente (atob)
             const base64Url = response.credential.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const datosDecodificados = JSON.parse(
@@ -74,9 +70,6 @@ export default function Login() {
                 )
             );
 
-            console.log("Datos de Google desencriptados:", datosDecodificados);
-
-            // Mostrar el perfil del usuario temporalmente en pantalla
             setPerfil({
                 picture: datosDecodificados.picture,
                 name: datosDecodificados.given_name,
@@ -85,20 +78,15 @@ export default function Login() {
 
             setMensaje(`¡Hola, ${datosDecodificados.given_name}!`);
 
-            // Armar objeto de usuario para el backend
             const usuarioGoogle = {
                 nombre: datosDecodificados.given_name,
                 email: datosDecodificados.email
             };
 
-            // Sincronizar con el backend de Express usando el Contexto
             const usuarioBackend = await sincronizarUsuarioConBackend(usuarioGoogle);
 
             if (usuarioBackend) {
-                // Redirigir al inicio después de 1.5 segundos
-                setTimeout(() => {
-                    navigate('/');
-                }, 1500);
+                setTimeout(() => { navigate('/'); }, 1500);
             } else {
                 setMensaje("Error de sincronización con el servidor.");
             }
@@ -108,47 +96,88 @@ export default function Login() {
         }
     }
 
+    const handleLoginSubmit = (e) => {
+        e.preventDefault();
+        // Por ahora solo visual — conectar con backend cuando esté listo
+        setMensaje('Funcionalidad de login por email próximamente.');
+    };
+
     return (
         <div className="login-page">
-            <div className="login-container">
-                <h2>Bloque Mundo 🧱</h2>
-                <p className="login-subtitle">Iniciá sesión para continuar</p>
-
-                {/* Contenedor del Botón de Google */}
-                {!perfil && (
-                    <div 
-                        id="g_id_signin" 
-                        style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}
-                    ></div>
-                )}
-
-                {/* Mensaje de Estado / Bienvenida */}
-                {perfil && (
-                    <div className="mensaje-login">
-                        {perfil.picture && (
-                            <img 
-                                src={perfil.picture} 
-                                alt="Foto de perfil" 
-                                style={{ borderRadius: '50%', width: '50px', marginBottom: '10px' }} 
-                            />
-                        )}
-                        <span>{mensaje}</span>
-                        {perfil.email && (
-                            <span style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
-                                {perfil.email}
-                            </span>
-                        )}
-                        <span style={{ fontSize: '0.85rem', color: '#0055AD', marginTop: '10px' }}>
-                            Redireccionando a la tienda...
-                        </span>
+            <Navbar />
+            <main className="login-main">
+                <div className="login-card">
+                    {/* Panel izquierdo — imagen */}
+                    <div className="login-image-panel">
+                        <img
+                            src="/images/login_banner.png"
+                            alt="Bloque Mundo LEGO"
+                            className="login-banner-img"
+                        />
                     </div>
-                )}
 
-                <br />
-                <Link to="/" className="back-link">
-                    Volver a la tienda
-                </Link>
-            </div>
+                    {/* Panel derecho — formulario */}
+                    <div className="login-form-panel">
+                        {perfil ? (
+                            <div className="login-success">
+                                <img src={perfil.picture} alt="Foto de perfil" className="login-avatar" />
+                                <h2>{mensaje}</h2>
+                                <p>{perfil.email}</p>
+                                <p className="login-redirect">Redireccionando a la tienda...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <h1 className="login-title">Iniciar Sesión</h1>
+                                <p className="login-subtitle">Ingresá tus Datos</p>
+
+                                <form className="login-form" onSubmit={handleLoginSubmit}>
+                                    <div className="login-field">
+                                        <input
+                                            type="email"
+                                            placeholder="Correo Electrónico"
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            className="login-input"
+                                        />
+                                    </div>
+                                    <div className="login-field">
+                                        <input
+                                            type="password"
+                                            placeholder="Contraseña"
+                                            value={password}
+                                            onChange={e => setPassword(e.target.value)}
+                                            className="login-input"
+                                        />
+                                    </div>
+
+                                    <button type="submit" className="login-btn">
+                                        Iniciar Sesión
+                                    </button>
+
+                                    <div className="login-forgot">
+                                        <a href="#">Olvidé mi contraseña</a>
+                                    </div>
+                                </form>
+
+                                <div className="login-divider">
+                                    <span>o continuá con</span>
+                                </div>
+
+                                {/* Botón de Google */}
+                                <div id="g_id_signin" className="login-google-btn"></div>
+
+                                {mensaje && <p className="login-msg">{mensaje}</p>}
+
+                                <p className="login-register">
+                                    ¿No tenés cuenta?{' '}
+                                    <Link to="/register">Registrate</Link>
+                                </p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </main>
+            <Footer />
         </div>
     );
 }
