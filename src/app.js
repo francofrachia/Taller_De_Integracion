@@ -13,6 +13,12 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Evita la pantalla de advertencia de ngrok en el navegador
+app.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+    next();
+});
 app.use('/api/productos', productoRoutes);
 app.use('/api/auth', authRoutes); // Ruta de autenticación
 app.use('/api/mercadopago', mercadoPagoRoutes);
