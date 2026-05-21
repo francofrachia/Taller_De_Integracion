@@ -182,19 +182,19 @@ const receiveWebhook = async (req, res) => {
 };
 
 const successRedirect = (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
     const queryParams = new URLSearchParams(req.query).toString();
     res.redirect(`${frontendUrl}/payment-success?${queryParams}`);
 };
 
 const failureRedirect = (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
     const queryParams = new URLSearchParams(req.query).toString();
     res.redirect(`${frontendUrl}/payment-failure?${queryParams}`);
 };
 
 const pendingRedirect = (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
     const queryParams = new URLSearchParams(req.query).toString();
     res.redirect(`${frontendUrl}/payment-pending?${queryParams}`);
 };

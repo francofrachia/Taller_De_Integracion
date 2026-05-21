@@ -7,7 +7,7 @@ import mercadopagoLogo from '../../assets/mercadopago-seeklogo.png';
 import './Checkout.css';
 
 export default function Checkout() {
-    const { cart, API_URL, usuario, productos, loading } = useContext(AppContext);
+    const { cart, API_URL, usuario, productos, loading, isInitialized } = useContext(AppContext);
     const navigate = useNavigate();
     const [coupon, setCoupon] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -42,8 +42,8 @@ export default function Checkout() {
 
     // Seguridad: Redirecciones
     useEffect(() => {
-        if (loading) {
-            console.log("[Checkout] App Context is loading, skipping redirection checks.");
+        if (!isInitialized) {
+            console.log("[Checkout] App Context aun no inicializado, esperando...");
             return;
         }
 
@@ -61,7 +61,7 @@ export default function Checkout() {
             console.log("[Checkout] Cart is empty, redirecting to /carrito.");
             navigate('/carrito', { replace: true });
         }
-    }, [usuario, cart, navigate, loading]);
+    }, [usuario, cart, navigate, loading, isInitialized]);
 
     // Pre-llenar datos del usuario (sólo si no están llenos ya en formData)
     useEffect(() => {
@@ -74,7 +74,8 @@ export default function Checkout() {
         }
     }, [usuario]);
 
-    if (!usuario || !usuario.id_usuario || cart === null) {
+    // Mostrar skeleton si el contexto aun no termino de inicializarse completamente
+    if (!isInitialized || !usuario || !usuario.id_usuario || cart === null) {
         return (
             <div className="checkout-page">
                 <Navbar />
