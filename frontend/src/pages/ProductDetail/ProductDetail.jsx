@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -11,8 +12,10 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { agregarAlCarrito, usuario } = React.useContext(AppContext);
   const [quantity, setQuantity] = useState(1);
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const navigate = useNavigate();
   
   // Ref para el carrusel de relacionados
   const carouselRef = React.useRef(null);
@@ -23,10 +26,19 @@ const ProductDetail = () => {
   const [paymentError, setPaymentError] = useState(null);
 
   const handleBuyNow = async () => {
+    if (!usuario || !usuario.id_usuario) {
+      navigate('/login');
+      return;
+    }
+
     if (!product || product.stock <= 0) return;
     
     setIsProcessingPayment(true);
     setPaymentError(null);
+
+    let qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty < 1) qty = 1;
+    if (product && qty > product.stock) qty = product.stock;
 
     try {
       const response = await fetch('http://localhost:3000/api/mercadopago/create_preference', {
@@ -35,8 +47,10 @@ const ProductDetail = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          id_producto: product.id,
-          quantity: quantity
+          cartItems: [{
+            id_producto: product.id,
+            cantidad: qty
+          }]
         })
       });
 
@@ -122,9 +136,38 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleQuantityChange = (change) => {
-    const newQuantity = quantity + change;
-    if (newQuantity >= 1 && newQuantity <= (product?.stock || 1)) {
+    let currentQty = parseInt(quantity, 10);
+    if (isNaN(currentQty)) {
+      currentQty = 1;
+    }
+    const newQuantity = currentQty + change;
+    const maxStock = product?.stock || 1;
+    if (newQuantity >= 1 && newQuantity <= maxStock) {
       setQuantity(newQuantity);
+    }
+  };
+
+  const handleQuantityInputChange = (e) => {
+    const val = e.target.value;
+    if (val === '') {
+      setQuantity('');
+      return;
+    }
+    const cleanVal = val.replace(/[^0-9]/g, '');
+    if (cleanVal === '') {
+      setQuantity('');
+      return;
+    }
+    const num = parseInt(cleanVal, 10);
+    if (!isNaN(num)) {
+      setQuantity(num);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    let val = parseInt(quantity, 10);
+    if (isNaN(val) || val < 1) {
+      setQuantity(1);
     }
   };
 
@@ -217,22 +260,51 @@ const ProductDetail = () => {
 
             <div className="product-actions">
               <p className="quantity-label">Cantidad:</p>
-              <div className="action-row">
-                <div className="quantity-selector">
+              <div className="action-row" style={{ flexWrap: 'wrap' }}>
+                <div className={`quantity-selector ${quantity > product.stock ? "qty-selector-error" : ""}`}>
                   <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment}>-</button>
-                  <input type="number" value={quantity} readOnly />
+                  <input 
+                    type="number" 
+                    value={quantity} 
+                    onChange={handleQuantityInputChange}
+                    onBlur={handleQuantityBlur}
+                    min="1"
+                    max={product?.stock || 1}
+                    disabled={isProcessingPayment} 
+                  />
                   <button className="plus-btn" onClick={() => handleQuantityChange(1)} disabled={isProcessingPayment}>+</button>
                 </div>
                 
                 <button 
                   className="buy-now-btn" 
                   onClick={handleBuyNow} 
-                  disabled={isProcessingPayment || product.stock <= 0}
+                  disabled={isProcessingPayment || product.stock <= 0 || quantity > product.stock}
                 >
                   {isProcessingPayment ? 'Procesando...' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
+                <button 
+                  className="btn-outline" 
+                  style={{marginLeft: '10px'}}
+                  onClick={async () => {
+                    let qty = parseInt(quantity, 10);
+                    if (isNaN(qty) || qty < 1) qty = 1;
+                    if (product && qty > product.stock) return;
+                    const res = await agregarAlCarrito(product.id, qty);
+                    if (res && res.requireLogin) {
+                      navigate('/login');
+                    }
+                  }} 
+                  disabled={product.stock <= 0 || quantity > product.stock}
+                >
+                  Agregar al Carrito
+                </button>
                 <button className="favorite-btn-large" title="Agregar a favoritos">♡</button>
               </div>
+              {quantity > product.stock && (
+                <p className="stock-warning-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '-5px', fontWeight: '500' }}>
+                  ⚠️ No hay suficiente stock. El máximo es {product.stock} unidades.
+                </p>
+              )}
               {paymentError && (
                 <p className="payment-error-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '10px', fontWeight: '500' }}>
                   ❌ {paymentError}

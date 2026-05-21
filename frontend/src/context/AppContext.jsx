@@ -5,6 +5,7 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
     const [productos, setProductos] = useState([]);
     const [busqueda, setBusqueda] = useState('');
+    const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
     const [cartCount, setCartCount] = useState(0);
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,15 +17,16 @@ export function AppProvider({ children }) {
         const usuarioGuardado = localStorage.getItem('usuario_bloquemundo');
         if (usuarioGuardado) {
             try {
-                setUsuario(JSON.parse(usuarioGuardado));
+                const user = JSON.parse(usuarioGuardado);
+                setUsuario(user);
+                obtenerCarrito(user.id_usuario);
             } catch (e) {
                 console.error("Error al parsear el usuario guardado:", e);
             }
-        }
-
-        const carritoGuardado = localStorage.getItem('carrito_count');
-        if (carritoGuardado) {
-            setCartCount(parseInt(carritoGuardado, 10) || 0);
+        } else {
+            // Si no hay usuario, no cargamos carrito (limpiar estado)
+            setCart(null);
+            setCartCount(0);
         }
 
         obtenerProductos();
@@ -48,14 +50,110 @@ export function AppProvider({ children }) {
         }
     }
 
-    // 3. Función para añadir al carrito (incrementar contador de forma reactiva)
-    function agregarAlCarrito(id_producto) {
-        setCartCount(prevCount => {
-            const newCount = prevCount + 1;
-            localStorage.setItem('carrito_count', newCount.toString());
-            return newCount;
-        });
-        console.log(`Producto ${id_producto} añadido al carrito.`);
+    // 3. Funciones de carrito conectadas al backend
+    async function obtenerCarrito(id_usuario) {
+        try {
+            const response = await fetch(`${API_URL}/carrito?id_usuario=${id_usuario}`);
+            if (response.ok) {
+                const data = await response.json();
+                setCart(data);
+                // Calcular total de ítems para el badge
+                const count = data.items.reduce((acc, item) => acc + item.cantidad, 0);
+                setCartCount(count);
+            }
+        } catch (error) {
+            console.error("Error obteniendo carrito:", error);
+        }
+    }
+
+    async function agregarAlCarrito(id_producto, cantidad = 1) {
+        if (!usuario || !usuario.id_usuario) {
+            return { success: false, requireLogin: true };
+        }
+
+        const id_usuario = usuario.id_usuario;
+        try {
+            const response = await fetch(`${API_URL}/carrito/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario, id_producto, cantidad })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCart(data);
+                setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+                console.log(`Producto ${id_producto} añadido al carrito.`);
+                return { success: true };
+            } else {
+                console.error("Error al añadir al carrito");
+                return { success: false, error: 'Error del servidor' };
+            }
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function actualizarCantidadCarrito(id_producto, cantidad) {
+        if (!usuario || !usuario.id_usuario) {
+            return { success: false, requireLogin: true };
+        }
+        const id_usuario = usuario.id_usuario;
+        try {
+            const response = await fetch(`${API_URL}/carrito/update`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario, id_producto, cantidad })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCart(data);
+                setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function removerDelCarrito(id_producto) {
+        if (!usuario || !usuario.id_usuario) {
+            return { success: false, requireLogin: true };
+        }
+        const id_usuario = usuario.id_usuario;
+        try {
+            const response = await fetch(`${API_URL}/carrito/remove`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario, id_producto })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCart(data);
+                setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async function vaciarCarrito() {
+        if (!usuario || !usuario.id_usuario) {
+            return;
+        }
+        const id_usuario = usuario.id_usuario;
+        try {
+            const response = await fetch(`${API_URL}/carrito/clear`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario })
+            });
+            if (response.ok) {
+                setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
+                setCartCount(0);
+            }
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     // 4. Función de sincronización de usuario al iniciar sesión con Google
@@ -79,6 +177,8 @@ export function AppProvider({ children }) {
                 // Guardar en estado y localStorage
                 setUsuario(datos.usuario);
                 localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                // Cargar carrito del usuario
+                obtenerCarrito(datos.usuario.id_usuario);
                 return datos.usuario;
             } else {
                 console.error("Error al sincronizar con el backend");
@@ -102,8 +202,12 @@ export function AppProvider({ children }) {
             productos,
             busqueda,
             setBusqueda,
+            cart,
             cartCount,
             agregarAlCarrito,
+            actualizarCantidadCarrito,
+            removerDelCarrito,
+            vaciarCarrito,
             usuario,
             setUsuario,
             sincronizarUsuarioConBackend,

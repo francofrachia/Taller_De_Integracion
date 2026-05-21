@@ -8,20 +8,38 @@ const client = new MercadoPagoConfig({
 
 const createPreference = async (req, res) => {
     try {
-        const { id_producto, quantity } = req.body;
+        const { cartItems } = req.body;
 
-        if (!id_producto || !quantity) {
-            return res.status(400).json({ error: 'Faltan datos obligatorios (id_producto, cantidad)' });
+        if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+            return res.status(400).json({ error: 'Faltan datos obligatorios (cartItems vacío)' });
         }
 
-        // Obtener el producto de la base de datos para asegurar el precio real y evitar alteraciones
-        const producto = await Producto.getById(id_producto);
-        if (!producto) {
-            return res.status(404).json({ error: 'Producto no encontrado' });
-        }
+        const itemsPreference = [];
+        const metadataItems = [];
 
-        if (producto.stock < quantity) {
-            return res.status(400).json({ error: 'No hay suficiente stock disponible' });
+        // Validar stock de todos los productos antes de crear preferencia
+        for (const item of cartItems) {
+            const producto = await Producto.getById(item.id_producto);
+            if (!producto) {
+                return res.status(404).json({ error: `Producto ${item.id_producto} no encontrado` });
+            }
+            if (producto.stock < item.cantidad) {
+                return res.status(400).json({ error: `No hay suficiente stock para ${producto.nombre}` });
+            }
+
+            itemsPreference.push({
+                id: String(producto.id_producto),
+                title: producto.nombre,
+                quantity: Number(item.cantidad),
+                unit_price: Number(producto.precio),
+                currency_id: 'ARS',
+                picture_url: producto.imagenes && producto.imagenes[0] ? producto.imagenes[0] : ''
+            });
+
+            metadataItems.push({
+                product_id: producto.id_producto,
+                quantity: Number(item.cantidad)
+            });
         }
 
         const preference = new Preference(client);
@@ -32,24 +50,15 @@ const createPreference = async (req, res) => {
 
         const preferenceData = {
             body: {
-                items: [
-                    {
-                        id: String(producto.id_producto),
-                        title: producto.nombre,
-                        quantity: Number(quantity),
-                        unit_price: Number(producto.precio),
-                        currency_id: 'ARS',
-                        picture_url: producto.imagenes && producto.imagenes[0] ? producto.imagenes[0] : ''
-                    }
-                ],
+                items: itemsPreference,
                 back_urls: {
                     success: `${baseUrl}/payment-success`,
                     failure: `${baseUrl}/payment-failure`,
                     pending: `${baseUrl}/payment-pending`
                 },
                 metadata: {
-                    product_id: producto.id_producto,
-                    quantity: Number(quantity)
+                    // MP metadata string limit is 500 chars, JSON stringify for multiple items
+                    cart: JSON.stringify(metadataItems)
                 }
             }
         };
@@ -93,19 +102,24 @@ const receiveWebhook = async (req, res) => {
             console.log(`Detalles del pago ${paymentId}: Estado = ${paymentData.status}`);
 
             if (paymentData.status === 'approved') {
-                const productId = paymentData.metadata.product_id;
-                const quantity = paymentData.metadata.quantity;
+                const cartMetadataStr = paymentData.metadata.cart;
 
-                if (productId && quantity) {
-                    console.log(`Pago aprobado. Decrementando stock del producto ID ${productId} en ${quantity} unidades.`);
-                    const result = await Producto.updateStock(productId, quantity);
-                    if (result) {
-                        console.log(`Stock actualizado con éxito. Nuevo stock: ${result.stock}`);
-                    } else {
-                        console.log(`Error al actualizar stock. Es posible que no haya stock suficiente o el producto no exista.`);
+                if (cartMetadataStr) {
+                    try {
+                        const items = JSON.parse(cartMetadataStr);
+                        console.log(`Pago aprobado. Actualizando stock de ${items.length} productos.`);
+                        
+                        for (const item of items) {
+                            const result = await Producto.updateStock(item.product_id, item.quantity);
+                            if (result) {
+                                console.log(`Stock actualizado para producto ${item.product_id}. Nuevo stock: ${result.stock}`);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parseando metadata cart JSON:', e);
                     }
                 } else {
-                    console.log('No se encontraron los metadatos necesarios en el pago (product_id, quantity).');
+                    console.log('No se encontraron los metadatos de cart en el pago.');
                 }
             }
         }

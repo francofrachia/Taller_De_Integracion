@@ -65,9 +65,11 @@ export default function Navbar() {
                     
                     <div className="icons">
                         <span className="icon-heart" role="img" aria-label="Favoritos">🤍</span>
-                        <span className="icon-cart" role="img" aria-label="Carrito">
-                            🛒 <small className="cart-count">{cartCount}</small>
-                        </span>
+                        <Link to="/carrito" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <span className="icon-cart" role="img" aria-label="Carrito">
+                                🛒 <small className="cart-count">{cartCount}</small>
+                            </span>
+                        </Link>
                         
                         {usuario ? (
                             <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

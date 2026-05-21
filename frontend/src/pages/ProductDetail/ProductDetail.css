@@ -202,6 +202,11 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   height: 45px;
+  transition: border-color 0.2s;
+}
+
+.quantity-selector.qty-selector-error {
+  border-color: #d32f2f;
 }
 
 .quantity-selector button {
@@ -226,8 +231,18 @@
   background: var(--primary-yellow-hover);
 }
 
+/* Ocultar las flechas de spinner por defecto del navegador */
+.quantity-selector input::-webkit-outer-spin-button,
+.quantity-selector input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.quantity-selector input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .quantity-selector input {
-  width: 50px;
+  width: 65px;
   height: 100%;
   border: none;
   border-left: 1px solid var(--border-color);
@@ -236,6 +251,16 @@
   font-size: 16px;
   font-weight: 600;
   outline: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.quantity-selector.qty-selector-error input {
+  border-left-color: #d32f2f;
+  border-right-color: #d32f2f;
+}
+
+.quantity-selector input:focus {
+  background-color: #f7f9fa;
 }
 
 .buy-now-btn {

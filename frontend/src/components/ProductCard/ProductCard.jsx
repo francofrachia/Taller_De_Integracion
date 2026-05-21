@@ -1,8 +1,20 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AppContext } from '../../context/AppContext';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
+  const { agregarAlCarrito } = useContext(AppContext);
+  const navigate = useNavigate();
+
+  const handleAddCart = async (e) => {
+    e.preventDefault();
+    const res = await agregarAlCarrito(product.id, 1);
+    if (res && res.requireLogin) {
+      navigate('/login');
+    }
+  };
+
   // Render stars based on rating (mock)
   const renderStars = (rating) => {
     const stars = [];
@@ -44,7 +56,9 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
       <div className="product-card-actions">
-        <button className="add-to-cart-btn">Agregar al Carrito</button>
+        <button className="add-to-cart-btn" onClick={handleAddCart}>
+          Agregar al Carrito
+        </button>
       </div>
     </div>
   );
