@@ -11,6 +11,8 @@ import secondaryBanner from '../../assets/secondary_banner.png';
 import placeholderProduct from '../../assets/product_placeholder.png';
 
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 const ProductCardSkeleton = () => (
   <div className="product-card" style={{ height: '100%' }}>
     <div className="product-card-image-container" style={{ display: 'block', padding: '0' }}>
@@ -37,7 +39,7 @@ const Home = () => {
 
   useEffect(() => {
     // Conectando con tu backend existente (Express + PostgreSQL)
-    fetch('http://localhost:3000/api/productos')
+    fetch(`${API_URL}/productos`)
       .then(res => res.json())
       .then(data => {
         // Mapeamos los datos de la DB al formato que espera nuestro ProductCard
