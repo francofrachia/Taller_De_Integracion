@@ -6,7 +6,7 @@ import Footer from '../../components/Footer/Footer';
 import './Cart.css';
 
 export default function Cart() {
-    const { cart, actualizarCantidadCarrito, removerDelCarrito, vaciarCarrito, API_URL, usuario, productos } = useContext(AppContext);
+    const { cart, actualizarCantidadCarrito, removerDelCarrito, vaciarCarrito, API_URL, usuario, productos, isInitialized } = useContext(AppContext);
     const navigate = useNavigate();
     const [localQuantities, setLocalQuantities] = useState({});
 
@@ -62,7 +62,41 @@ export default function Cart() {
                     <Link to="/">Inicio</Link> / <span className="current">Carrito</span>
                 </div>
 
-                {!usuario || !usuario.id_usuario ? (
+                {/* Skeleton mientras el contexto no esta inicializado */}
+                {!isInitialized ? (
+                    <div className="cart-layout">
+                        <div className="cart-items-section">
+                            <div className="cart-table-header">
+                                <span>Producto</span>
+                                <span>Precio</span>
+                                <span>Cantidad</span>
+                                <span>Total</span>
+                            </div>
+                            {[1, 2, 3].map(n => (
+                                <div className="cart-item" key={n} style={{ opacity: 0.7 }}>
+                                    <div className="item-product">
+                                        <div className="skeleton" style={{ width: '60px', height: '60px', borderRadius: '4px', flexShrink: 0 }}></div>
+                                        <div className="skeleton" style={{ width: '150px', height: '16px', marginLeft: '12px' }}></div>
+                                    </div>
+                                    <div className="item-price"><div className="skeleton" style={{ width: '60px', height: '16px' }}></div></div>
+                                    <div className="item-quantity"><div className="skeleton" style={{ width: '90px', height: '38px', borderRadius: '4px' }}></div></div>
+                                    <div className="item-total"><div className="skeleton" style={{ width: '60px', height: '16px' }}></div></div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="cart-summary-section">
+                            <div className="summary-box">
+                                <div className="skeleton" style={{ width: '120px', height: '22px', marginBottom: '20px' }}></div>
+                                <div className="skeleton" style={{ width: '100%', height: '14px', marginBottom: '10px' }}></div>
+                                <hr />
+                                <div className="skeleton" style={{ width: '100%', height: '14px', margin: '10px 0' }}></div>
+                                <hr />
+                                <div className="skeleton" style={{ width: '100%', height: '20px', margin: '10px 0' }}></div>
+                                <div className="skeleton" style={{ width: '100%', height: '45px', borderRadius: '4px', marginTop: '15px' }}></div>
+                            </div>
+                        </div>
+                    </div>
+                ) : !usuario || !usuario.id_usuario ? (
                     <div className="empty-cart">
                         <h2>Iniciá sesión para ver tu carrito</h2>
                         <Link to="/login" className="primary-btn-outline" style={{marginTop: '20px', display: 'inline-block'}}>

@@ -27,7 +27,7 @@ const ProductDetail = () => {
 
   const handleBuyNow = async () => {
     if (!usuario || !usuario.id_usuario) {
-      navigate('/login');
+      navigate('/login', { state: { from: `/producto/${id}` } });
       return;
     }
 
@@ -41,30 +41,15 @@ const ProductDetail = () => {
     if (product && qty > product.stock) qty = product.stock;
 
     try {
-      const response = await fetch('http://localhost:3000/api/mercadopago/create_preference', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          cartItems: [{
-            id_producto: product.id,
-            cantidad: qty
-          }]
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al procesar el pago');
-      }
-
-      const data = await response.json();
-      
-      if (data.init_point) {
-        window.location.href = data.init_point;
+      // Agregar al carrito optimista/backend
+      const res = await agregarAlCarrito(product.id, qty);
+      if (res && res.success) {
+        // Redirigir a facturación
+        navigate('/checkout');
+      } else if (res && res.requireLogin) {
+        navigate('/login', { state: { from: `/producto/${id}` } });
       } else {
-        throw new Error('No se recibió el punto de inicio de Mercado Pago');
+        throw new Error(res.error || 'Error al agregar el producto al carrito');
       }
     } catch (err) {
       console.error('Error al iniciar compra:', err);

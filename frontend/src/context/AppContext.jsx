@@ -9,27 +9,36 @@ export function AppProvider({ children }) {
     const [cartCount, setCartCount] = useState(0);
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
     // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
-        const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
-        if (usuarioGuardado) {
-            try {
-                const user = JSON.parse(usuarioGuardado);
-                setUsuario(user);
-                obtenerCarrito(user.id_usuario);
-            } catch (e) {
-                console.error("Error al parsear el usuario guardado:", e);
+        const init = async () => {
+            const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
+            if (usuarioGuardado) {
+                try {
+                    const user = JSON.parse(usuarioGuardado);
+                    setUsuario(user);
+                    // Esperamos tanto productos como carrito antes de marcar como inicializado
+                    await Promise.all([
+                        obtenerProductos(),
+                        obtenerCarrito(user.id_usuario)
+                    ]);
+                } catch (e) {
+                    console.error("Error al parsear el usuario guardado:", e);
+                    await obtenerProductos();
+                }
+            } else {
+                // Si no hay usuario, no cargamos carrito (limpiar estado)
+                setCart(null);
+                setCartCount(0);
+                await obtenerProductos();
             }
-        } else {
-            // Si no hay usuario, no cargamos carrito (limpiar estado)
-            setCart(null);
-            setCartCount(0);
-        }
-
-        obtenerProductos();
+            setIsInitialized(true);
+        };
+        init();
     }, []);
 
     // 2. Fetch de productos del backend
@@ -60,9 +69,13 @@ export function AppProvider({ children }) {
                 // Calcular total de ítems para el badge
                 const count = data.items.reduce((acc, item) => acc + item.cantidad, 0);
                 setCartCount(count);
+            } else {
+                // Si falla el carrito, inicializamos uno vacío para no bloquear la app
+                setCart({ id_carrito: null, total: 0, items: [] });
             }
         } catch (error) {
             console.error("Error obteniendo carrito:", error);
+            setCart({ id_carrito: null, total: 0, items: [] });
         }
     }
 
@@ -301,6 +314,7 @@ export function AppProvider({ children }) {
             sincronizarUsuarioConBackend,
             logout,
             loading,
+            isInitialized,
             API_URL
         }}>
             {children}
