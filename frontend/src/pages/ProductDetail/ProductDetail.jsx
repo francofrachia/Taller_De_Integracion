@@ -6,6 +6,8 @@ import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import './ProductDetail.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -29,7 +31,7 @@ const ProductDetail = () => {
     setPaymentError(null);
 
     try {
-      const response = await fetch('http://localhost:3000/api/mercadopago/create_preference', {
+      const response = await fetch(`${API_URL}/mercadopago/create_preference`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -66,7 +68,7 @@ const ProductDetail = () => {
     setLoading(true);
 
     // Fetch product detail
-    fetch(`http://localhost:3000/api/productos/${id}`)
+    fetch(`${API_URL}/productos/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('Producto no encontrado');
         return res.json();
@@ -86,8 +88,8 @@ const ProductDetail = () => {
         
         // Ahora que tenemos la categoría, buscamos los relacionados y las reseñas en paralelo
         return Promise.all([
-          fetch('http://localhost:3000/api/productos').then(r => r.json()),
-          fetch(`http://localhost:3000/api/productos/${id}/resenas`).then(r => {
+          fetch(`${API_URL}/productos`).then(r => r.json()),
+          fetch(`${API_URL}/productos/${id}/resenas`).then(r => {
             if (!r.ok) return []; // Si el endpoint falla (ej. servidor no reiniciado), devuelve array vacío
             return r.json();
           }).catch(() => []) // También atrapamos errores de red o parseo

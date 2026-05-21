@@ -26,9 +26,40 @@ const createPreference = async (req, res) => {
 
         const preference = new Preference(client);
         
-        // Determinar URLs de retorno
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        // Obtener el webhook de ngrok configurado
         const webhookUrl = process.env.MP_WEBHOOK_URL;
+        
+        // Determinar URLs de retorno
+        // Para desarrollo local con ngrok, registramos las URLs del backend (HTTPS y públicas).
+        // Cuando Mercado Pago redirige al backend, este hace un redirect 302 al frontend local del usuario (http://localhost:5173).
+        // De esta manera se sortea el bloqueo de seguridad de Mercado Pago hacia URLs 'http://localhost' en producción.
+        let backendBaseUrl = `http://localhost:${process.env.PORT || 3000}`;
+        let useRedirectProxy = false;
+        
+        if (webhookUrl) {
+            const match = webhookUrl.match(/^(https:\/\/[^/]+)/);
+            if (match) {
+                backendBaseUrl = match[1];
+                useRedirectProxy = true;
+            }
+        }
+
+        let successUrl, failureUrl, pendingUrl;
+        
+        if (useRedirectProxy) {
+            successUrl = `${backendBaseUrl}/api/mercadopago/success-redirect`;
+            failureUrl = `${backendBaseUrl}/api/mercadopago/failure-redirect`;
+            pendingUrl = `${backendBaseUrl}/api/mercadopago/pending-redirect`;
+        } else {
+            const origin = req.get('origin') || req.get('referer');
+            let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            if (origin) {
+                baseUrl = origin.replace(/\/$/, '');
+            }
+            successUrl = `${baseUrl}/payment-success`;
+            failureUrl = `${baseUrl}/payment-failure`;
+            pendingUrl = `${baseUrl}/payment-pending`;
+        }
 
         const preferenceData = {
             body: {
@@ -43,9 +74,9 @@ const createPreference = async (req, res) => {
                     }
                 ],
                 back_urls: {
-                    success: `${baseUrl}/payment-success`,
-                    failure: `${baseUrl}/payment-failure`,
-                    pending: `${baseUrl}/payment-pending`
+                    success: successUrl,
+                    failure: failureUrl,
+                    pending: pendingUrl
                 },
                 metadata: {
                     product_id: producto.id_producto,
@@ -54,9 +85,10 @@ const createPreference = async (req, res) => {
             }
         };
 
-        // Mercado Pago exige que para usar auto_return: 'approved', las URLs de retorno deben ser HTTPS.
-        // En desarrollo local (HTTP), lo omitimos para evitar que la API devuelva un error 400.
-        if (baseUrl.startsWith('https://')) {
+        // Mercado Pago exige que para usar auto_return: 'approved', las URLs de retorno deben ser HTTPS,
+        // o ser un host local (localhost o 127.0.0.1) para desarrollo local sin proxy.
+        const requiresHttps = useRedirectProxy || successUrl.startsWith('https://') || successUrl.includes('localhost') || successUrl.includes('127.0.0.1');
+        if (requiresHttps) {
             preferenceData.body.auto_return = 'approved';
         }
 
@@ -120,7 +152,28 @@ const receiveWebhook = async (req, res) => {
     }
 };
 
+const successRedirect = (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const queryParams = new URLSearchParams(req.query).toString();
+    res.redirect(`${frontendUrl}/payment-success?${queryParams}`);
+};
+
+const failureRedirect = (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const queryParams = new URLSearchParams(req.query).toString();
+    res.redirect(`${frontendUrl}/payment-failure?${queryParams}`);
+};
+
+const pendingRedirect = (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const queryParams = new URLSearchParams(req.query).toString();
+    res.redirect(`${frontendUrl}/payment-pending?${queryParams}`);
+};
+
 module.exports = {
     createPreference,
-    receiveWebhook
+    receiveWebhook,
+    successRedirect,
+    failureRedirect,
+    pendingRedirect
 };
