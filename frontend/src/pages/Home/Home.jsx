@@ -11,6 +11,26 @@ import secondaryBanner from '../../assets/secondary_banner.png';
 import placeholderProduct from '../../assets/product_placeholder.png';
 
 
+const ProductCardSkeleton = () => (
+  <div className="product-card" style={{ height: '100%' }}>
+    <div className="product-card-image-container" style={{ display: 'block', padding: '0' }}>
+      <div className="skeleton" style={{ width: '100%', height: '100%', aspectRatio: '1', borderRadius: '0' }}></div>
+    </div>
+    <div className="product-card-content" style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+      <div className="skeleton" style={{ width: '85%', height: '16px' }}></div>
+      <div className="skeleton" style={{ width: '60%', height: '14px' }}></div>
+      <div className="skeleton" style={{ width: '40%', height: '18px', marginTop: '5px' }}></div>
+      <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: 'auto' }}>
+        <div className="skeleton" style={{ width: '60px', height: '12px' }}></div>
+        <div className="skeleton" style={{ width: '25px', height: '12px' }}></div>
+      </div>
+    </div>
+    <div className="product-card-actions">
+      <div className="skeleton" style={{ width: '100%', height: '40px', borderRadius: '4px' }}></div>
+    </div>
+  </div>
+);
+
 const Home = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,15 +76,15 @@ const Home = () => {
             title="Ofertas Relámpago" 
             timer={{ days: '03', hours: '23', minutes: '19', seconds: '56' }} 
           />
-          {loading ? (
-            <p>Cargando productos desde la base de datos...</p>
-          ) : (
-            <div className="products-grid">
-              {productos.map(product => (
+          <div className="products-grid">
+            {loading ? (
+              [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={n} />)
+            ) : (
+              productos.map(product => (
                 <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
           <div className="center-btn-container">
             <button className="primary-btn-outline">Ver todas las Promociones</button>
           </div>
@@ -73,15 +93,15 @@ const Home = () => {
         {/* Productos Más Vendidos */}
         <section className="best-sellers-section">
           <SectionHeader title="Productos más Vendidos" showViewAll={true} />
-          {loading ? (
-            <p>Cargando productos...</p>
-          ) : (
-            <div className="products-grid">
-              {productos.map(product => (
+          <div className="products-grid">
+            {loading ? (
+              [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={n} />)
+            ) : (
+              productos.map(product => (
                 <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </section>
 
         {/* Secondary Banner */}
@@ -92,15 +112,15 @@ const Home = () => {
         {/* Explorá Nuestros Productos */}
         <section className="explore-products-section">
           <SectionHeader title="Explorá Nuestros Productos" />
-          {loading ? (
-            <p>Cargando catálogo...</p>
-          ) : (
-            <div className="products-grid">
-              {productos.map(product => (
+          <div className="products-grid">
+            {loading ? (
+              [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={`exp-loading-${n}`} />)
+            ) : (
+              productos.map(product => (
                 <ProductCard key={`exp-${product.id}`} product={product} />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
           <div className="center-btn-container">
             <button className="primary-btn-outline">Ver todos los Productos</button>
           </div>

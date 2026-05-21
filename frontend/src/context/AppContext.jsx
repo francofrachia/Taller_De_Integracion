@@ -71,6 +71,47 @@ export function AppProvider({ children }) {
             return { success: false, requireLogin: true };
         }
 
+        // Guardar valores previos por si falla la llamada
+        const oldCart = cart;
+        const oldCartCount = cartCount;
+
+        // Actualización optimista
+        let newItems = [];
+        let itemAlreadyInCart = false;
+
+        if (cart && cart.items) {
+            newItems = cart.items.map(item => {
+                if (item.id_producto === id_producto) {
+                    itemAlreadyInCart = true;
+                    return { ...item, cantidad: item.cantidad + cantidad };
+                }
+                return item;
+            });
+        }
+
+        if (!itemAlreadyInCart) {
+            const productInfo = productos.find(p => p.id_producto === id_producto);
+            const newItem = {
+                id_producto,
+                cantidad,
+                precio: productInfo ? parseFloat(productInfo.precio) : 0,
+                nombre: productInfo ? productInfo.nombre : 'Producto',
+                imagenes: productInfo ? (productInfo.imagenes || []) : [],
+                stock: productInfo ? productInfo.stock : 99
+            };
+            newItems = [...newItems, newItem];
+        }
+
+        const newTotal = newItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+        const newCart = { 
+            id_carrito: cart?.id_carrito || null, 
+            total: newTotal, 
+            items: newItems 
+        };
+
+        setCart(newCart);
+        setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
+
         const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/add`, {
@@ -86,10 +127,14 @@ export function AppProvider({ children }) {
                 return { success: true };
             } else {
                 console.error("Error al añadir al carrito");
+                setCart(oldCart);
+                setCartCount(oldCartCount);
                 return { success: false, error: 'Error del servidor' };
             }
         } catch (error) {
             console.error(error);
+            setCart(oldCart);
+            setCartCount(oldCartCount);
             return { success: false, error: error.message };
         }
     }
@@ -98,6 +143,24 @@ export function AppProvider({ children }) {
         if (!usuario || !usuario.id_usuario) {
             return { success: false, requireLogin: true };
         }
+
+        const oldCart = cart;
+        const oldCartCount = cartCount;
+
+        // Actualización optimista
+        if (cart && cart.items) {
+            const newItems = cart.items.map(item => {
+                if (item.id_producto === id_producto) {
+                    return { ...item, cantidad };
+                }
+                return item;
+            });
+            const newTotal = newItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+            const newCart = { ...cart, items: newItems, total: newTotal };
+            setCart(newCart);
+            setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
+        }
+
         const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/update`, {
@@ -109,9 +172,14 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            } else {
+                setCart(oldCart);
+                setCartCount(oldCartCount);
             }
         } catch (error) {
             console.error(error);
+            setCart(oldCart);
+            setCartCount(oldCartCount);
         }
     }
 
@@ -119,6 +187,19 @@ export function AppProvider({ children }) {
         if (!usuario || !usuario.id_usuario) {
             return { success: false, requireLogin: true };
         }
+
+        const oldCart = cart;
+        const oldCartCount = cartCount;
+
+        // Actualización optimista
+        if (cart && cart.items) {
+            const newItems = cart.items.filter(item => item.id_producto !== id_producto);
+            const newTotal = newItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+            const newCart = { ...cart, items: newItems, total: newTotal };
+            setCart(newCart);
+            setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
+        }
+
         const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/remove`, {
@@ -130,9 +211,14 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            } else {
+                setCart(oldCart);
+                setCartCount(oldCartCount);
             }
         } catch (error) {
             console.error(error);
+            setCart(oldCart);
+            setCartCount(oldCartCount);
         }
     }
 

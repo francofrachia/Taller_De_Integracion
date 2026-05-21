@@ -78,9 +78,115 @@ export default function Checkout() {
         return (
             <div className="checkout-page">
                 <Navbar />
-                <main className="checkout-main container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-                    <div className="loading-spinner" style={{ fontSize: '18px', fontWeight: '500', color: 'var(--text-gray)' }}>Cargando datos de facturación...</div>
+                
+                <main className="checkout-main container">
+                    {/* Breadcrumb Skeleton */}
+                    <div className="breadcrumb">
+                        <span className="skeleton" style={{ width: '50px', height: '14px' }}></span> / <span className="skeleton" style={{ width: '50px', height: '14px' }}></span> / <span className="skeleton" style={{ width: '80px', height: '14px' }}></span>
+                    </div>
+
+                    <div className="checkout-layout">
+                        {/* Sección Izquierda: Formulario de Facturación Skeleton */}
+                        <div className="checkout-form-section">
+                            <h2>
+                                <span className="skeleton" style={{ width: '100px', height: '28px' }}></span>
+                            </h2>
+                            <div>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label><span className="skeleton" style={{ width: '60px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label><span className="skeleton" style={{ width: '60px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+                                </div>
+
+                                <div className="form-grid grid-3">
+                                    <div className="form-group span-2">
+                                        <label><span className="skeleton" style={{ width: '90px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label><span className="skeleton" style={{ width: '110px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+                                </div>
+
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label><span className="skeleton" style={{ width: '50px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label><span className="skeleton" style={{ width: '120px', height: '14px' }}></span></label>
+                                        <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label><span className="skeleton" style={{ width: '50px', height: '14px' }}></span></label>
+                                    <div className="skeleton" style={{ width: '100%', height: '48px' }}></div>
+                                </div>
+
+                                <div className="form-group checkbox-group" style={{ marginTop: '10px' }}>
+                                    <div className="skeleton" style={{ width: '180px', height: '20px' }}></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sección Derecha: Resumen de la Orden Skeleton */}
+                        <div className="checkout-summary-section">
+                            <div className="summary-box">
+                                <div className="summary-items" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                    {[1, 2].map((n) => (
+                                        <div className="summary-item-row" key={n} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span className="skeleton" style={{ width: '120px', height: '14px' }}></span>
+                                            <span className="skeleton" style={{ width: '60px', height: '14px' }}></span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <hr />
+
+                                <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span className="skeleton" style={{ width: '60px', height: '14px' }}></span>
+                                    <span className="skeleton" style={{ width: '50px', height: '14px' }}></span>
+                                </div>
+                                
+                                <hr />
+                                
+                                <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span className="skeleton" style={{ width: '55px', height: '14px' }}></span>
+                                    <span className="skeleton" style={{ width: '40px', height: '14px' }}></span>
+                                </div>
+                                
+                                <hr />
+                                
+                                <div className="summary-row total-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span className="skeleton" style={{ width: '70px', height: '20px' }}></span>
+                                    <span className="skeleton" style={{ width: '80px', height: '20px' }}></span>
+                                </div>
+
+                                <div className="coupon-section">
+                                    <div className="skeleton" style={{ flex: 1, height: '44px' }}></div>
+                                    <div className="skeleton" style={{ width: '110px', height: '44px' }}></div>
+                                </div>
+
+                                <div className="payment-options-centered">
+                                    <div className="skeleton" style={{ width: '140px', height: '28px' }}></div>
+                                </div>
+
+                                <div className="skeleton" style={{ width: '100%', height: '45px' }}></div>
+                            </div>
+                        </div>
+                    </div>
                 </main>
+
                 <Footer />
             </div>
         );

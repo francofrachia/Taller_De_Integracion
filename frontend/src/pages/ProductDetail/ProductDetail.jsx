@@ -190,7 +190,67 @@ const ProductDetail = () => {
     return Math.round(sum / reviewsArr.length);
   };
 
-  if (loading) return <div><Navbar /><div className="container" style={{padding: '100px 0'}}>Cargando detalles...</div><Footer /></div>;
+  if (loading) {
+    return (
+      <div className="product-detail-page">
+        <Navbar />
+        <main className="container">
+          {/* Breadcrumb Skeleton */}
+          <div className="breadcrumb">
+            <span className="skeleton" style={{ width: '50px', height: '14px' }}></span> / <span className="skeleton" style={{ width: '80px', height: '14px' }}></span>
+          </div>
+
+          <div className="product-detail-grid">
+            {/* Galería de imágenes Skeleton */}
+            <div className="product-gallery">
+              <div className="thumbnails-column">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="thumbnail-container" style={{ border: 'none', cursor: 'default' }}>
+                    <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: '4px' }}></div>
+                  </div>
+                ))}
+              </div>
+              <div className="main-image-container" style={{ minHeight: '500px' }}>
+                <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: '8px' }}></div>
+              </div>
+            </div>
+
+            {/* Información del producto Skeleton */}
+            <div className="product-info" style={{ gap: '15px' }}>
+              <div className="skeleton" style={{ width: '70%', height: '36px', marginBottom: '10px' }}></div>
+              
+              <div className="product-meta" style={{ margin: '0', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div className="skeleton" style={{ width: '100px', height: '16px' }}></div>
+                <span className="meta-divider">|</span>
+                <div className="skeleton" style={{ width: '80px', height: '16px' }}></div>
+              </div>
+
+              <div className="skeleton" style={{ width: '120px', height: '32px', margin: '10px 0' }}></div>
+
+              <div className="product-description" style={{ margin: '0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="skeleton" style={{ width: '100%', height: '16px' }}></div>
+                <div className="skeleton" style={{ width: '95%', height: '16px' }}></div>
+                <div className="skeleton" style={{ width: '90%', height: '16px' }}></div>
+              </div>
+
+              <hr className="divider" style={{ margin: '15px 0' }} />
+
+              <div className="product-actions" style={{ gap: '15px' }}>
+                <div className="skeleton" style={{ width: '80px', height: '16px' }}></div>
+                <div className="action-row" style={{ flexWrap: 'wrap' }}>
+                  <div className="skeleton" style={{ width: '155px', height: '45px', borderRadius: '4px' }}></div>
+                  <div className="skeleton" style={{ flex: 1, minWidth: '150px', height: '45px', borderRadius: '4px' }}></div>
+                  <div className="skeleton" style={{ flex: 1, minWidth: '150px', height: '45px', borderRadius: '4px' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (error) return <div><Navbar /><div className="container" style={{padding: '100px 0'}}>Error: {error}</div><Footer /></div>;
   if (!product) return null;
 
