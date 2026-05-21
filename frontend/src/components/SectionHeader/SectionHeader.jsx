@@ -1,7 +1,7 @@
 import React from 'react';
 import './SectionHeader.css';
 
-const SectionHeader = ({ title, showViewAll = false, timer = null }) => {
+const SectionHeader = ({ title, showViewAll = false, timer = null, rightElement = null }) => {
   return (
     <div className="section-header-container">
       <div className="section-title-wrapper">
@@ -36,6 +36,8 @@ const SectionHeader = ({ title, showViewAll = false, timer = null }) => {
       {showViewAll && (
         <button className="view-all-btn">Ver Todos</button>
       )}
+      
+      {rightElement}
     </div>
   );
 };
