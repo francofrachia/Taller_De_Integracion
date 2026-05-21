@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -7,8 +7,7 @@ import './Cart.css';
 
 export default function Cart() {
     const { cart, actualizarCantidadCarrito, removerDelCarrito, vaciarCarrito, API_URL, usuario, productos } = useContext(AppContext);
-    const [coupon, setCoupon] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
+    const navigate = useNavigate();
     const [localQuantities, setLocalQuantities] = useState({});
 
     const handleQuantityChange = (id_producto, currentQty, change, stock) => {
@@ -40,43 +39,9 @@ export default function Cart() {
         return itemStock && parseInt(qty, 10) > itemStock;
     }) : false;
 
-    const handleCheckout = async () => {
+    const handleCheckout = () => {
         if (!cart || !cart.items || cart.items.length === 0 || hasAnyQtyError) return;
-        
-        setIsProcessing(true);
-        try {
-            // Mapeamos los items al formato que espera el backend
-            const cartItems = cart.items.map(item => {
-                const qty = localQuantities[item.id_producto] !== undefined 
-                    ? (parseInt(localQuantities[item.id_producto], 10) || 1) 
-                    : item.cantidad;
-                return {
-                    id_producto: item.id_producto,
-                    cantidad: qty
-                };
-            });
-
-            const response = await fetch(`${API_URL}/mercadopago/create_preference`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cartItems })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.init_point) {
-                    window.location.href = data.init_point;
-                }
-            } else {
-                const errData = await response.json();
-                alert(`Error al procesar el pago: ${errData.error}`);
-            }
-        } catch (error) {
-            console.error('Error al iniciar checkout:', error);
-            alert('Error al iniciar el pago.');
-        } finally {
-            setIsProcessing(false);
-        }
+        navigate('/checkout');
     };
 
     const subtotal = cart && cart.items ? cart.items.reduce((sum, item) => {
@@ -206,16 +171,6 @@ export default function Cart() {
                             <div className="cart-actions">
                                 <Link to="/" className="btn-outline">Volver al Inicio</Link>
                             </div>
-
-                            <div className="coupon-section">
-                                <input 
-                                    type="text" 
-                                    placeholder="Código de Cupón" 
-                                    value={coupon}
-                                    onChange={(e) => setCoupon(e.target.value)}
-                                />
-                                <button className="btn-yellow">Aplicar cupón</button>
-                            </div>
                         </div>
 
                         <div className="cart-summary-section">
@@ -238,9 +193,9 @@ export default function Cart() {
                                 <button 
                                     className="btn-yellow full-width" 
                                     onClick={handleCheckout}
-                                    disabled={isProcessing || hasAnyQtyError}
+                                    disabled={hasAnyQtyError}
                                 >
-                                    {isProcessing ? 'Procesando...' : 'Confirmar Compra'}
+                                    Comprar
                                 </button>
                                 {hasAnyQtyError && (
                                     <p className="cart-checkout-warning" style={{ color: '#d32f2f', fontSize: '13px', marginTop: '10px', textAlign: 'center', fontWeight: '500' }}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
@@ -14,6 +14,9 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from || '/';
 
     const CLIENT_ID = "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
 
@@ -88,7 +91,7 @@ export default function Register() {
             const usuarioBackend = await sincronizarUsuarioConBackend(usuarioGoogle);
 
             if (usuarioBackend) {
-                setTimeout(() => { navigate('/'); }, 1500);
+                setTimeout(() => { navigate(from, { replace: true }); }, 1500);
             } else {
                 setMensaje("Error al crear la cuenta en el servidor.");
             }
@@ -180,7 +183,7 @@ export default function Register() {
 
                                 <p className="login-register">
                                     ¿Ya tenés cuenta?{' '}
-                                    <Link to="/login">Iniciar Sesión</Link>
+                                    <Link to="/login" state={{ from }}>Iniciar Sesión</Link>
                                 </p>
                             </>
                         )}

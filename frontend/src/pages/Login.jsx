@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
@@ -12,6 +12,9 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from || '/';
 
     const CLIENT_ID = "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
 
@@ -86,7 +89,7 @@ export default function Login() {
             const usuarioBackend = await sincronizarUsuarioConBackend(usuarioGoogle);
 
             if (usuarioBackend) {
-                setTimeout(() => { navigate('/'); }, 1500);
+                setTimeout(() => { navigate(from, { replace: true }); }, 1500);
             } else {
                 setMensaje("Error de sincronización con el servidor.");
             }
@@ -170,7 +173,7 @@ export default function Login() {
 
                                 <p className="login-register">
                                     ¿No tenés cuenta?{' '}
-                                    <Link to="/register">Registrate</Link>
+                                    <Link to="/register" state={{ from }}>Registrate</Link>
                                 </p>
                             </>
                         )}

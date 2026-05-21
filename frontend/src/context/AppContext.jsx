@@ -12,9 +12,9 @@ export function AppProvider({ children }) {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-    // 1. Cargar datos del localStorage e inicializar sesión al montar
+    // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
-        const usuarioGuardado = localStorage.getItem('usuario_bloquemundo');
+        const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
         if (usuarioGuardado) {
             try {
                 const user = JSON.parse(usuarioGuardado);
@@ -174,9 +174,10 @@ export function AppProvider({ children }) {
                 const datos = await respuesta.json();
                 console.log("Respuesta de Bloque Mundo Backend:", datos);
                 
-                // Guardar en estado y localStorage
+                // Guardar en estado, localStorage y sessionStorage
                 setUsuario(datos.usuario);
                 localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
                 // Cargar carrito del usuario
                 obtenerCarrito(datos.usuario.id_usuario);
                 return datos.usuario;
@@ -194,6 +195,7 @@ export function AppProvider({ children }) {
     function logout() {
         setUsuario(null);
         localStorage.removeItem('usuario_bloquemundo');
+        sessionStorage.removeItem('usuario_bloquemundo');
         console.log("Sesión cerrada.");
     }
 

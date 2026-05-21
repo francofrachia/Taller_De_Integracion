@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './PaymentStatus.css';
 
 const PaymentStatus = ({ type }) => {
+  const { vaciarCarrito, usuario, loading } = useContext(AppContext);
   const [searchParams] = useSearchParams();
   const paymentId = searchParams.get('payment_id');
   const status = searchParams.get('status');
@@ -12,7 +14,22 @@ const PaymentStatus = ({ type }) => {
   useEffect(() => {
     // Scroll to top
     window.scrollTo(0, 0);
-  }, []);
+
+    if (loading) {
+      console.log("[PaymentStatus] App context is loading user session, delaying cart clear.");
+      return;
+    }
+
+    if (type === 'success') {
+      sessionStorage.removeItem('checkout_form_data');
+      if (usuario && usuario.id_usuario) {
+        console.log("[PaymentStatus] User session loaded. Clearing cart for user:", usuario.id_usuario);
+        vaciarCarrito();
+      } else {
+        console.warn("[PaymentStatus] Payment success page reached but no logged-in user found.");
+      }
+    }
+  }, [type, loading, usuario, vaciarCarrito]);
 
   const renderContent = () => {
     switch (type) {
@@ -47,7 +64,7 @@ const PaymentStatus = ({ type }) => {
               </div>
             )}
             <div className="status-actions">
-              <Link to="/" className="primary-btn-outline">Volver a intentar</Link>
+              <Link to="/checkout" className="primary-btn-outline">Volver a intentar</Link>
             </div>
           </div>
         );

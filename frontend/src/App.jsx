@@ -5,6 +5,7 @@ import ProductDetail from './pages/ProductDetail/ProductDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Cart from './pages/Cart/Cart';
+import Checkout from './pages/Checkout/Checkout';
 import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/carrito" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment-success" element={<PaymentStatus type="success" />} />
         <Route path="/payment-failure" element={<PaymentStatus type="failure" />} />
         <Route path="/payment-pending" element={<PaymentStatus type="pending" />} />

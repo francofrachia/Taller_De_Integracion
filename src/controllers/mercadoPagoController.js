@@ -8,7 +8,7 @@ const client = new MercadoPagoConfig({
 
 const createPreference = async (req, res) => {
     try {
-        const { cartItems } = req.body;
+        const { cartItems, id_usuario } = req.body;
 
         if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
             return res.status(400).json({ error: 'Faltan datos obligatorios (cartItems vacío)' });
@@ -45,7 +45,18 @@ const createPreference = async (req, res) => {
         const preference = new Preference(client);
         
         // Determinar URLs de retorno
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        let baseUrl = req.headers.origin || req.headers.referer || process.env.FRONTEND_URL || 'http://localhost:5173';
+        
+        // Limpiar baseUrl (extraer solo origen sin rutas ni barras diagonales finales)
+        try {
+            const parsedUrl = new URL(baseUrl);
+            baseUrl = parsedUrl.origin;
+        } catch (e) {
+            if (baseUrl.endsWith('/')) {
+                baseUrl = baseUrl.slice(0, -1);
+            }
+        }
+
         const webhookUrl = process.env.MP_WEBHOOK_URL;
 
         const preferenceData = {
@@ -53,12 +64,13 @@ const createPreference = async (req, res) => {
                 items: itemsPreference,
                 back_urls: {
                     success: `${baseUrl}/payment-success`,
-                    failure: `${baseUrl}/payment-failure`,
+                    failure: `${baseUrl}/checkout`,
                     pending: `${baseUrl}/payment-pending`
                 },
                 metadata: {
                     // MP metadata string limit is 500 chars, JSON stringify for multiple items
-                    cart: JSON.stringify(metadataItems)
+                    cart: JSON.stringify(metadataItems),
+                    id_usuario: id_usuario
                 }
             }
         };
@@ -103,7 +115,21 @@ const receiveWebhook = async (req, res) => {
 
             if (paymentData.status === 'approved') {
                 const cartMetadataStr = paymentData.metadata.cart;
+                const idUsuario = paymentData.metadata.id_usuario;
 
+                // 1. Vaciar el carrito en la base de datos
+                if (idUsuario) {
+                    try {
+                        const Carrito = require('../models/carritoModel');
+                        const carrito = await Carrito.getOrCreateByUserId(idUsuario);
+                        await Carrito.clearCart(carrito.id_carrito);
+                        console.log(`Pago aprobado: Carrito vaciado para el usuario ${idUsuario}`);
+                    } catch (err) {
+                        console.error('Error al vaciar el carrito en el webhook:', err);
+                    }
+                }
+
+                // 2. Actualizar stock
                 if (cartMetadataStr) {
                     try {
                         const items = JSON.parse(cartMetadataStr);
