@@ -6,6 +6,11 @@ import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import { AppContext } from '../../context/AppContext';
 import './Home.css';
 
+// Import local placeholder images for banners
+import heroBanner from '../../assets/hero_banner.png';
+import secondaryBanner from '../../assets/secondary_banner.png';
+import placeholderProduct from '../../assets/product_placeholder.png';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const ProductCardSkeleton = () => (
