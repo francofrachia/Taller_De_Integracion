@@ -9,6 +9,8 @@ import Checkout from './pages/Checkout/Checkout';
 import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
 import Account from './pages/Account/Account';
 
+import About from './pages/About/About';
+
 function App() {
   return (
     <BrowserRouter>
@@ -20,6 +22,7 @@ function App() {
         <Route path="/carrito" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/cuenta" element={<Account />} />
+        <Route path="/nosotros" element={<About />} />
         <Route path="/payment-success" element={<PaymentStatus type="success" />} />
         <Route path="/payment-failure" element={<PaymentStatus type="failure" />} />
         <Route path="/payment-pending" element={<PaymentStatus type="pending" />} />
