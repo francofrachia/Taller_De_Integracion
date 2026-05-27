@@ -7,6 +7,7 @@ export function AppProvider({ children }) {
     const [busqueda, setBusqueda] = useState('');
     const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
     const [cartCount, setCartCount] = useState(0);
+    const [favoritos, setFavoritos] = useState([]);
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
@@ -24,7 +25,8 @@ export function AppProvider({ children }) {
                     // Esperamos tanto productos como carrito antes de marcar como inicializado
                     await Promise.all([
                         obtenerProductos(),
-                        obtenerCarrito(user.id_usuario)
+                        obtenerCarrito(user.id_usuario),
+                        obtenerFavoritos(user.id_usuario)
                     ]);
                 } catch (e) {
                     console.error("Error al parsear el usuario guardado:", e);
@@ -34,6 +36,7 @@ export function AppProvider({ children }) {
                 // Si no hay usuario, no cargamos carrito (limpiar estado)
                 setCart(null);
                 setCartCount(0);
+                setFavoritos([]);
                 await obtenerProductos();
             }
             setIsInitialized(true);
@@ -255,7 +258,55 @@ export function AppProvider({ children }) {
         }
     }
 
-    // 4. Función de sincronización de usuario al iniciar sesión con Google
+    // 4. Favoritos
+    async function obtenerFavoritos(id_usuario) {
+        if (!id_usuario) return;
+        try {
+            const response = await fetch(`${API_URL}/favoritos?id_usuario=${id_usuario}`);
+            if (response.ok) {
+                const data = await response.json();
+                setFavoritos(data.favoritos.map(f => f.id_producto)); // Guardamos solo IDs en el contexto para acceso rápido
+            }
+        } catch (error) {
+            console.error("Error al obtener favoritos:", error);
+        }
+    }
+
+    async function toggleFavorito(id_producto) {
+        if (!usuario) {
+            alert('Debes iniciar sesión para agregar a favoritos');
+            return;
+        }
+
+        const isFav = favoritos.includes(id_producto);
+        const method = isFav ? 'DELETE' : 'POST';
+
+        // Actualización optimista
+        if (isFav) {
+            setFavoritos(prev => prev.filter(id => id !== id_producto));
+        } else {
+            setFavoritos(prev => [...prev, id_producto]);
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/favoritos`, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario: usuario.id_usuario, id_producto })
+            });
+            if (!response.ok) {
+                // Revertir en caso de error
+                if (isFav) setFavoritos(prev => [...prev, id_producto]);
+                else setFavoritos(prev => prev.filter(id => id !== id_producto));
+            }
+        } catch (error) {
+            console.error("Error al hacer toggle en favoritos:", error);
+            if (isFav) setFavoritos(prev => [...prev, id_producto]);
+            else setFavoritos(prev => prev.filter(id => id !== id_producto));
+        }
+    }
+
+    // 5. Función de sincronización de usuario al iniciar sesión con Google
     async function sincronizarUsuarioConBackend(usuarioGoogle) {
         try {
             const respuesta = await fetch(`${API_URL}/auth/google-login`, {
@@ -277,8 +328,9 @@ export function AppProvider({ children }) {
                 setUsuario(datos.usuario);
                 localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
                 sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                // Cargar carrito del usuario
+                // Cargar carrito y favoritos del usuario
                 obtenerCarrito(datos.usuario.id_usuario);
+                obtenerFavoritos(datos.usuario.id_usuario);
                 return datos.usuario;
             } else {
                 console.error("Error al sincronizar con el backend");
@@ -293,6 +345,9 @@ export function AppProvider({ children }) {
     // 5. Cerrar sesión
     function logout() {
         setUsuario(null);
+        setCart(null);
+        setCartCount(0);
+        setFavoritos([]);
         localStorage.removeItem('usuario_bloquemundo');
         sessionStorage.removeItem('usuario_bloquemundo');
         console.log("Sesión cerrada.");
@@ -309,6 +364,8 @@ export function AppProvider({ children }) {
             actualizarCantidadCarrito,
             removerDelCarrito,
             vaciarCarrito,
+            favoritos,
+            toggleFavorito,
             usuario,
             setUsuario,
             sincronizarUsuarioConBackend,

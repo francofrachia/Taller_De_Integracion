@@ -1,8 +1,9 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import ProductCard from '../../components/ProductCard/ProductCard';
 import './Account.css';
 
 // ───────────────────────────────────────────────
@@ -264,10 +265,17 @@ function DireccionesSection({ usuario, API_URL }) {
 // Componente principal: Account
 // ───────────────────────────────────────────────
 export default function Account() {
-    const { usuario, isInitialized, loading, API_URL, setUsuario } = useContext(AppContext);
+    const { usuario, isInitialized, loading, API_URL, setUsuario, productos, favoritos } = useContext(AppContext);
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const [activeSection, setActiveSection] = useState('perfil');
+    const [activeSection, setActiveSection] = useState(location.state?.section || 'perfil');
+
+    useEffect(() => {
+        if (location.state?.section) {
+            setActiveSection(location.state.section);
+        }
+    }, [location.state]);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -570,15 +578,39 @@ export default function Account() {
                         {activeSection === 'favoritos' && (
                             <div className="account-placeholder-section">
                                 <h2 className="account-section-title">Favoritos</h2>
-                                <div className="placeholder-empty">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748z"/>
-                                    </svg>
-                                    <p>Todavía no marcaste productos como favoritos.</p>
-                                    <Link to="/" className="btn-save" style={{ marginTop: '16px', display: 'inline-block', textDecoration: 'none' }}>
-                                        Explorar productos
-                                    </Link>
-                                </div>
+                                {favoritos.length === 0 ? (
+                                    <div className="placeholder-empty">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748z"/>
+                                        </svg>
+                                        <p>Todavía no marcaste productos como favoritos.</p>
+                                        <Link to="/" className="btn-save" style={{ marginTop: '16px', display: 'inline-block', textDecoration: 'none' }}>
+                                            Explorar productos
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="products-grid" style={{ marginTop: '20px' }}>
+                                        {productos
+                                            .filter(p => favoritos.includes(p.id_producto))
+                                            .map(item => {
+                                                const precioNum = parseFloat(item.precio) || 0;
+                                                const productMapped = {
+                                                    id: item.id_producto,
+                                                    title: item.nombre || item.titulo || 'Producto sin nombre',
+                                                    price: precioNum,
+                                                    oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
+                                                    discount: item.descuento || null,
+                                                    rating: item.calificacion || 5,
+                                                    reviews: item.reseñas || 0,
+                                                    image: item.imagen_url,
+                                                    collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+                                                    age: item.edad_recomendada || null,
+                                                    stock: item.stock || 0
+                                                };
+                                                return <ProductCard key={productMapped.id} product={productMapped} />;
+                                            })}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </section>

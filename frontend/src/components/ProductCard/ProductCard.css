@@ -61,7 +61,11 @@
 }
 
 .favorite-btn:hover {
-  color: red;
+  color: #ff4757;
+}
+
+.favorite-btn.active {
+  color: #ff4757;
 }
 
 .product-card-content {
