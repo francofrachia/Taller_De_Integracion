@@ -7,7 +7,7 @@ import mercadopagoLogo from '../../assets/mercadopago-seeklogo.png';
 import './Checkout.css';
 
 export default function Checkout() {
-    const { cart, API_URL, usuario, productos, loading, isInitialized } = useContext(AppContext);
+    const { cart, API_URL, usuario, productos, loading, isInitialized, token } = useContext(AppContext);
     const navigate = useNavigate();
     const [coupon, setCoupon] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -259,10 +259,12 @@ export default function Checkout() {
 
             const response = await fetch(`${API_URL}/mercadopago/create_preference`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ 
-                    cartItems,
-                    id_usuario: usuario.id_usuario
+                    cartItems
                 })
             });
 

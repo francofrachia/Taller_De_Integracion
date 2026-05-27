@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const pool = require('./config/db');
 const productoRoutes = require('./routes/productoRoutes');
@@ -10,9 +11,25 @@ const carritoRoutes = require('./routes/carritoRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Portero estricto: Rate Limiting para auth y pagos
+const limitadorSeguridad = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 50, // Máximo 50 peticiones por IP
+    message: { error: 'Demasiadas peticiones desde esta dirección IP. Intenta de nuevo en 15 minutos.' }
+});
+
 // Middlewares
-app.use(cors());
+// Configuración de CORS restringido
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Aplicar Rate Limiter a las rutas críticas
+app.use('/api/auth', limitadorSeguridad);
+app.use('/api/mercadopago/create_preference', limitadorSeguridad);
 
 // Evita la pantalla de advertencia de ngrok en el navegador
 app.use((req, res, next) => {

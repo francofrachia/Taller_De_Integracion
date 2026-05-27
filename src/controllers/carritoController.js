@@ -3,8 +3,7 @@ const Producto = require('../models/productoModel');
 
 const getCarrito = async (req, res) => {
     try {
-        const id_usuario = req.query.id_usuario; // En un entorno real se obtendría del JWT en req.user
-        if (!id_usuario) return res.status(400).json({ error: 'id_usuario es requerido' });
+        const id_usuario = req.usuario.id_usuario;
 
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carrito.id_carrito);
@@ -25,10 +24,11 @@ const getCarrito = async (req, res) => {
 
 const addProducto = async (req, res) => {
     try {
-        const { id_usuario, id_producto, cantidad } = req.body;
+        const id_usuario = req.usuario.id_usuario;
+        const { id_producto, cantidad } = req.body;
         
-        if (!id_usuario || !id_producto || !cantidad) {
-            return res.status(400).json({ error: 'Faltan datos (id_usuario, id_producto, cantidad)' });
+        if (!id_producto || !cantidad) {
+            return res.status(400).json({ error: 'Faltan datos (id_producto, cantidad)' });
         }
 
         const producto = await Producto.getById(id_producto);
@@ -54,7 +54,8 @@ const addProducto = async (req, res) => {
 
 const updateCantidad = async (req, res) => {
     try {
-        const { id_usuario, id_producto, cantidad } = req.body;
+        const id_usuario = req.usuario.id_usuario;
+        const { id_producto, cantidad } = req.body;
         
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
         await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, cantidad);
@@ -71,7 +72,8 @@ const updateCantidad = async (req, res) => {
 
 const removeProducto = async (req, res) => {
     try {
-        const { id_usuario, id_producto } = req.body;
+        const id_usuario = req.usuario.id_usuario;
+        const { id_producto } = req.body;
         
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
         await Carrito.removeItem(id_producto, carrito.id_carrito);
@@ -88,7 +90,7 @@ const removeProducto = async (req, res) => {
 
 const clearCarrito = async (req, res) => {
     try {
-        const { id_usuario } = req.body;
+        const id_usuario = req.usuario.id_usuario;
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
         await Carrito.clearCart(carrito.id_carrito);
         

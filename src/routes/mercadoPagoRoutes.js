@@ -7,9 +7,10 @@ const {
     failureRedirect,
     pendingRedirect
 } = require('../controllers/mercadoPagoController');
+const verificarToken = require('../middlewares/authMiddleware');
 
-// Ruta para crear preferencia de pago
-router.post('/create_preference', createPreference);
+// Ruta para crear preferencia de pago (Protegida)
+router.post('/create_preference', verificarToken, createPreference);
 
 // Ruta para recibir notificaciones de webhook de Mercado Pago
 router.post('/webhook', receiveWebhook);

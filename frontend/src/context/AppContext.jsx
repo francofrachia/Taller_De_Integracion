@@ -8,6 +8,7 @@ export function AppProvider({ children }) {
     const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
     const [cartCount, setCartCount] = useState(0);
     const [usuario, setUsuario] = useState(null);
+    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
 
@@ -16,7 +17,15 @@ export function AppProvider({ children }) {
     // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
         const init = async () => {
+            const tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
             const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
+            
+            let loadedToken = null;
+            if (tokenGuardado) {
+                loadedToken = tokenGuardado;
+                setToken(tokenGuardado);
+            }
+
             if (usuarioGuardado) {
                 try {
                     const user = JSON.parse(usuarioGuardado);
@@ -24,7 +33,7 @@ export function AppProvider({ children }) {
                     // Esperamos tanto productos como carrito antes de marcar como inicializado
                     await Promise.all([
                         obtenerProductos(),
-                        obtenerCarrito(user.id_usuario)
+                        obtenerCarrito(loadedToken)
                     ]);
                 } catch (e) {
                     console.error("Error al parsear el usuario guardado:", e);
@@ -41,7 +50,7 @@ export function AppProvider({ children }) {
         init();
     }, []);
 
-    // 2. Fetch de productos del backend
+    // 2. Fetch de productos del backend (público)
     async function obtenerProductos() {
         setLoading(true);
         try {
@@ -59,10 +68,17 @@ export function AppProvider({ children }) {
         }
     }
 
-    // 3. Funciones de carrito conectadas al backend
-    async function obtenerCarrito(id_usuario) {
+    // 3. Funciones de carrito conectadas al backend (Protegidas con JWT)
+    async function obtenerCarrito(tokenHeaderVal) {
+        const currentToken = tokenHeaderVal || token;
+        if (!currentToken) return;
+
         try {
-            const response = await fetch(`${API_URL}/carrito?id_usuario=${id_usuario}`);
+            const response = await fetch(`${API_URL}/carrito`, {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setCart(data);
@@ -80,7 +96,7 @@ export function AppProvider({ children }) {
     }
 
     async function agregarAlCarrito(id_producto, cantidad = 1) {
-        if (!usuario || !usuario.id_usuario) {
+        if (!usuario || !usuario.id_usuario || !token) {
             return { success: false, requireLogin: true };
         }
 
@@ -125,12 +141,14 @@ export function AppProvider({ children }) {
         setCart(newCart);
         setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
 
-        const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/add`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_usuario, id_producto, cantidad })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id_producto, cantidad })
             });
             if (response.ok) {
                 const data = await response.json();
@@ -153,7 +171,7 @@ export function AppProvider({ children }) {
     }
 
     async function actualizarCantidadCarrito(id_producto, cantidad) {
-        if (!usuario || !usuario.id_usuario) {
+        if (!usuario || !usuario.id_usuario || !token) {
             return { success: false, requireLogin: true };
         }
 
@@ -174,12 +192,14 @@ export function AppProvider({ children }) {
             setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
         }
 
-        const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/update`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_usuario, id_producto, cantidad })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id_producto, cantidad })
             });
             if (response.ok) {
                 const data = await response.json();
@@ -197,7 +217,7 @@ export function AppProvider({ children }) {
     }
 
     async function removerDelCarrito(id_producto) {
-        if (!usuario || !usuario.id_usuario) {
+        if (!usuario || !usuario.id_usuario || !token) {
             return { success: false, requireLogin: true };
         }
 
@@ -213,12 +233,14 @@ export function AppProvider({ children }) {
             setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
         }
 
-        const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/remove`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_usuario, id_producto })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id_producto })
             });
             if (response.ok) {
                 const data = await response.json();
@@ -236,15 +258,16 @@ export function AppProvider({ children }) {
     }
 
     async function vaciarCarrito() {
-        if (!usuario || !usuario.id_usuario) {
+        if (!usuario || !usuario.id_usuario || !token) {
             return;
         }
-        const id_usuario = usuario.id_usuario;
         try {
             const response = await fetch(`${API_URL}/carrito/clear`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_usuario })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
             });
             if (response.ok) {
                 setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
@@ -275,10 +298,14 @@ export function AppProvider({ children }) {
                 
                 // Guardar en estado, localStorage y sessionStorage
                 setUsuario(datos.usuario);
+                setToken(datos.token);
                 localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
                 sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                // Cargar carrito del usuario
-                obtenerCarrito(datos.usuario.id_usuario);
+                localStorage.setItem('token_bloquemundo', datos.token);
+                sessionStorage.setItem('token_bloquemundo', datos.token);
+                
+                // Cargar carrito del usuario usando el token retornado
+                obtenerCarrito(datos.token);
                 return datos.usuario;
             } else {
                 console.error("Error al sincronizar con el backend");
@@ -293,8 +320,11 @@ export function AppProvider({ children }) {
     // 5. Cerrar sesión
     function logout() {
         setUsuario(null);
+        setToken(null);
         localStorage.removeItem('usuario_bloquemundo');
         sessionStorage.removeItem('usuario_bloquemundo');
+        localStorage.removeItem('token_bloquemundo');
+        sessionStorage.removeItem('token_bloquemundo');
         console.log("Sesión cerrada.");
     }
 
@@ -311,6 +341,8 @@ export function AppProvider({ children }) {
             vaciarCarrito,
             usuario,
             setUsuario,
+            token,
+            setToken,
             sincronizarUsuarioConBackend,
             logout,
             loading,

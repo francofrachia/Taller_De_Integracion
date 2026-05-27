@@ -1,4 +1,17 @@
 const pool = require('../config/db');
+const jwt = require('jsonwebtoken');
+
+const firmarToken = (usuario) => {
+    return jwt.sign(
+        { 
+            id_usuario: usuario.id_usuario, 
+            rol: usuario.rol, 
+            email: usuario.email 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+};
 
 const loginOauth = async (req, res) => {
     const { email, nombre } = req.body; // Recibimos el nombre completo desde el Frontend
@@ -8,14 +21,18 @@ const loginOauth = async (req, res) => {
         const userExist = await pool.query('SELECT * FROM usuario WHERE email = $1', [email]);
 
         if (userExist.rows.length > 0) {
-            // Caso A: El usuario ya existe, devolvemos sus datos (Login)
+            // Caso A: El usuario ya existe, devolvemos sus datos (Login) + Token
+            const usuario = userExist.rows[0];
             console.log("Usuario ya existente:", email);
+            
+            const token = firmarToken(usuario);
+
             return res.json({
                 mensaje: "Login exitoso",
-                usuario: userExist.rows[0]
+                usuario,
+                token
             });
         } else {
-
             // Caso B: El usuario es nuevo (Registro)
             const partes = nombre ? nombre.split(' ') : ['Usuario', 'Google'];
             const primerNombre = partes[0];
@@ -29,9 +46,13 @@ const loginOauth = async (req, res) => {
                 [primerNombre, apellido, email, 'usuario', 'OAUTH_USER']
             );
 
+            const usuarioNuevo = newUser.rows[0];
+            const token = firmarToken(usuarioNuevo);
+
             return res.status(201).json({
                 mensaje: "Usuario registrado con éxito",
-                usuario: newUser.rows[0]
+                usuario: usuarioNuevo,
+                token
             });
         }
     } catch (error) {
