@@ -14,12 +14,32 @@ export function AppProvider({ children }) {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+    // 5. Cerrar sesión (definida arriba para poder invocarla desde init y otros métodos)
+    function logout() {
+        setUsuario(null);
+        setToken(null);
+        setCart(null);
+        setCartCount(0);
+        localStorage.removeItem('usuario_bloquemundo');
+        sessionStorage.removeItem('usuario_bloquemundo');
+        localStorage.removeItem('token_bloquemundo');
+        sessionStorage.removeItem('token_bloquemundo');
+        console.log("Sesión cerrada y limpiada.");
+    }
+
     // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
         const init = async () => {
-            const tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
+            let tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
             const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
             
+            // Sanitización extrema: Si el token guardado es la cadena "null" o "undefined" debido a bugs previos, limpiarlo
+            if (tokenGuardado === 'null' || tokenGuardado === 'undefined') {
+                tokenGuardado = null;
+                localStorage.removeItem('token_bloquemundo');
+                sessionStorage.removeItem('token_bloquemundo');
+            }
+
             let loadedToken = null;
             if (tokenGuardado) {
                 loadedToken = tokenGuardado;
@@ -71,7 +91,7 @@ export function AppProvider({ children }) {
     // 3. Funciones de carrito conectadas al backend (Protegidas con JWT)
     async function obtenerCarrito(tokenHeaderVal) {
         const currentToken = tokenHeaderVal || token;
-        if (!currentToken) return;
+        if (!currentToken || currentToken === 'null' || currentToken === 'undefined') return;
 
         try {
             const response = await fetch(`${API_URL}/carrito`, {
@@ -85,6 +105,10 @@ export function AppProvider({ children }) {
                 // Calcular total de ítems para el badge
                 const count = data.items.reduce((acc, item) => acc + item.cantidad, 0);
                 setCartCount(count);
+            } else if (response.status === 401 || response.status === 403) {
+                // Si el token es inválido o expiró en el backend, auto-logout para limpiar el estado corrupto
+                console.warn("Sesión expirada o inválida detectada al obtener carrito. Auto-logout.");
+                logout();
             } else {
                 // Si falla el carrito, inicializamos uno vacío para no bloquear la app
                 setCart({ id_carrito: null, total: 0, items: [] });
@@ -96,7 +120,7 @@ export function AppProvider({ children }) {
     }
 
     async function agregarAlCarrito(id_producto, cantidad = 1) {
-        if (!usuario || !usuario.id_usuario || !token) {
+        if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
         }
 
@@ -156,6 +180,12 @@ export function AppProvider({ children }) {
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
                 console.log(`Producto ${id_producto} añadido al carrito.`);
                 return { success: true };
+            } else if (response.status === 401 || response.status === 403) {
+                console.warn("Sesión expirada o inválida detectada al agregar producto. Auto-logout.");
+                logout();
+                setCart(oldCart);
+                setCartCount(oldCartCount);
+                return { success: false, requireLogin: true };
             } else {
                 console.error("Error al añadir al carrito");
                 setCart(oldCart);
@@ -171,7 +201,7 @@ export function AppProvider({ children }) {
     }
 
     async function actualizarCantidadCarrito(id_producto, cantidad) {
-        if (!usuario || !usuario.id_usuario || !token) {
+        if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
         }
 
@@ -205,6 +235,11 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            } else if (response.status === 401 || response.status === 403) {
+                console.warn("Sesión expirada o inválida al actualizar carrito. Auto-logout.");
+                logout();
+                setCart(oldCart);
+                setCartCount(oldCartCount);
             } else {
                 setCart(oldCart);
                 setCartCount(oldCartCount);
@@ -217,7 +252,7 @@ export function AppProvider({ children }) {
     }
 
     async function removerDelCarrito(id_producto) {
-        if (!usuario || !usuario.id_usuario || !token) {
+        if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
         }
 
@@ -246,6 +281,11 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+            } else if (response.status === 401 || response.status === 403) {
+                console.warn("Sesión expirada o inválida al remover item. Auto-logout.");
+                logout();
+                setCart(oldCart);
+                setCartCount(oldCartCount);
             } else {
                 setCart(oldCart);
                 setCartCount(oldCartCount);
@@ -258,7 +298,7 @@ export function AppProvider({ children }) {
     }
 
     async function vaciarCarrito() {
-        if (!usuario || !usuario.id_usuario || !token) {
+        if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return;
         }
         try {
@@ -272,6 +312,9 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
                 setCartCount(0);
+            } else if (response.status === 401 || response.status === 403) {
+                console.warn("Sesión expirada o inválida al vaciar carrito. Auto-logout.");
+                logout();
             }
         } catch (error) {
             console.error(error);
@@ -315,17 +358,6 @@ export function AppProvider({ children }) {
             console.error("Error sincronizando con el backend:", error);
             return null;
         }
-    }
-
-    // 5. Cerrar sesión
-    function logout() {
-        setUsuario(null);
-        setToken(null);
-        localStorage.removeItem('usuario_bloquemundo');
-        sessionStorage.removeItem('usuario_bloquemundo');
-        localStorage.removeItem('token_bloquemundo');
-        sessionStorage.removeItem('token_bloquemundo');
-        console.log("Sesión cerrada.");
     }
 
     return (

@@ -4,7 +4,7 @@ const verificarToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Formato: Bearer TOKEN
 
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
         return res.status(401).json({ error: 'Acceso denegado. Token no provisto.' });
     }
 
