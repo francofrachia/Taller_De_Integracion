@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
 import placeholderImg from '../../assets/product_placeholder.png';
 import './ProductCard.css';
@@ -48,7 +49,7 @@ const ProductCard = ({ product }) => {
             title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"} 
             onClick={handleToggleFav}
           >
-            {isFav ? '♥' : '♡'}
+            {isFav ? <FaHeart /> : <FaRegHeart />}
           </button>
           <img 
             src={(!product.image || product.image.includes('legostore.com')) ? placeholderImg : product.image} 

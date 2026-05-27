@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -15,7 +16,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { agregarAlCarrito, usuario } = React.useContext(AppContext);
+  const { agregarAlCarrito, usuario, favoritos, toggleFavorito } = React.useContext(AppContext);
   const [quantity, setQuantity] = useState(1);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const navigate = useNavigate();
@@ -273,7 +274,19 @@ const ProductDetail = () => {
                 </div>
               ))}
             </div>
-            <div className="main-image-container">
+            <div className="main-image-container" style={{ position: 'relative' }}>
+              <button 
+                className={`product-image-fav-btn ${favoritos && favoritos.includes(product.id) ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorito(product.id);
+                }}
+                title={favoritos && favoritos.includes(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              >
+                {favoritos && favoritos.includes(product.id) ? <FaHeart /> : <FaRegHeart />}
+              </button>
+              
               {product.images.length > 1 && (
                 <button className="gallery-arrow prev" onClick={prevImage}>&lt;</button>
               )}
@@ -361,7 +374,6 @@ const ProductDetail = () => {
                 >
                   Agregar al Carrito
                 </button>
-                <button className="favorite-btn-large" title="Agregar a favoritos">♡</button>
               </div>
               {quantity > product.stock && (
                 <p className="stock-warning-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '-5px', fontWeight: '500' }}>
