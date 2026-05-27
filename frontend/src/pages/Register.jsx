@@ -7,18 +7,19 @@ import registerImg from '../assets/40792_Lifestyle_Envr_en-gb.webp';
 import './Login.css'; // Reutilizamos los estilos del login porque la estructura es idéntica
 
 export default function Register() {
-    const { sincronizarUsuarioConBackend } = useContext(AppContext);
+    const { sincronizarUsuarioConBackend, registrarConEmail } = useContext(AppContext);
     const [mensaje, setMensaje] = useState('');
     const [perfil, setPerfil] = useState(null);
     const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
     const from = location.state?.from || '/';
 
-    const CLIENT_ID = "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
 
     useEffect(() => {
         const scriptId = 'google-gis-sdk';
@@ -101,10 +102,58 @@ export default function Register() {
         }
     }
 
-    const handleRegisterSubmit = (e) => {
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault();
-        // Por ahora solo visual — conectar con backend cuando esté listo
-        setMensaje('Funcionalidad de registro por email próximamente.');
+        
+        // 1. Validaciones del frontend
+        const nombreTrim = nombre.trim();
+        const emailTrim = email.trim();
+        const passwordTrim = password.trim();
+
+        if (!nombreTrim || !emailTrim || !passwordTrim) {
+            setMensaje('Por favor, completa todos los campos.');
+            return;
+        }
+
+        // Validación estricta del Nombre
+        const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
+        if (nombreTrim.length < 2 || nombreTrim.length > 50 || !regexNombre.test(nombreTrim)) {
+            setMensaje('El nombre solo puede contener letras, espacios y guiones, con una longitud de 2 a 50 caracteres.');
+            return;
+        }
+
+        // Validación estricta del Email
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (emailTrim.length > 100 || !regexEmail.test(emailTrim)) {
+            setMensaje('El formato del correo electrónico no es válido.');
+            return;
+        }
+
+        // Validación estricta de la Contraseña
+        if (passwordTrim.length < 6 || passwordTrim.length > 50) {
+            setMensaje('La contraseña debe tener entre 6 y 50 caracteres.');
+            return;
+        }
+
+        setIsRegistering(true);
+        setMensaje('');
+
+        try {
+            const res = await registrarConEmail(nombreTrim, emailTrim, passwordTrim);
+            if (res.success) {
+                setMensaje('¡Cuenta creada con éxito! Redireccionando...');
+                setTimeout(() => {
+                    navigate(from, { replace: true });
+                }, 1200);
+            } else {
+                setMensaje(res.error);
+            }
+        } catch (error) {
+            console.error("Error al registrarse:", error);
+            setMensaje('Ocurrió un error inesperado al intentar crear tu cuenta.');
+        } finally {
+            setIsRegistering(false);
+        }
     };
 
     return (
@@ -167,8 +216,8 @@ export default function Register() {
                                         />
                                     </div>
 
-                                    <button type="submit" className="login-btn">
-                                        Crear Cuenta
+                                    <button type="submit" className="login-btn" disabled={isRegistering}>
+                                        {isRegistering ? 'Creando Cuenta...' : 'Crear Cuenta'}
                                     </button>
                                 </form>
 

@@ -434,6 +434,117 @@ export function AppProvider({ children }) {
         }
     }
 
+    async function loginConEmail(email, contrasena) {
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, contrasena })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Login] Inicio de sesión exitoso con email.");
+                setUsuario(datos.usuario);
+                setToken(datos.token);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                localStorage.setItem('token_bloquemundo', datos.token);
+                sessionStorage.setItem('token_bloquemundo', datos.token);
+
+                await Promise.all([
+                    obtenerCarrito(datos.token),
+                    obtenerFavoritos(datos.token)
+                ]);
+
+                return { success: true, usuario: datos.usuario };
+            } else {
+                return { success: false, error: datos.error || 'Error al iniciar sesión.' };
+            }
+        } catch (error) {
+            console.error("Error en loginConEmail:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
+    async function registrarConEmail(nombre, email, contrasena) {
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nombre, email, contrasena })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Register] Cuenta creada exitosamente con email.");
+                setUsuario(datos.usuario);
+                setToken(datos.token);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                localStorage.setItem('token_bloquemundo', datos.token);
+                sessionStorage.setItem('token_bloquemundo', datos.token);
+
+                await Promise.all([
+                    obtenerCarrito(datos.token),
+                    obtenerFavoritos(datos.token)
+                ]);
+
+                return { success: true, usuario: datos.usuario };
+            } else {
+                return { success: false, error: datos.error || 'Error al registrar el usuario.' };
+            }
+        } catch (error) {
+            console.error("Error en registrarConEmail:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
+
+    async function actualizarAvatar(avatar_url) {
+        if (!usuario || !token || token === 'null' || token === 'undefined') {
+            return { success: false, requireLogin: true };
+        }
+
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/avatar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ avatar_url })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Avatar] Avatar actualizado con éxito.");
+                // Actualizar en el estado y almacenamiento
+                const nuevoUsuario = { ...usuario, avatar_url: datos.usuario.avatar_url };
+                setUsuario(nuevoUsuario);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+                return { success: true };
+            } else if (respuesta.status === 401 || respuesta.status === 403) {
+                console.warn("Sesión expirada o inválida al actualizar avatar. Auto-logout.");
+                logout();
+                return { success: false, requireLogin: true };
+            } else {
+                return { success: false, error: datos.error || 'Error al actualizar el avatar.' };
+            }
+        } catch (error) {
+            console.error("Error en actualizarAvatar:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
 
     return (
         <AppContext.Provider value={{
@@ -453,6 +564,9 @@ export function AppProvider({ children }) {
             token,
             setToken,
             sincronizarUsuarioConBackend,
+            loginConEmail,
+            registrarConEmail,
+            actualizarAvatar,
             logout,
             loading,
             isInitialized,

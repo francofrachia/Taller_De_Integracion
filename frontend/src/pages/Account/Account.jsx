@@ -4,6 +4,7 @@ import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import './Account.css';
 
 // ───────────────────────────────────────────────
@@ -274,7 +275,7 @@ function DireccionesSection({ usuario, API_URL, token }) {
 // Componente principal: Account
 // ───────────────────────────────────────────────
 export default function Account() {
-    const { usuario, isInitialized, loading, API_URL, setUsuario, productos, favoritos, token } = useContext(AppContext);
+    const { usuario, isInitialized, loading, API_URL, setUsuario, productos, favoritos, token, actualizarAvatar } = useContext(AppContext);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -288,6 +289,62 @@ export default function Account() {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [avatarFeedback, setAvatarFeedback] = useState({ type: '', msg: '' });
+
+    // ── Sección cambio de contraseña ──
+    // passStep: 'locked' | 'verifying' | 'unlocked'
+    const [passStep, setPassStep] = useState('locked');
+    const [unlockPassValue, setUnlockPassValue] = useState('');
+    const [unlockError, setUnlockError] = useState('');
+    const [showUnlockEye, setShowUnlockEye] = useState(false);
+    const [showPassNueva, setShowPassNueva] = useState(false);
+    const [showPassConfirmar, setShowPassConfirmar] = useState(false);
+    const [passwordData, setPasswordData] = useState({ nueva: '', confirmar: '' });
+    const [passError, setPassError] = useState('');
+
+    const handleAvatarChange = async (path) => {
+        if (!usuario) return;
+        const currentAvatar = usuario.avatar_url || '/images/logo mario.png';
+        if (currentAvatar === path) return; // Ya está seleccionado
+        setAvatarFeedback({ type: '', msg: '' });
+        try {
+            const res = await actualizarAvatar(path);
+            if (res.success) {
+                setAvatarFeedback({ type: 'success', msg: '¡Avatar actualizado con éxito!' });
+                setTimeout(() => {
+                    setAvatarFeedback({ type: '', msg: '' });
+                }, 3000);
+            } else {
+                setAvatarFeedback({ type: 'error', msg: res.error || 'Error al actualizar el avatar.' });
+            }
+        } catch (err) {
+            setAvatarFeedback({ type: 'error', msg: 'Error de conexión al actualizar avatar.' });
+        }
+    };
+
+    const handlePassChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({ ...prev, [name]: value }));
+        setPassError('');
+    };
+
+    // Verifica la contraseña actual de forma local (el servidor la valida al guardar)
+    const handleUnlock = () => {
+        if (!unlockPassValue.trim()) {
+            setUnlockError('Ingresá tu contraseña actual para continuar.');
+            return;
+        }
+        setUnlockError('');
+        setPassStep('unlocked');
+    };
+
+    const handleLockPass = () => {
+        setPassStep('locked');
+        setUnlockPassValue('');
+        setUnlockError('');
+        setPasswordData({ nueva: '', confirmar: '' });
+        setPassError('');
+    };
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -333,35 +390,78 @@ export default function Account() {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        setIsSaving(true);
         setSaveSuccess(false);
         setSaveError('');
+        setPassError('');
 
+        // Validar campos de nueva contraseña si está desbloqueada
+        if (passStep === 'unlocked') {
+            const nue = passwordData.nueva.trim();
+            const conf = passwordData.confirmar.trim();
+            if (nue || conf) {
+                if (!nue || !conf) {
+                    setPassError('Completá ambos campos de contraseña.');
+                    return;
+                }
+                if (nue.length < 6 || nue.length > 50) {
+                    setPassError('La nueva contraseña debe tener entre 6 y 50 caracteres.');
+                    return;
+                }
+                if (nue !== conf) {
+                    setPassError('Las contraseñas no coinciden.');
+                    return;
+                }
+                if (nue === unlockPassValue.trim()) {
+                    setPassError('La nueva contraseña debe ser diferente a la actual.');
+                    return;
+                }
+            }
+        }
+
+        setIsSaving(true);
         try {
-            const res = await fetch(`${API_URL}/auth/profile`, {
+            // 1. Guardar datos del perfil
+            const profileRes = await fetch(`${API_URL}/auth/profile`, {
                 method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     nombre: formData.nombre.trim(),
                     apellido: formData.apellido.trim(),
                     email: formData.correo.trim(),
                 }),
             });
-            const data = await res.json();
-            if (res.ok) {
-                // Actualizar usuario en contexto y storage para que persista
-                const updatedUser = { ...usuario, ...data.usuario };
-                setUsuario(updatedUser);
-                localStorage.setItem('usuario_bloquemundo', JSON.stringify(updatedUser));
-                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(updatedUser));
-                setSaveSuccess(true);
-            } else {
-                setSaveError(data.error || 'Error al guardar los cambios.');
+            const profileData = await profileRes.json();
+            if (!profileRes.ok) {
+                setSaveError(profileData.error || 'Error al guardar los cambios.');
+                return;
             }
-        } catch (e) {
+            const updatedUser = { ...usuario, ...profileData.usuario };
+            setUsuario(updatedUser);
+            localStorage.setItem('usuario_bloquemundo', JSON.stringify(updatedUser));
+            sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(updatedUser));
+
+            // 2. Cambiar contraseña si hay datos
+            if (passStep === 'unlocked' && passwordData.nueva.trim()) {
+                const passRes = await fetch(`${API_URL}/auth/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        contrasenaActual: unlockPassValue.trim(),
+                        contrasenaNueva: passwordData.nueva.trim(),
+                        confirmarContrasena: passwordData.confirmar.trim(),
+                    }),
+                });
+                const passData = await passRes.json();
+                if (!passRes.ok) {
+                    setSaveError(passData.error || 'Error al cambiar la contraseña.');
+                    return;
+                }
+                // Reset sección de contraseña tras éxito
+                handleLockPass();
+            }
+
+            setSaveSuccess(true);
+        } catch (err) {
             setSaveError('Error de conexión. Intentá de nuevo.');
         } finally {
             setIsSaving(false);
@@ -485,6 +585,50 @@ export default function Account() {
                             <form onSubmit={handleSave} noValidate>
                                 <h2 className="account-section-title">Editar Tu Perfil</h2>
 
+                                {/* Panel de Avatares */}
+                                <div className="avatar-selection-panel">
+                                    <label className="avatar-panel-label">Tu Personaje Lego</label>
+                                    <p className="avatar-panel-desc">
+                                        Elegí el avatar que te represente. Aparecerá en el menú de navegación superior:
+                                    </p>
+                                    
+                                    <div className="avatar-grid">
+                                        {[
+                                            { id: 'mario', path: '/images/logo mario.png', name: 'Lego Mario' },
+                                            { id: 'luigi', path: '/images/lego_luigi.png', name: 'Lego Luigi' },
+                                            { id: 'batman', path: '/images/lego_batman.png', name: 'Lego Batman' }
+                                        ].map(av => {
+                                            const isSelected = (usuario.avatar_url || '/images/logo mario.png') === av.path;
+                                            return (
+                                                <div 
+                                                    key={av.id} 
+                                                    className={`avatar-option-card ${isSelected ? 'selected' : ''}`}
+                                                    onClick={() => handleAvatarChange(av.path)}
+                                                    title={`Seleccionar ${av.name}`}
+                                                >
+                                                    <div className="avatar-img-wrapper">
+                                                        <img src={av.path} alt={av.name} className="avatar-option-img" />
+                                                        {isSelected && (
+                                                            <div className="avatar-check-badge">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="avatar-option-name">{av.name}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {avatarFeedback.msg && (
+                                        <p className={`save-feedback ${avatarFeedback.type}`} style={{ marginTop: '16px', marginBottom: '0' }}>
+                                            {avatarFeedback.type === 'success' ? '✔ ' : '✖ '}{avatarFeedback.msg}
+                                        </p>
+                                    )}
+                                </div>
+
                                 <div className="account-form-grid">
                                     <div className="account-form-group">
                                         <label htmlFor="nombre">Nombre</label>
@@ -521,21 +665,129 @@ export default function Account() {
                                     </div>
                                 </div>
 
-                                {/* Cambio de contraseña — no funcional aún */}
+                                {/* Cambio de contraseña */}
                                 <div className="password-section">
                                     <h3 className="password-section-title">Cambio de Contraseña</h3>
-                                    <p className="password-section-note">
-                                        El cambio de contraseña estará disponible cuando se habilite el acceso con cuenta propia.
-                                    </p>
-                                    <div className="account-form-group">
-                                        <input type="password" placeholder="Contraseña actual" disabled className="input-disabled" />
-                                    </div>
-                                    <div className="account-form-group">
-                                        <input type="password" placeholder="Nueva Contraseña" disabled className="input-disabled" />
-                                    </div>
-                                    <div className="account-form-group">
-                                        <input type="password" placeholder="Confirmar Contraseña" disabled className="input-disabled" />
-                                    </div>
+
+                                    {usuario.contrasena === 'OAUTH_USER' ? (
+                                        <div className="oauth-password-warning">
+                                            <div className="oauth-warning-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div className="oauth-warning-text">
+                                                <p><strong>Inicio de Sesión con Google Activo</strong></p>
+                                                <p>Tu cuenta se autentica a través de Google. No necesitas configurar o cambiar contraseñas locales en BloqueMundo.</p>
+                                            </div>
+                                        </div>
+                                    ) : passStep === 'locked' ? (
+                                        /* ── Estado bloqueado ── */
+                                        <div className="pass-locked-gate">
+                                            <div className="pass-locked-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                                </svg>
+                                            </div>
+                                            <div className="pass-locked-text">
+                                                <p className="pass-locked-title">Contraseña protegida</p>
+                                                <p className="pass-locked-desc">Para modificar tu contraseña debés verificar tu identidad primero.</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn-unlock-pass"
+                                                onClick={() => setPassStep('verifying')}
+                                            >
+                                                Quiero cambiar mi contraseña
+                                            </button>
+                                        </div>
+                                    ) : passStep === 'verifying' ? (
+                                        /* ── Verificar identidad ── */
+                                        <div className="pass-verify-gate">
+                                            <p className="password-section-note" style={{ marginBottom: '14px' }}>
+                                                Ingresá tu contraseña actual para habilitar el cambio:
+                                            </p>
+                                            <div className="account-form-group" style={{ marginBottom: '12px' }}>
+                                                <label htmlFor="pass-unlock">Contraseña Actual</label>
+                                                <div className="pass-input-wrapper">
+                                                    <input
+                                                        type={showUnlockEye ? 'text' : 'password'}
+                                                        id="pass-unlock"
+                                                        value={unlockPassValue}
+                                                        onChange={e => { setUnlockPassValue(e.target.value); setUnlockError(''); }}
+                                                        onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+                                                        placeholder="Ingresá tu contraseña actual"
+                                                        autoComplete="new-password"
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="eye-toggle"
+                                                        onClick={() => setShowUnlockEye(p => !p)}
+                                                        tabIndex={-1}
+                                                        aria-label="Mostrar/ocultar contraseña"
+                                                    >
+                                                        {showUnlockEye ? <FiEyeOff /> : <FiEye />}
+                                                    </button>
+                                                </div>
+                                                {unlockError && <p className="save-feedback error" style={{ marginTop: '8px', marginBottom: 0 }}>✖ {unlockError}</p>}
+                                            </div>
+                                            <div className="pass-verify-actions">
+                                                <button type="button" className="btn-cancel" onClick={handleLockPass}>Cancelar</button>
+                                                <button type="button" className="btn-save" onClick={handleUnlock}>Continuar</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* ── Desbloqueada: ingresar nueva contraseña ── */
+                                        <div className="password-fields-container">
+                                            <div className="pass-unlocked-badge">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z"/>
+                                                </svg>
+                                                Identidad verificada — ingresá tu nueva contraseña
+                                                <button type="button" className="pass-relock-btn" onClick={handleLockPass} title="Cancelar cambio">
+                                                    ✕
+                                                </button>
+                                            </div>
+
+                                            <div className="account-form-group" style={{ marginBottom: '16px' }}>
+                                                <label htmlFor="pass-nueva">Nueva Contraseña</label>
+                                                <div className="pass-input-wrapper">
+                                                    <input
+                                                        type={showPassNueva ? 'text' : 'password'}
+                                                        id="pass-nueva"
+                                                        name="nueva"
+                                                        value={passwordData.nueva}
+                                                        onChange={handlePassChange}
+                                                        placeholder="Mínimo 6 caracteres"
+                                                    />
+                                                    <button type="button" className="eye-toggle" onClick={() => setShowPassNueva(p => !p)} tabIndex={-1}>
+                                                        {showPassNueva ? <FiEyeOff /> : <FiEye />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="account-form-group" style={{ marginBottom: '8px' }}>
+                                                <label htmlFor="pass-confirmar">Confirmar Nueva Contraseña</label>
+                                                <div className="pass-input-wrapper">
+                                                    <input
+                                                        type={showPassConfirmar ? 'text' : 'password'}
+                                                        id="pass-confirmar"
+                                                        name="confirmar"
+                                                        value={passwordData.confirmar}
+                                                        onChange={handlePassChange}
+                                                        placeholder="Repetir nueva contraseña"
+                                                    />
+                                                    <button type="button" className="eye-toggle" onClick={() => setShowPassConfirmar(p => !p)} tabIndex={-1}>
+                                                        {showPassConfirmar ? <FiEyeOff /> : <FiEye />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {passError && <p className="save-feedback error" style={{ marginTop: '8px' }}>✖ {passError}</p>}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {saveSuccess && <p className="save-feedback success">✔ Cambios guardados correctamente.</p>}
@@ -551,6 +803,8 @@ export default function Account() {
                                 </div>
                             </form>
                         )}
+
+
 
                         {/* ─── Direcciones (funcional) ─── */}
                         {activeSection === 'direcciones' && (
