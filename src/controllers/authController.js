@@ -72,7 +72,7 @@ const updateProfile = async (req, res) => {
         const { nombre, apellido, email } = req.body;
 
         const result = await pool.query(
-            'UPDATE usuario SET nombre = COALESCE($1, nombre), apellido = COALESCE($2, apellido), email = COALESCE($3, email) WHERE id_usuario = $4 RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro',
+            'UPDATE usuario SET nombre = COALESCE($1, nombre), apellido = COALESCE($2, apellido), email = COALESCE($3, email) WHERE id_usuario = $4 RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro, avatar_url',
             [nombre || null, apellido || null, email || null, id_usuario]
         );
 
@@ -141,7 +141,7 @@ const registerUser = async (req, res) => {
         // 9. Registrar el usuario en la base de datos
         console.log("[Register] Registrando usuario por email:", email);
         const result = await pool.query(
-            'INSERT INTO usuario (nombre, apellido, email, rol, contrasena) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, nombre, apellido, email, rol, fecha_registro',
+            'INSERT INTO usuario (nombre, apellido, email, rol, contrasena) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, nombre, apellido, email, rol, fecha_registro, avatar_url',
             [primerNombre, apellido, email, 'usuario', hashContrasena]
         );
 
@@ -221,4 +221,96 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { loginOauth, updateProfile, registerUser, loginUser };
+const updateAvatar = async (req, res) => {
+    try {
+        const id_usuario = req.usuario.id_usuario;
+        const { avatar_url } = req.body;
+
+        if (!avatar_url) {
+            return res.status(400).json({ error: 'avatar_url es requerido.' });
+        }
+
+        console.log("[Avatar] Actualizando avatar para usuario:", id_usuario, "a", avatar_url);
+        const result = await pool.query(
+            'UPDATE usuario SET avatar_url = $1 WHERE id_usuario = $2 RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro, avatar_url',
+            [avatar_url, id_usuario]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        return res.json({
+            mensaje: 'Avatar actualizado correctamente',
+            usuario: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error al actualizar avatar:', error.message);
+        res.status(500).json({ error: 'Error interno al actualizar el avatar' });
+    }
+};
+
+const updatePassword = async (req, res) => {
+    try {
+        const id_usuario = req.usuario.id_usuario;
+        let { contrasenaActual, contrasenaNueva, confirmarContrasena } = req.body;
+
+        // Sanitización básica
+        contrasenaActual = contrasenaActual ? contrasenaActual.trim() : '';
+        contrasenaNueva = contrasenaNueva ? contrasenaNueva.trim() : '';
+        confirmarContrasena = confirmarContrasena ? confirmarContrasena.trim() : '';
+
+        if (!contrasenaActual || !contrasenaNueva || !confirmarContrasena) {
+            return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+        }
+
+        // Obtener la contraseña actual en la base de datos
+        const userRes = await pool.query('SELECT contrasena FROM usuario WHERE id_usuario = $1', [id_usuario]);
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        const usuario = userRes.rows[0];
+
+        // Si es usuario de Google (OAuth)
+        if (usuario.contrasena === 'OAUTH_USER') {
+            return res.status(400).json({ 
+                error: 'Las cuentas asociadas a Google no poseen contraseña local y no pueden modificarla.' 
+            });
+        }
+
+        // Comparar contraseña actual ingresada con la de la base de datos
+        const matches = await bcrypt.compare(contrasenaActual, usuario.contrasena);
+        if (!matches) {
+            return res.status(400).json({ error: 'La contraseña actual ingresada es incorrecta.' });
+        }
+
+        // Validar nueva contraseña
+        if (contrasenaNueva.length < 6 || contrasenaNueva.length > 50) {
+            return res.status(400).json({ error: 'La nueva contraseña debe tener entre 6 y 50 caracteres.' });
+        }
+
+        if (contrasenaNueva !== confirmarContrasena) {
+            return res.status(400).json({ error: 'La nueva contraseña y su confirmación no coinciden.' });
+        }
+
+        if (contrasenaActual === contrasenaNueva) {
+            return res.status(400).json({ error: 'La nueva contraseña debe ser diferente a la contraseña actual.' });
+        }
+
+        // Hashear e insertar
+        const salt = await bcrypt.genSalt(10);
+        const hashContrasena = await bcrypt.hash(contrasenaNueva, salt);
+
+        await pool.query('UPDATE usuario SET contrasena = $1 WHERE id_usuario = $2', [hashContrasena, id_usuario]);
+
+        console.log(`[Password] Contraseña actualizada exitosamente para usuario ${id_usuario}`);
+        return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+
+    } catch (error) {
+        console.error('Error al actualizar contraseña:', error.message);
+        res.status(500).json({ error: 'Error interno al actualizar la contraseña' });
+    }
+};
+
+module.exports = { loginOauth, updateProfile, registerUser, loginUser, updateAvatar, updatePassword };

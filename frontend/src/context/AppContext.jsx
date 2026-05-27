@@ -503,6 +503,45 @@ export function AppProvider({ children }) {
     }
 
 
+    async function actualizarAvatar(avatar_url) {
+        if (!usuario || !token || token === 'null' || token === 'undefined') {
+            return { success: false, requireLogin: true };
+        }
+
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/avatar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ avatar_url })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Avatar] Avatar actualizado con éxito.");
+                // Actualizar en el estado y almacenamiento
+                const nuevoUsuario = { ...usuario, avatar_url: datos.usuario.avatar_url };
+                setUsuario(nuevoUsuario);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+                return { success: true };
+            } else if (respuesta.status === 401 || respuesta.status === 403) {
+                console.warn("Sesión expirada o inválida al actualizar avatar. Auto-logout.");
+                logout();
+                return { success: false, requireLogin: true };
+            } else {
+                return { success: false, error: datos.error || 'Error al actualizar el avatar.' };
+            }
+        } catch (error) {
+            console.error("Error en actualizarAvatar:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
+
     return (
         <AppContext.Provider value={{
             productos,
@@ -523,6 +562,7 @@ export function AppProvider({ children }) {
             sincronizarUsuarioConBackend,
             loginConEmail,
             registrarConEmail,
+            actualizarAvatar,
             logout,
             loading,
             isInitialized,

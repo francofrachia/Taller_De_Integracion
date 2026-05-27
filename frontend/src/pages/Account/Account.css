@@ -577,3 +577,382 @@
         width: 100%;
     }
 }
+
+/* ===========================
+   PANEL DE SELECCIÓN DE AVATAR
+   =========================== */
+.avatar-selection-panel {
+    margin-bottom: 36px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+
+.avatar-selection-panel:hover {
+    border-color: #e0e0e0;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.avatar-panel-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.avatar-panel-desc {
+    font-size: 13.5px;
+    color: var(--text-gray);
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 18px;
+    max-width: 420px;
+}
+
+.avatar-option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border: 2px solid #eaeaea;
+    border-radius: 10px;
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    user-select: none;
+}
+
+.avatar-option-card:hover {
+    transform: translateY(-3px);
+    border-color: #c8a000;
+    background: #ffffff;
+    box-shadow: 0 6px 14px rgba(200, 160, 0, 0.12);
+}
+
+.avatar-option-card.selected {
+    border-color: var(--primary-yellow);
+    background: rgba(255, 215, 0, 0.04);
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.18);
+}
+
+.avatar-img-wrapper {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e2e2e2;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+}
+
+.avatar-option-card:hover .avatar-img-wrapper {
+    border-color: #c8a000;
+    transform: scale(1.05);
+}
+
+.avatar-option-card.selected .avatar-img-wrapper {
+    border-color: var(--primary-yellow);
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+.avatar-option-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #f0f0f0;
+}
+
+.avatar-option-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-align: center;
+    transition: color 0.2s ease;
+}
+
+.avatar-option-card:hover .avatar-option-name {
+    color: #9a7800;
+}
+
+.avatar-option-card.selected .avatar-option-name {
+    color: #9a7800;
+    font-weight: 700;
+}
+
+.avatar-check-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    background: var(--primary-yellow);
+    color: var(--text-dark);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Google OAuth password warning */
+.oauth-password-warning {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 22px;
+    background-color: rgba(66, 133, 244, 0.05); /* Soft Google blue */
+    border: 1px solid rgba(66, 133, 244, 0.2);
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(66, 133, 244, 0.04);
+}
+
+.oauth-warning-icon {
+    color: #4285f4; /* Google Blue */
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.oauth-warning-text p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-dark);
+    line-height: 1.5;
+}
+
+.oauth-warning-text p strong {
+    color: #4285f4;
+}
+
+.oauth-warning-text p:last-child {
+    margin-top: 4px;
+    color: var(--text-gray);
+    font-size: 12.5px;
+}
+
+/* Premium Dark Change Password Button */
+.btn-change-pass {
+    background-color: #2b2b2b;
+    color: white;
+    font-size: 13px;
+    padding: 10px 24px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-change-pass:hover:not(:disabled) {
+    background-color: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-change-pass:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===========================
+   PASSWORD EYE TOGGLE
+   =========================== */
+.pass-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pass-input-wrapper input {
+    width: 100%;
+    padding-right: 44px; /* espacio para el ojo */
+}
+
+.eye-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-gray);
+    display: flex;
+    align-items: center;
+    font-size: 17px;
+    transition: color 0.2s ease;
+    line-height: 1;
+}
+
+.eye-toggle:hover {
+    color: var(--primary-yellow);
+}
+
+/* ===========================
+   PASSWORD LOCK GATE
+   =========================== */
+
+/* Estado bloqueado */
+.pass-locked-gate {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fafafa;
+    border: 1.5px dashed #ddd;
+    border-radius: 10px;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+}
+
+.pass-locked-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fffde0, #fff3b0);
+    color: #b8900a;
+    flex-shrink: 0;
+}
+
+.pass-locked-text {
+    flex: 1;
+    min-width: 140px;
+}
+
+.pass-locked-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 2px;
+}
+
+.pass-locked-desc {
+    font-size: 12.5px;
+    color: var(--text-gray);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.btn-unlock-pass {
+    background: none;
+    border: 1.5px solid var(--primary-yellow);
+    color: #8a6500;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-unlock-pass:hover {
+    background: var(--primary-yellow);
+    color: #333;
+    box-shadow: 0 3px 10px rgba(255, 215, 0, 0.25);
+}
+
+/* Estado verificando */
+.pass-verify-gate {
+    background: #fafafa;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 18px 20px;
+    animation: fadeSlideIn 0.2s ease;
+}
+
+.pass-verify-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+/* Estado desbloqueado */
+.pass-unlocked-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1a7f4b;
+    background: #edfaf4;
+    border: 1px solid #b6e8d0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 16px;
+}
+
+.pass-relock-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    font-size: 14px;
+    padding: 0;
+    margin-left: auto;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.pass-relock-btn:hover {
+    color: #e53;
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .pass-locked-gate {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .btn-unlock-pass {
+        width: 100%;
+        text-align: center;
+    }
+    .pass-verify-actions {
+        flex-direction: column-reverse;
+    }
+    .pass-verify-actions .btn-cancel,
+    .pass-verify-actions .btn-save {
+        width: 100%;
+        text-align: center;
+    }
+}
+
