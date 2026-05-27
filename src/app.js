@@ -19,9 +19,24 @@ const limitadorSeguridad = rateLimit({
 });
 
 // Middlewares
-// Configuración de CORS restringido
+// Configuración de CORS dinámica y segura para localhost y túneles ngrok
+const whitelist = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Permitir solicitudes sin origen (como Postman o curl) y cualquier origen en la whitelist o ngrok
+        if (!origin || whitelist.indexOf(origin) !== -1 || origin.includes('ngrok-free.app') || origin.includes('ngrok-free.dev') || origin.includes('ngrok.io')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado por políticas de seguridad de CORS'));
+        }
+    },
+    credentials: true,
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));

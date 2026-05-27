@@ -8,7 +8,7 @@ const firmarToken = (usuario) => {
             rol: usuario.rol, 
             email: usuario.email 
         },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'bloque_mundo_secret_token_firmas_2026_super_secure_key_123',
         { expiresIn: '8h' }
     );
 };

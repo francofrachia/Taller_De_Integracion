@@ -8,7 +8,8 @@ const client = new MercadoPagoConfig({
 
 const createPreference = async (req, res) => {
     try {
-        const { cartItems, id_usuario } = req.body;
+        const id_usuario = req.usuario.id_usuario;
+        const { cartItems } = req.body;
 
         if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
             return res.status(400).json({ error: 'Faltan datos obligatorios (cartItems vacío)' });
