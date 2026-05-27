@@ -4,9 +4,11 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const pool = require('./config/db');
 const productoRoutes = require('./routes/productoRoutes');
-const authRoutes = require('./routes/authRoutes'); // Ruta de autenticación
+const authRoutes = require('./routes/authRoutes');
 const mercadoPagoRoutes = require('./routes/mercadoPagoRoutes');
 const carritoRoutes = require('./routes/carritoRoutes');
+const direccionRoutes = require('./routes/direccionRoutes');
+const favoritoRoutes = require('./routes/favoritoRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,9 +54,11 @@ app.use((req, res, next) => {
     next();
 });
 app.use('/api/productos', productoRoutes);
-app.use('/api/auth', authRoutes); // Ruta de autenticación
+app.use('/api/auth', authRoutes);
 app.use('/api/mercadopago', mercadoPagoRoutes);
 app.use('/api/carrito', carritoRoutes);
+app.use('/api/direccion', direccionRoutes);
+app.use('/api/favoritos', favoritoRoutes);
 
 // Ruta de prueba para verificar que el servidor se lanzo
 app.get('/', (req, res) => {

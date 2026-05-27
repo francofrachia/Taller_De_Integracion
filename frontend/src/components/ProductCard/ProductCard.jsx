@@ -4,7 +4,7 @@ import { AppContext } from '../../context/AppContext';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
-  const { agregarAlCarrito } = useContext(AppContext);
+  const { agregarAlCarrito, favoritos, toggleFavorito } = useContext(AppContext);
   const navigate = useNavigate();
 
   const handleAddCart = async (e) => {
@@ -14,6 +14,13 @@ const ProductCard = ({ product }) => {
       navigate('/login');
     }
   };
+
+  const handleToggleFav = (e) => {
+    e.preventDefault();
+    toggleFavorito(product.id);
+  };
+
+  const isFav = favoritos && favoritos.includes(product.id);
 
   // Render stars based on rating (mock)
   const renderStars = (rating) => {
@@ -35,7 +42,13 @@ const ProductCard = ({ product }) => {
           {product.discount && (
             <span className="discount-badge">-{product.discount}%</span>
           )}
-          <button className="favorite-btn" title="Agregar a favoritos" onClick={(e) => e.preventDefault()}>♡</button>
+          <button 
+            className={`favorite-btn ${isFav ? 'active' : ''}`} 
+            title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"} 
+            onClick={handleToggleFav}
+          >
+            {isFav ? '♥' : '♡'}
+          </button>
           <img src={product.image} alt={product.title} className="product-image" />
         </div>
         
