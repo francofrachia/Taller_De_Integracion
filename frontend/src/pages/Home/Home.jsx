@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -38,6 +38,18 @@ const Home = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
+  const [activeFlashIndex, setActiveFlashIndex] = useState(2);
+
+  const scrollFlashCarousel = (direction) => {
+    const totalFlash = Math.min(10, productos.length);
+    if (totalFlash === 0) return;
+    
+    if (direction === 'left') {
+      setActiveFlashIndex(prev => (prev === 0 ? totalFlash - 1 : prev - 1));
+    } else {
+      setActiveFlashIndex(prev => (prev === totalFlash - 1 ? 0 : prev + 1));
+    }
+  };
 
   useEffect(() => {
     // Conectando con tu backend existente (Express + PostgreSQL)
@@ -85,88 +97,201 @@ const Home = () => {
     <div className="home-page">
       <Navbar />
       
-      <main className="container">
-        {/* Hero Banner Section */}
-        <section className="hero-section">
-          <img src={heroBanner} alt="Hero Banner" className="hero-banner-img" />
+      <main className="home-main">
+        {/* Nuevo Hero Section Moderno */}
+        <section className="hero-section-modern">
+          <div className="hero-content">
+            <span className="hero-badge animate-fade-in-up">🌟 Novedad Exclusiva</span>
+            <h1 className="hero-title animate-fade-in-up delay-1">
+              Construye tu imaginación <span className="highlight-text">bloque a bloque</span>
+            </h1>
+            <p className="hero-subtitle animate-fade-in-up delay-2">
+              Descubre las colecciones más increíbles y sumérgete en un mundo de posibilidades infinitas con Bloques Mundo.
+            </p>
+            <div className="hero-actions animate-fade-in-up delay-3">
+              <Link to="/productos" className="btn-primary-glow">
+                Explorar Catálogo <span className="arrow">→</span>
+              </Link>
+            </div>
+          </div>
+          <div className="hero-image-wrapper animate-float">
+            <img src={heroBanner} alt="Lego Colección" className="hero-3d-image" />
+          </div>
+        </section>
+
+        {/* Nueva Sección: Explora por Colecciones */}
+        <section className="collections-nav-section">
+          <div className="container">
+            <div className="collections-grid">
+              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Clásicos'].map((col, index) => (
+                <Link to="/productos" className="collection-card" key={col} style={{ animationDelay: `${index * 0.1}s` }}>
+                  <div className="col-icon">{['🚀', '🦸‍♂️', '🧙‍♂️', '🏙️', '⚙️', '🧱'][index]}</div>
+                  <span className="col-name">{col}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </section>
 
         {serverError ? (
-          <div className="server-error-state animate-fade-in" style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--bg-white)', borderRadius: '24px', margin: '40px 0', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔌</div>
-            <h2 style={{ fontSize: '32px', color: 'var(--text-dark)', marginBottom: '16px', fontWeight: '800' }}>¡Problemas de conexión!</h2>
-            <p style={{ color: 'var(--text-gray)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-              No pudimos conectarnos con nuestro catálogo de productos en este momento. Parece que el servidor está desenchufado o en mantenimiento.
-            </p>
-            <button className="btn-primary-custom" onClick={() => window.location.reload()} style={{ marginTop: '30px', border: 'none', cursor: 'pointer' }}>
-              Reintentar Conexión
-            </button>
+          <div className="container">
+            <div className="server-error-state animate-fade-in">
+              <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔌</div>
+              <h2>¡Problemas de conexión!</h2>
+              <p>No pudimos conectarnos con nuestro catálogo en este momento.</p>
+              <button className="btn-primary-custom" onClick={() => window.location.reload()}>Reintentar Conexión</button>
+            </div>
           </div>
         ) : (
           <>
-            {/* Ofertas Relámpago */}
-            <section className="flash-deals-section">
-              <SectionHeader 
-                title="Ofertas Relámpago" 
-            timer={{ days: '03', hours: '23', minutes: '19', seconds: '56' }} 
-          />
-          <div className="products-grid">
-            {loading ? (
-              [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={n} />)
-            ) : (
-              productos.slice(0, 4).map(product => (
-                <ProductCard key={`flash-${product.id}`} product={product} />
-              ))
-            )}
-          </div>
-          <div className="center-btn-container">
-            <Link to="/productos" className="primary-btn-outline">Ver Todas las Promociones</Link>
-          </div>
-        </section>
-
-        {/* Productos Más Vendidos */}
-        <section className="best-sellers-section">
-          <div className="section-header">
-            <h2>Productos más Vendidos</h2>
-            <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
-          </div>
-          <div className="products-grid">
-            {loading ? (
-              [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={n} />)
-            ) : (
-              productos.slice(4, 8).map(product => (
-                <ProductCard key={`best-${product.id}`} product={product} />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Secondary Banner */}
-        <section className="secondary-banner-section">
-          <img src={secondaryBanner} alt="Colección Especial" className="secondary-banner-img" />
-        </section>
-
-        {/* Nuevos Ingresos (Collage) */}
-        <section className="new-arrivals-section">
-          <SectionHeader title="Nuevos Ingresos" />
-          <div className="arrivals-collage">
-            <div className="collage-item large">
-              <img src={placeholderProduct} alt="Nuevo Ingreso" />
-            </div>
-            <div className="collage-col">
-              <div className="collage-item wide">
-                <img src={placeholderProduct} alt="Nuevo Ingreso" />
-              </div>
-              <div className="collage-row">
-                <div className="collage-item small">
-                  <img src={placeholderProduct} alt="Nuevo Ingreso" />
+            {/* Ofertas Relámpago con Glassmorphism */}
+            <section className="flash-deals-modern">
+              <div className="container">
+                <div className="flash-header">
+                  <div className="flash-title-group">
+                    <h2>⚡ Ofertas Relámpago</h2>
+                    <p>¡Apresúrate antes de que se agoten!</p>
+                  </div>
+                  <div className="neon-timer">
+                    <span className="time-block">03<small>d</small></span>:
+                    <span className="time-block">23<small>h</small></span>:
+                    <span className="time-block">19<small>m</small></span>:
+                    <span className="time-block">56<small>s</small></span>
+                  </div>
                 </div>
-                <div className="collage-item small">
-                  <img src={placeholderProduct} alt="Nuevo Ingreso" />
+                
+                <div className="flash-carousel-container">
+                  <button className="flash-carousel-btn left" onClick={() => scrollFlashCarousel('left')}>&lt;</button>
+                  <div className="products-carousel-3d">
+                    {loading ? (
+                      <div className="carousel-3d-card" style={{ transform: 'translateX(0) scale(1)', zIndex: 10, opacity: 1 }}>
+                        <ProductCardSkeleton />
+                      </div>
+                    ) : (
+                      productos.slice(0, 10).map((product, i) => {
+                        const total = Math.min(10, productos.length);
+                        // Lógica para carrusel infinito (ruleta)
+                        let offset = i - activeFlashIndex;
+                        if (offset > Math.floor(total / 2)) offset -= total;
+                        if (offset < -Math.floor(total / 2)) offset += total;
+                        
+                        const absOffset = Math.abs(offset);
+                        const direction = Math.sign(offset);
+                        const isActive = absOffset === 0;
+
+                        return (
+                          <div 
+                            className={`carousel-3d-card ${isActive ? 'active' : ''}`}
+                            style={{ 
+                              transform: `translateX(${offset * 150}px) scale(${isActive ? 1.15 : 1 - absOffset * 0.2}) perspective(1000px) rotateY(${direction * 35}deg)`,
+                              zIndex: 10 - absOffset,
+                              opacity: absOffset > 2 ? 0 : 1,
+                              filter: `brightness(${isActive ? 1 : Math.max(0.3, 1 - absOffset * 0.4)})`,
+                              pointerEvents: isActive ? 'auto' : 'none'
+                            }} 
+                            key={`flash-${product.id}`}
+                          >
+                            <div className={isActive ? 'active-pulse' : 'idle-float'} style={{ animationDelay: `${i * 0.3}s` }}>
+                              <ProductCard product={product} />
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  <button className="flash-carousel-btn right" onClick={() => scrollFlashCarousel('right')}>&gt;</button>
+                </div>
+                <div className="center-btn-container" style={{ marginTop: '40px' }}>
+                  <Link to="/productos" className="btn-glass-outline">Ver Todas las Promociones</Link>
                 </div>
               </div>
-            </div>
-          </div>
+            </section>
+
+            {/* Productos Más Vendidos */}
+            <section className="best-sellers-section container">
+              <div className="section-header modern-header">
+                <h2>👑 Los Más Vendidos</h2>
+                <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+              </div>
+              <div className="products-grid">
+                {loading ? (
+                  [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={`b-load-${n}`} />)
+                ) : (
+                  productos.slice(4, 8).map((product, i) => (
+                    <div className="stagger-up" style={{ animationDelay: `${i * 0.15}s` }} key={`best-${product.id}`}>
+                      <ProductCard product={product} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Banner Parallax Secundario */}
+            <section className="parallax-banner-section container">
+              <div className="parallax-container">
+                <div className="parallax-bg" style={{ backgroundImage: `url(${secondaryBanner})` }}></div>
+                <div className="parallax-content">
+                  <h2>Colecciones Especiales</h2>
+                  <p>Descubre el lado oscuro de la fuerza</p>
+                  <Link to="/productos" className="btn-primary-glow">Descubrir</Link>
+                </div>
+              </div>
+            </section>
+
+            {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}
+            <section className="new-arrivals-modern container">
+              <div className="section-header modern-header">
+                <h2>✨ Nuevos Ingresos</h2>
+              </div>
+              <div className="masonry-grid">
+                {loading ? (
+                  <>
+                    <div className="masonry-item large-span skeleton" style={{ borderRadius: '24px' }}></div>
+                    <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
+                    <div className="masonry-item tall-span skeleton" style={{ borderRadius: '24px' }}></div>
+                    <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
+                  </>
+                ) : (
+                  <>
+                    {productos[8] && (
+                      <div className="masonry-item large-span">
+                        <img src={productos[8].image || placeholderProduct} alt={productos[8].title} />
+                        <div className="masonry-overlay">
+                          <h3 style={{ fontSize: '18px' }}>{productos[8].title}</h3>
+                          <Link to={`/producto/${productos[8].id}`}>Explorar</Link>
+                        </div>
+                      </div>
+                    )}
+                    {productos[9] && (
+                      <div className="masonry-item">
+                        <img src={productos[9].image || placeholderProduct} alt={productos[9].title} />
+                        <div className="masonry-overlay">
+                          <h3 style={{ fontSize: '18px' }}>{productos[9].title}</h3>
+                          <Link to={`/producto/${productos[9].id}`}>Explorar</Link>
+                        </div>
+                      </div>
+                    )}
+                    {productos[10] && (
+                      <div className="masonry-item tall-span">
+                        <img src={productos[10].image || placeholderProduct} alt={productos[10].title} />
+                        <div className="masonry-overlay">
+                          <h3 style={{ fontSize: '18px' }}>{productos[10].title}</h3>
+                          <Link to={`/producto/${productos[10].id}`}>Explorar</Link>
+                        </div>
+                      </div>
+                    )}
+                    {productos[11] && (
+                      <div className="masonry-item">
+                        <img src={productos[11].image || placeholderProduct} alt={productos[11].title} />
+                        <div className="masonry-overlay">
+                          <h3 style={{ fontSize: '18px' }}>{productos[11].title}</h3>
+                          <Link to={`/producto/${productos[11].id}`}>Explorar</Link>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </section>
           </>
         )}
