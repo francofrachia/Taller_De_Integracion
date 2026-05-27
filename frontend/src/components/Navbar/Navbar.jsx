@@ -23,8 +23,8 @@ const Navbar = () => {
         
         <ul className="navbar-links">
           <li><Link to="/">Inicio</Link></li>
-          <li><a href="/#productos">Nuestros Productos</a></li>
-          <li><a href="/#sobre-nosotros">Sobre la APP</a></li>
+          <li><Link to="/productos">Nuestros Productos</Link></li>
+          <li><Link to="/nosotros">Sobre la APP</Link></li>
         </ul>
 
         <div className="navbar-search">
