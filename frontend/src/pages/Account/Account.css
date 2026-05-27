@@ -186,7 +186,8 @@
 
 .account-form-group input[type="text"],
 .account-form-group input[type="email"],
-.account-form-group input[type="password"] {
+.account-form-group input[type="password"],
+.account-form-group input[type="number"] {
     padding: 12px 15px;
     border: 1px solid var(--border-color);
     background-color: #fafafa;

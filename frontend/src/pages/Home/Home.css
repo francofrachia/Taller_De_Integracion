@@ -182,16 +182,14 @@
   background: transparent;
 }
 
-/* Dropdown Menu Panel with Premium Glassmorphism */
+/* Dropdown Menu Panel */
 .filter-dropdown-menu.glassmorphic {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
   width: 320px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: #ffffff;
+  border: 1px solid rgba(255, 215, 0, 0.4);
   border-radius: 16px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
   padding: 24px;
@@ -375,11 +373,11 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--text-dark);
-  border: 2px solid var(--primary-yellow);
+  background: var(--primary-yellow);
+  border: 2px solid #ffffff;
   cursor: pointer;
   transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
 }
 
 .price-range-slider::-webkit-slider-thumb:hover {
@@ -462,10 +460,15 @@ input:checked + .switch-slider:before {
   transform: translateX(22px);
 }
 
-/* Sorting Selector */
-.filter-sort-select {
+/* Custom Sort Dropdown (Replaces native select) */
+.custom-sort-dropdown {
+  position: relative;
   width: 100%;
-  padding: 10px;
+}
+
+.custom-sort-selected {
+  width: 100%;
+  padding: 10px 30px 10px 14px;
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   background-color: var(--bg-white);
@@ -473,12 +476,75 @@ input:checked + .switch-slider:before {
   font-weight: 600;
   color: var(--text-dark);
   cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.filter-sort-select:focus {
+.custom-sort-dropdown.open .custom-sort-selected {
   border-color: var(--primary-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+}
+
+.custom-sort-arrow {
+  color: var(--text-gray);
+  transition: transform 0.2s;
+}
+
+.custom-sort-dropdown.open .custom-sort-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-sort-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background: var(--bg-white);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  list-style: none;
+  padding: 6px;
+  margin: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.custom-sort-options li {
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.custom-sort-options li:hover {
+  background-color: #f5f5f5;
+}
+
+.custom-sort-options li.active {
+  background-color: var(--primary-yellow);
+  font-weight: 700;
+}
+
+.custom-sort-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+/* Age Range Slider Fixes */
+.age-range-slider::-webkit-slider-thumb {
+  background: #ff4757; /* Color rojo para distinguirlo del precio */
+}
+.age-range-slider {
+  margin-top: 14px;
 }
 
 /* ==========================================================================

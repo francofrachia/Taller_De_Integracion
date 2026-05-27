@@ -49,6 +49,7 @@ const Home = () => {
   const [priceRange, setPriceRange] = useState(100000);
   const [maxPriceLimit, setMaxPriceLimit] = useState(100000);
   const [sortBy, setSortBy] = useState('default');
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   useEffect(() => {
     // Conectando con tu backend existente (Express + PostgreSQL)
@@ -243,21 +244,27 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Edad Recomendada como LEGO Studs */}
+              {/* Edad Recomendada como Slider */}
               <div className="filter-group">
-                <label className="filter-label">Edad Recomendada</label>
-                <div className="lego-studs-container">
-                  {['3', '6', '8', '9', '12', '16', '18'].map(age => (
-                    <button 
-                      key={age}
-                      className={`lego-stud-btn ${activeAge === age ? 'active' : ''}`}
-                      onClick={() => setActiveAge(activeAge === age ? null : age)}
-                      title={`LEGO ${age}+ años`}
-                    >
-                      <span className="lego-stud-top"></span>
-                      <span className="lego-stud-label">{age}+</span>
-                    </button>
-                  ))}
+                <div className="filter-group-header">
+                  <label className="filter-label">Edad Recomendada</label>
+                  <span className="price-value">{activeAge ? `${activeAge}+ años` : 'Todas las edades'}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="7" 
+                  value={activeAge ? ['3', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7} 
+                  onChange={(e) => {
+                    const ages = ['3', '6', '8', '9', '12', '16', '18', 'Todos'];
+                    const val = parseInt(e.target.value);
+                    setActiveAge(ages[val] === 'Todos' ? null : ages[val]);
+                  }}
+                  className="price-range-slider age-range-slider"
+                />
+                <div className="price-range-labels">
+                  <span>3+</span>
+                  <span>Todas</span>
                 </div>
               </div>
 
@@ -308,20 +315,64 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Ordenamiento */}
+              {/* Ordenamiento Custom */}
               <div className="filter-group">
                 <label className="filter-label">Ordenar por</label>
-                <select 
-                  className="filter-sort-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  <option value="default">Por defecto</option>
-                  <option value="price-asc">Precio: de menor a mayor</option>
-                  <option value="price-desc">Precio: de mayor a menor</option>
-                  <option value="rating-desc">Calificación más alta</option>
-                  <option value="title-asc">Nombre: A - Z</option>
-                </select>
+                <div className={`custom-sort-dropdown ${sortMenuOpen ? 'open' : ''}`}>
+                  <div 
+                    className="custom-sort-selected" 
+                    onClick={() => setSortMenuOpen(!sortMenuOpen)}
+                  >
+                    <span>
+                      {sortBy === 'default' ? 'Por defecto' :
+                       sortBy === 'price-asc' ? 'Precio: de menor a mayor' :
+                       sortBy === 'price-desc' ? 'Precio: de mayor a menor' :
+                       sortBy === 'rating-desc' ? 'Calificación más alta' :
+                       'Nombre: A - Z'}
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" className="custom-sort-arrow">
+                      <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                    </svg>
+                  </div>
+                  
+                  {sortMenuOpen && (
+                    <>
+                      <div className="custom-sort-overlay" onClick={() => setSortMenuOpen(false)}></div>
+                      <ul className="custom-sort-options">
+                        <li 
+                          className={sortBy === 'default' ? 'active' : ''} 
+                          onClick={() => { setSortBy('default'); setSortMenuOpen(false); }}
+                        >
+                          Por defecto
+                        </li>
+                        <li 
+                          className={sortBy === 'price-asc' ? 'active' : ''} 
+                          onClick={() => { setSortBy('price-asc'); setSortMenuOpen(false); }}
+                        >
+                          Precio: de menor a mayor
+                        </li>
+                        <li 
+                          className={sortBy === 'price-desc' ? 'active' : ''} 
+                          onClick={() => { setSortBy('price-desc'); setSortMenuOpen(false); }}
+                        >
+                          Precio: de mayor a menor
+                        </li>
+                        <li 
+                          className={sortBy === 'rating-desc' ? 'active' : ''} 
+                          onClick={() => { setSortBy('rating-desc'); setSortMenuOpen(false); }}
+                        >
+                          Calificación más alta
+                        </li>
+                        <li 
+                          className={sortBy === 'name-asc' ? 'active' : ''} 
+                          onClick={() => { setSortBy('name-asc'); setSortMenuOpen(false); }}
+                        >
+                          Nombre: A - Z
+                        </li>
+                      </ul>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
