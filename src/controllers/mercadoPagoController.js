@@ -48,18 +48,37 @@ const createPreference = async (req, res) => {
         // Obtener el webhook de ngrok configurado
         const webhookUrl = process.env.MP_WEBHOOK_URL;
         
-        // Determinar URLs de retorno directamente al frontend
-        // Redirigir directamente al frontend (localhost:5173) evita la pantalla de advertencia intermedia de ngrok (ERR_NGROK_6024)
-        // y ofrece una experiencia de redirección limpia e instantánea.
-        const origin = req.get('origin') || req.get('referer');
-        let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        if (origin) {
-            baseUrl = origin.replace(/\/$/, '');
-        }
+        // Determinar URLs de retorno
+        // Para desarrollo local con ngrok, si hay una URL pública HTTPS de ngrok configurada,
+        // la registramos como proxy de redirección en el backend. Esto permite usar auto_return: 'approved'
+        // ya que la URL tiene HTTPS, y el backend luego redirige limpiamente al localhost del usuario.
+        let backendBaseUrl = `http://localhost:${process.env.PORT || 3000}`;
+        let useRedirectProxy = false;
         
-        const successUrl = `${baseUrl}/payment-success`;
-        const failureUrl = `${baseUrl}/payment-failure`;
-        const pendingUrl = `${baseUrl}/payment-pending`;
+        if (webhookUrl) {
+            const match = webhookUrl.match(/^(https:\/\/[^/]+)/);
+            if (match) {
+                backendBaseUrl = match[1];
+                useRedirectProxy = true;
+            }
+        }
+
+        let successUrl, failureUrl, pendingUrl;
+        
+        if (useRedirectProxy) {
+            successUrl = `${backendBaseUrl}/api/mercadopago/success-redirect`;
+            failureUrl = `${backendBaseUrl}/api/mercadopago/failure-redirect`;
+            pendingUrl = `${backendBaseUrl}/api/mercadopago/pending-redirect`;
+        } else {
+            const origin = req.get('origin') || req.get('referer');
+            let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            if (origin) {
+                baseUrl = origin.replace(/\/$/, '');
+            }
+            successUrl = `${baseUrl}/payment-success`;
+            failureUrl = `${baseUrl}/payment-failure`;
+            pendingUrl = `${baseUrl}/payment-pending`;
+        }
 
         const preferenceData = {
             body: {
