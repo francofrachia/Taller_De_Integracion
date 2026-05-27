@@ -50,11 +50,15 @@ const Home = () => {
   const [maxPriceLimit, setMaxPriceLimit] = useState(100000);
   const [sortBy, setSortBy] = useState('default');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [serverError, setServerError] = useState(false);
 
   useEffect(() => {
     // Conectando con tu backend existente (Express + PostgreSQL)
     fetch(`${API_URL}/productos`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Server response not ok');
+        return res.json();
+      })
       .then(data => {
         // Mapeamos los datos de la DB al formato que espera nuestro ProductCard
         const productosMapeados = data.map(item => {
@@ -91,6 +95,7 @@ const Home = () => {
       })
       .catch(error => {
         console.error('Error fetching products:', error);
+        setServerError(true);
         setLoading(false);
       });
   }, []);
@@ -391,10 +396,23 @@ const Home = () => {
           <img src={heroBanner} alt="Hero Banner" className="hero-banner-img" />
         </section>
 
-        {/* Ofertas Relámpago */}
-        <section className="flash-deals-section">
-          <SectionHeader 
-            title="Ofertas Relámpago" 
+        {serverError ? (
+          <div className="server-error-state animate-fade-in" style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--bg-white)', borderRadius: '24px', margin: '40px 0', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔌</div>
+            <h2 style={{ fontSize: '32px', color: 'var(--text-dark)', marginBottom: '16px', fontWeight: '800' }}>¡Problemas de conexión!</h2>
+            <p style={{ color: 'var(--text-gray)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
+              No pudimos conectarnos con nuestro catálogo de productos en este momento. Parece que el servidor está desenchufado o en mantenimiento.
+            </p>
+            <button className="btn-primary-custom" onClick={() => window.location.reload()} style={{ marginTop: '30px', border: 'none', cursor: 'pointer' }}>
+              Reintentar Conexión
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Ofertas Relámpago */}
+            <section className="flash-deals-section">
+              <SectionHeader 
+                title="Ofertas Relámpago" 
             timer={{ days: '03', hours: '23', minutes: '19', seconds: '56' }} 
           />
           <div className="products-grid">
@@ -484,7 +502,9 @@ const Home = () => {
               </div>
             </div>
           </div>
-        </section>
+            </section>
+          </>
+        )}
       </main>
 
       <Footer />

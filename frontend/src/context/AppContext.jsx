@@ -5,6 +5,7 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
     const [productos, setProductos] = useState([]);
     const [busqueda, setBusqueda] = useState('');
+    const [fetchError, setFetchError] = useState(false);
     const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
     const [cartCount, setCartCount] = useState(0);
     const [favoritos, setFavoritos] = useState([]);
@@ -82,11 +83,14 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 const data = await response.json();
                 setProductos(data);
+                setFetchError(false);
             } else {
                 console.error("Error en la respuesta de la API de productos");
+                setFetchError(true);
             }
         } catch (error) {
             console.error("Error conectando con la API:", error);
+            setFetchError(true);
         } finally {
             setLoading(false);
         }
@@ -452,7 +456,8 @@ export function AppProvider({ children }) {
             logout,
             loading,
             isInitialized,
-            API_URL
+            API_URL,
+            fetchError
         }}>
             {children}
         </AppContext.Provider>

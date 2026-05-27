@@ -8,8 +8,8 @@ import Cart from './pages/Cart/Cart';
 import Checkout from './pages/Checkout/Checkout';
 import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
 import Account from './pages/Account/Account';
-
 import About from './pages/About/About';
+import NotFound from './pages/NotFound/NotFound';
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
         <Route path="/payment-success" element={<PaymentStatus type="success" />} />
         <Route path="/payment-failure" element={<PaymentStatus type="failure" />} />
         <Route path="/payment-pending" element={<PaymentStatus type="pending" />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
