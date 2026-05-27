@@ -77,9 +77,9 @@ const createPreference = async (req, res) => {
             }
         };
 
-        // Mercado Pago exige que para usar auto_return: 'approved', las URLs de retorno deben ser HTTPS,
-        // o ser un host local (localhost o 127.0.0.1) para desarrollo local sin proxy.
-        const requiresHttps = successUrl.startsWith('https://') || successUrl.includes('localhost') || successUrl.includes('127.0.0.1');
+        // Mercado Pago exige que para usar auto_return: 'approved', las URLs de retorno deben ser HTTPS.
+        // Si usamos HTTP (como http://localhost:5173 en desarrollo), no debemos configurar auto_return.
+        const requiresHttps = successUrl.startsWith('https://');
         if (requiresHttps) {
             preferenceData.body.auto_return = 'approved';
         }
