@@ -72,10 +72,14 @@ const Navbar = () => {
           </Link>
 
           {usuario && usuario.id_usuario ? (
-            <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-dark)' }}>
+          <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link
+                to="/cuenta"
+                style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-dark)', textDecoration: 'none' }}
+                title="Mi Cuenta"
+              >
                 {usuario.nombre}
-              </span>
+              </Link>
               <button onClick={handleLogout} className="icon-btn" title="Cerrar Sesión">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-box-arrow-right" viewBox="0 0 16 16">
                   <path fillRule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>

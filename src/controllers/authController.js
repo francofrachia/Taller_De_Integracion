@@ -44,4 +44,31 @@ const loginOauth = async (req, res) => {
     }
 };
 
-module.exports = { loginOauth };
+const updateProfile = async (req, res) => {
+    const { id_usuario, nombre, apellido, email } = req.body;
+
+    if (!id_usuario) {
+        return res.status(400).json({ error: 'id_usuario es requerido' });
+    }
+
+    try {
+        const result = await pool.query(
+            'UPDATE usuario SET nombre = COALESCE($1, nombre), apellido = COALESCE($2, apellido), email = COALESCE($3, email) WHERE id_usuario = $4 RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro',
+            [nombre || null, apellido || null, email || null, id_usuario]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        return res.json({
+            mensaje: 'Perfil actualizado correctamente',
+            usuario: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error al actualizar perfil:', error.message);
+        res.status(500).json({ error: 'Error interno al actualizar el perfil' });
+    }
+};
+
+module.exports = { loginOauth, updateProfile };
