@@ -11,10 +11,12 @@ const PaymentStatus = ({ type }) => {
   const paymentId = searchParams.get('payment_id');
   const status = searchParams.get('status');
 
+  // Scroll to top strictly ONCE on mount to prevent scroll tugging/snapping on subsequent re-renders
   useEffect(() => {
-    // Scroll to top
     window.scrollTo(0, 0);
+  }, []);
 
+  useEffect(() => {
     if (loading) {
       console.log("[PaymentStatus] App context is loading user session, delaying cart clear.");
       return;
