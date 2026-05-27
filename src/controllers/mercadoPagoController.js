@@ -48,37 +48,18 @@ const createPreference = async (req, res) => {
         // Obtener el webhook de ngrok configurado
         const webhookUrl = process.env.MP_WEBHOOK_URL;
         
-        // Determinar URLs de retorno
-        // Para desarrollo local con ngrok, registramos las URLs del backend (HTTPS y públicas).
-        // Cuando Mercado Pago redirige al backend, este hace un redirect 302 al frontend local del usuario (http://localhost:5173).
-        // De esta manera se sortea el bloqueo de seguridad de Mercado Pago hacia URLs 'http://localhost' en producción.
-        let backendBaseUrl = `http://localhost:${process.env.PORT || 3000}`;
-        let useRedirectProxy = false;
-        
-        if (webhookUrl) {
-            const match = webhookUrl.match(/^(https:\/\/[^/]+)/);
-            if (match) {
-                backendBaseUrl = match[1];
-                useRedirectProxy = true;
-            }
+        // Determinar URLs de retorno directamente al frontend
+        // Redirigir directamente al frontend (localhost:5173) evita la pantalla de advertencia intermedia de ngrok (ERR_NGROK_6024)
+        // y ofrece una experiencia de redirección limpia e instantánea.
+        const origin = req.get('origin') || req.get('referer');
+        let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        if (origin) {
+            baseUrl = origin.replace(/\/$/, '');
         }
-
-        let successUrl, failureUrl, pendingUrl;
         
-        if (useRedirectProxy) {
-            successUrl = `${backendBaseUrl}/api/mercadopago/success-redirect`;
-            failureUrl = `${backendBaseUrl}/api/mercadopago/failure-redirect`;
-            pendingUrl = `${backendBaseUrl}/api/mercadopago/pending-redirect`;
-        } else {
-            const origin = req.get('origin') || req.get('referer');
-            let baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            if (origin) {
-                baseUrl = origin.replace(/\/$/, '');
-            }
-            successUrl = `${baseUrl}/payment-success`;
-            failureUrl = `${baseUrl}/payment-failure`;
-            pendingUrl = `${baseUrl}/payment-pending`;
-        }
+        const successUrl = `${baseUrl}/payment-success`;
+        const failureUrl = `${baseUrl}/payment-failure`;
+        const pendingUrl = `${baseUrl}/payment-pending`;
 
         const preferenceData = {
             body: {
