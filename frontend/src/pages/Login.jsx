@@ -6,17 +6,18 @@ import Footer from '../components/Footer/Footer';
 import './Login.css';
 
 export default function Login() {
-    const { sincronizarUsuarioConBackend } = useContext(AppContext);
+    const { sincronizarUsuarioConBackend, loginConEmail } = useContext(AppContext);
     const [mensaje, setMensaje] = useState('');
     const [perfil, setPerfil] = useState(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
     const from = location.state?.from || '/';
 
-    const CLIENT_ID = "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "676947281267-v3l9o98u7f9b3v8ids8t0fhgb9ar3mbm.apps.googleusercontent.com";
 
     useEffect(() => {
         const scriptId = 'google-gis-sdk';
@@ -99,10 +100,48 @@ export default function Login() {
         }
     }
 
-    const handleLoginSubmit = (e) => {
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
-        // Por ahora solo visual — conectar con backend cuando esté listo
-        setMensaje('Funcionalidad de login por email próximamente.');
+        
+        // 1. Validaciones del frontend
+        const emailTrim = email.trim();
+        const passwordTrim = password.trim();
+
+        if (!emailTrim || !passwordTrim) {
+            setMensaje('Por favor, completa todos los campos.');
+            return;
+        }
+
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexEmail.test(emailTrim)) {
+            setMensaje('El formato del correo electrónico no es válido.');
+            return;
+        }
+
+        if (passwordTrim.length < 6) {
+            setMensaje('La contraseña debe tener al menos 6 caracteres.');
+            return;
+        }
+
+        setIsLoggingIn(true);
+        setMensaje('');
+
+        try {
+            const res = await loginConEmail(emailTrim, passwordTrim);
+            if (res.success) {
+                setMensaje('¡Inicio de sesión exitoso! Redireccionando...');
+                setTimeout(() => {
+                    navigate(from, { replace: true });
+                }, 1200);
+            } else {
+                setMensaje(res.error);
+            }
+        } catch (error) {
+            console.error("Error al iniciar sesión:", error);
+            setMensaje('Ocurrió un error inesperado al intentar iniciar sesión.');
+        } finally {
+            setIsLoggingIn(false);
+        }
     };
 
     return (
@@ -153,8 +192,8 @@ export default function Login() {
                                         />
                                     </div>
 
-                                    <button type="submit" className="login-btn">
-                                        Iniciar Sesión
+                                    <button type="submit" className="login-btn" disabled={isLoggingIn}>
+                                        {isLoggingIn ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
                                     </button>
 
                                     <div className="login-forgot">

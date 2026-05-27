@@ -430,6 +430,78 @@ export function AppProvider({ children }) {
         }
     }
 
+    async function loginConEmail(email, contrasena) {
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, contrasena })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Login] Inicio de sesión exitoso con email.");
+                setUsuario(datos.usuario);
+                setToken(datos.token);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                localStorage.setItem('token_bloquemundo', datos.token);
+                sessionStorage.setItem('token_bloquemundo', datos.token);
+
+                await Promise.all([
+                    obtenerCarrito(datos.token),
+                    obtenerFavoritos(datos.token)
+                ]);
+
+                return { success: true, usuario: datos.usuario };
+            } else {
+                return { success: false, error: datos.error || 'Error al iniciar sesión.' };
+            }
+        } catch (error) {
+            console.error("Error en loginConEmail:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
+    async function registrarConEmail(nombre, email, contrasena) {
+        try {
+            const respuesta = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nombre, email, contrasena })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                console.log("[Register] Cuenta creada exitosamente con email.");
+                setUsuario(datos.usuario);
+                setToken(datos.token);
+                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
+                localStorage.setItem('token_bloquemundo', datos.token);
+                sessionStorage.setItem('token_bloquemundo', datos.token);
+
+                await Promise.all([
+                    obtenerCarrito(datos.token),
+                    obtenerFavoritos(datos.token)
+                ]);
+
+                return { success: true, usuario: datos.usuario };
+            } else {
+                return { success: false, error: datos.error || 'Error al registrar el usuario.' };
+            }
+        } catch (error) {
+            console.error("Error en registrarConEmail:", error);
+            return { success: false, error: 'Error de conexión con el servidor.' };
+        }
+    }
+
 
     return (
         <AppContext.Provider value={{
@@ -449,6 +521,8 @@ export function AppProvider({ children }) {
             token,
             setToken,
             sincronizarUsuarioConBackend,
+            loginConEmail,
+            registrarConEmail,
             logout,
             loading,
             isInitialized,

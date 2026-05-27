@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
+import placeholderImg from '../../assets/product_placeholder.png';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
@@ -49,7 +50,15 @@ const ProductCard = ({ product }) => {
           >
             {isFav ? '♥' : '♡'}
           </button>
-          <img src={product.image} alt={product.title} className="product-image" />
+          <img 
+            src={(!product.image || product.image.includes('legostore.com')) ? placeholderImg : product.image} 
+            alt={product.title} 
+            className="product-image" 
+            onError={(e) => {
+              e.target.onerror = null; // Prevent infinite loop if fallback also fails
+              e.target.src = placeholderImg;
+            }}
+          />
         </div>
         
         <div className="product-card-content">

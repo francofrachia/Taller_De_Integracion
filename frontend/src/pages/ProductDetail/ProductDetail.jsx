@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
+import placeholderProduct from '../../assets/product_placeholder.png';
 import './ProductDetail.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -261,7 +262,14 @@ const ProductDetail = () => {
                   className={`thumbnail-container ${index === mainImageIndex ? 'active' : ''}`}
                   onClick={() => setMainImageIndex(index)}
                 >
-                  <img src={img} alt={`Miniatura ${index + 1}`} />
+                  <img 
+                    src={(!img || img.includes('legostore.com')) ? placeholderProduct : img} 
+                    alt={`Miniatura ${index + 1}`} 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = placeholderProduct;
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -269,7 +277,15 @@ const ProductDetail = () => {
               {product.images.length > 1 && (
                 <button className="gallery-arrow prev" onClick={prevImage}>&lt;</button>
               )}
-              <img src={product.images[mainImageIndex]} alt={product.title} className="main-image" />
+              <img 
+                src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]} 
+                alt={product.title} 
+                className="main-image" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = placeholderProduct;
+                }}
+              />
               {product.images.length > 1 && (
                 <button className="gallery-arrow next" onClick={nextImage}>&gt;</button>
               )}

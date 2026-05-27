@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const firmarToken = (usuario) => {
     return jwt.sign(
@@ -89,4 +90,135 @@ const updateProfile = async (req, res) => {
     }
 };
 
-module.exports = { loginOauth, updateProfile };
+const registerUser = async (req, res) => {
+    try {
+        let { nombre, email, contrasena } = req.body;
+
+        // 1. Sanitización básica
+        nombre = nombre ? nombre.trim() : '';
+        email = email ? email.trim().toLowerCase() : '';
+        contrasena = contrasena ? contrasena.trim() : '';
+
+        // 2. Validación de campos obligatorios
+        if (!nombre || !email || !contrasena) {
+            return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+        }
+
+        // 3. Validación estricta de Nombre (Letras, espacios, acentos, eñes de 2 a 50 caracteres)
+        const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
+        if (nombre.length < 2 || nombre.length > 50 || !regexNombre.test(nombre)) {
+            return res.status(400).json({ 
+                error: 'El nombre solo puede contener letras, espacios y guiones, con una longitud de 2 a 50 caracteres.' 
+            });
+        }
+
+        // 4. Validación estricta de Correo Electrónico
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email.length > 100 || !regexEmail.test(email)) {
+            return res.status(400).json({ error: 'El correo electrónico provisto no es válido.' });
+        }
+
+        // 5. Validación estricta de Contraseña (Longitud de 6 a 50 caracteres)
+        if (contrasena.length < 6 || contrasena.length > 50) {
+            return res.status(400).json({ error: 'La contraseña debe tener entre 6 y 50 caracteres.' });
+        }
+
+        // 6. Verificar si el correo ya está registrado
+        const checkUser = await pool.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        if (checkUser.rows.length > 0) {
+            return res.status(400).json({ error: 'El correo electrónico ya está registrado.' });
+        }
+
+        // 7. Cifrar la contraseña de forma segura (Hash de un solo sentido con salt 10)
+        const salt = await bcrypt.genSalt(10);
+        const hashContrasena = await bcrypt.hash(contrasena, salt);
+
+        // 8. Dividir nombre y apellido para compatibilidad con la tabla usuario
+        const partes = nombre.split(/\s+/);
+        const primerNombre = partes[0];
+        const apellido = partes.length > 1 ? partes.slice(1).join(' ') : ' ';
+
+        // 9. Registrar el usuario en la base de datos
+        console.log("[Register] Registrando usuario por email:", email);
+        const result = await pool.query(
+            'INSERT INTO usuario (nombre, apellido, email, rol, contrasena) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, nombre, apellido, email, rol, fecha_registro',
+            [primerNombre, apellido, email, 'usuario', hashContrasena]
+        );
+
+        const nuevoUsuario = result.rows[0];
+        
+        // 10. Firmar JWT
+        const token = firmarToken(nuevoUsuario);
+
+        return res.status(201).json({
+            mensaje: 'Usuario registrado con éxito',
+            usuario: nuevoUsuario,
+            token
+        });
+    } catch (error) {
+        console.error('Error crítico en registerUser:', error.message);
+        res.status(500).json({ error: 'Error interno del servidor al registrar el usuario' });
+    }
+};
+
+const loginUser = async (req, res) => {
+    try {
+        let { email, contrasena } = req.body;
+
+        // 1. Sanitización básica
+        email = email ? email.trim().toLowerCase() : '';
+        contrasena = contrasena ? contrasena.trim() : '';
+
+        // 2. Validación de campos obligatorios
+        if (!email || !contrasena) {
+            return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+        }
+
+        // 3. Validación básica de formato de email
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexEmail.test(email)) {
+            return res.status(400).json({ error: 'El formato del correo electrónico no es válido.' });
+        }
+
+        // 4. Buscar usuario en base de datos
+        const userExist = await pool.query('SELECT * FROM usuario WHERE email = $1', [email]);
+        if (userExist.rows.length === 0) {
+            // Mensaje genérico por seguridad (evita la enumeración de emails registrados)
+            return res.status(401).json({ error: 'El correo electrónico o la contraseña son incorrectos.' });
+        }
+
+        const usuario = userExist.rows[0];
+
+        // 5. Verificar si el usuario está registrado con OAuth
+        if (usuario.contrasena === 'OAUTH_USER') {
+            return res.status(400).json({ 
+                error: 'Este correo está asociado a un inicio de sesión de Google. Por favor, accedé pulsando "Continuar con Google".' 
+            });
+        }
+
+        // 6. Comparar contraseña hasheada
+        const matches = await bcrypt.compare(contrasena, usuario.contrasena);
+        if (!matches) {
+            return res.status(401).json({ error: 'El correo electrónico o la contraseña son incorrectos.' });
+        }
+
+        // 7. Firmar JWT
+        const token = firmarToken(usuario);
+
+        // Limpiar contraseña del objeto devuelto
+        const usuarioSanitizado = { ...usuario };
+        delete usuarioSanitizado.contrasena;
+
+        console.log("[Login] Inicio de sesión exitoso para:", email);
+        return res.json({
+            mensaje: 'Login exitoso',
+            usuario: usuarioSanitizado,
+            token
+        });
+    } catch (error) {
+        console.error('Error crítico en loginUser:', error.message);
+        res.status(500).json({ error: 'Error interno del servidor al procesar el inicio de sesión' });
+    }
+};
+
+module.exports = { loginOauth, updateProfile, registerUser, loginUser };
