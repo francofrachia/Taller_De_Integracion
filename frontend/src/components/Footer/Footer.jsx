@@ -14,7 +14,7 @@ const Footer = () => {
           <ul>
             <li><Link to="/preguntas">Preguntas Frecuentes (FAQ)</Link></li>
             <li><Link to="/envios">Política de envíos y devoluciones</Link></li>
-            <li><Link to="/contacto">Contacto: soporte@bloquesmundo.com</Link></li>
+            <li><Link to="/contacto">Contacto: soporte@bloquemundo.com</Link></li>
             <li>+54 11 1234-5678</li>
           </ul>
         </div>
@@ -37,7 +37,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Bloques Mundo. Todos los derechos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} Bloque Mundo. Todos los derechos reservados.</p>
       </div>
     </footer>
   );
