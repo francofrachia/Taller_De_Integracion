@@ -1263,3 +1263,21 @@ input:checked + .switch-slider:before {
     gap: 14px;
   }
 }
+
+/* --- SVG CATEGORY ICONS STYLING --- */
+.col-chip-svg {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.active-filter-badge-svg {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
