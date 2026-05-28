@@ -491,7 +491,140 @@
   width: 100%;
 }
 
-.parallax-container.star-wars-theme {
+.parallax-banner-section.full-width.no-margin-top {
+  margin-top: 0;
+}
+
+.parallax-banner-section.full-width.no-margin-bottom {
+  margin-bottom: 0;
+}
+
+/* Banner Marvel Grande pero fluido */
+.cinematic-marvel-banner {
+  margin-bottom: 0;
+}
+
+.parallax-container.cinematic-theme.large-banner {
+  height: 80vh; /* Altura impactante, pero permite fluir al scrollear */
+  width: 100%;
+}
+
+/* Difuminado dentro del banner para fundirse con la transición oscura */
+.parallax-container.cinematic-theme.large-banner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, rgba(15,0,0,0) 0%, rgba(15,0,0,1) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Continuación del difuminado: del negro-rojo hacia el fondo oscuro, hacia ABAJO */
+.marvel-fade-out {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(to bottom, rgba(15,0,0,1) 0%, #111111 100%);
+  position: relative;
+  z-index: 1;
+}
+
+.dark-marvel-bg {
+  background-color: #111111;
+  width: 100%;
+  padding-bottom: 80px;
+  margin-bottom: -50px; /* Anula el margin-top del footer para unir los fondos oscuros */
+}
+
+
+
+/* Transición entre universos */
+.universe-transition {
+  background: #0a0a0a;
+  color: #ddd;
+  padding: 25px 20px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 10;
+  box-shadow: inset 0 0 30px rgba(0,0,0,1);
+}
+
+.transition-text-1 {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all 0.6s ease-out;
+}
+
+.transition-text-1.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.transition-text-2 {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.6s ease-out;
+}
+
+.transition-text-2.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.universe-transition .separator-dot {
+  color: #ffcc00;
+  font-size: 24px;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.4s ease-out;
+  transition-delay: 0.2s; /* Un ligero retraso para que aparezca después del texto */
+}
+
+.universe-transition .separator-dot.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.universe-transition::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+}
+
+.universe-transition::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,50,50,0.6), transparent);
+}
+
+@media (max-width: 768px) {
+  .universe-transition {
+    flex-direction: column;
+    gap: 10px;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+  .universe-transition .separator-dot {
+    display: none;
+  }
+}
+
+.parallax-container.star-wars-theme,
+.parallax-container.cinematic-theme {
   position: relative;
   height: 650px;
   border-radius: 0;
@@ -502,7 +635,8 @@
   text-align: left;
 }
 
-.parallax-container.star-wars-theme .parallax-bg {
+.parallax-container.star-wars-theme .parallax-bg,
+.parallax-container.cinematic-theme .parallax-bg {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-attachment: fixed;
@@ -514,12 +648,13 @@
   transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.parallax-container.star-wars-theme::before {
+.parallax-container.star-wars-theme::before,
+.parallax-container.cinematic-theme::before {
   content: '';
   position: absolute;
   top: 0; left: 0; bottom: 0;
   width: 65%;
-  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); /* Sombra a la izquierda para el texto centrado */
+  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
   z-index: 1;
 }
 
@@ -529,6 +664,28 @@
   color: white;
   padding: 0 10%; /* Espaciado normal */
   max-width: 100%;
+}
+
+.parallax-content.right-aligned {
+  position: relative;
+  z-index: 2;
+  color: white;
+  padding: 0 10%;
+  max-width: 100%;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.parallax-container.cinematic-theme.marvel-style {
+  justify-content: flex-end;
+}
+
+.parallax-container.cinematic-theme.marvel-style::before {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, rgba(100, 0, 0, 0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
 }
 
 .star-wars-title {
@@ -577,11 +734,55 @@
   transform: translateY(-2px);
 }
 
+.marvel-title {
+  background: linear-gradient(to bottom, #ffffff 0%, #ff4d4d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 20px rgba(255,0,0,0.4);
+}
+
+.btn-marvel {
+  border-color: rgba(255, 77, 77, 0.6);
+}
+
+.btn-marvel:hover {
+  background: #e60000;
+  color: white;
+  box-shadow: 0 0 30px rgba(230, 0, 0, 0.6);
+  border-color: #e60000;
+}
+
 /* ==========================================================================
    New Arrivals (Masonry Grid)
    ========================================================================== */
 .new-arrivals-modern {
-  margin-bottom: 100px;
+  margin-top: -150px; /* Sube la sección para que el título aproveche el difuminado */
+  margin-bottom: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.section-header-modern {
+  text-align: center;
+  margin-bottom: 50px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-header-modern h2 {
+  font-size: 40px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 15px;
+}
+
+.section-header-modern p {
+  font-size: 18px;
+  color: #aaaaaa;
+  line-height: 1.6;
 }
 
 .masonry-grid {
@@ -595,13 +796,17 @@
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  background: var(--bg-light);
+  background: #ffffff;
+  border: 1px solid #e0e0e0; /* Mini marco gris tenue pedido por el usuario */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04); /* Resalte sutil sobre el fondo blanco */
 }
 
 .masonry-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* Para que la imagen del producto no se recorte */
+  padding: 30px; /* Margen interno para que respire */
+  box-sizing: border-box;
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -650,6 +855,33 @@
   background: var(--primary-yellow);
 }
 
+.masonry-fav-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+}
+
+.masonry-fav-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.masonry-fav-btn:active {
+  transform: scale(0.95);
+}
+
 /* Grilla Asimétrica */
 .large-span {
   grid-column: span 2;
@@ -658,6 +890,38 @@
 
 .tall-span {
   grid-row: span 2;
+}
+
+.tall-span {
+  grid-column: span 1;
+  grid-row: span 2;
+}
+
+.wide-span {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+/* Animaciones de entrada escalonada para la grilla */
+.hidden-item {
+  opacity: 0;
+  transform: translateY(60px) scale(0.95);
+}
+
+.animate-item {
+  opacity: 0;
+  animation: masonryFadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes masonryFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Responsive */
