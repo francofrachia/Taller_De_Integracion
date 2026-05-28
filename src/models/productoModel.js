@@ -4,7 +4,12 @@ const Producto = {
     // Traer todos los productos con stock para el catálogo (CU03) + su imagen principal
     getAll: async () => {
         const query = `
-            SELECT DISTINCT ON (p.id_producto) p.*, c.nombre AS categoria_nombre, i.url AS imagen_url 
+            SELECT DISTINCT ON (p.id_producto) 
+                p.*, 
+                c.nombre AS categoria_nombre, 
+                i.url AS imagen_url,
+                COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
+                COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
             LEFT JOIN imagen i ON p.id_producto = i.id_producto
@@ -18,7 +23,12 @@ const Producto = {
     // Traer detalle de un producto específico (CU04) + TODAS sus imágenes
     getById: async (id) => {
         const query = `
-            SELECT p.*, c.nombre AS categoria_nombre, array_remove(array_agg(i.url), NULL) AS imagenes 
+            SELECT 
+                p.*, 
+                c.nombre AS categoria_nombre, 
+                array_remove(array_agg(i.url), NULL) AS imagenes,
+                COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
+                COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
             LEFT JOIN imagen i ON p.id_producto = i.id_producto

@@ -95,8 +95,8 @@ const Home = () => {
             price: precioNum,
             oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
             discount: item.discount || item.descuento || null,
-            rating: item.calificacion || 5, // Valor por defecto si no existe
-            reviews: item.reseñas || 0,
+            rating: parseFloat(item.calificacion) || 5,
+            reviews: parseInt(item.resenas || item.reseñas) || 0,
             image: item.imagen_url, // URL que viene del JOIN de la BD
             collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
             age: item.edad_recomendada || null,

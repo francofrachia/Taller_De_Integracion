@@ -95,8 +95,14 @@ const ProductCard = ({ product }) => {
           </div>
           
           <div className="product-rating">
-            <div className="stars">{renderStars(product.rating)}</div>
-            <span className="reviews-count">({product.reviews})</span>
+            {product.reviews > 0 ? (
+              <>
+                <div className="stars">{renderStars(product.rating)}</div>
+                <span className="reviews-count">({product.reviews})</span>
+              </>
+            ) : (
+              <span className="no-reviews-text">Sin reseñas</span>
+            )}
           </div>
         </div>
       </Link>

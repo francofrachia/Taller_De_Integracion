@@ -139,6 +139,12 @@
   color: var(--text-gray);
 }
 
+.no-reviews-text {
+  color: var(--text-gray);
+  font-style: italic;
+  font-size: 12px;
+}
+
 .add-to-cart-btn {
   width: 100%;
   background-color: var(--primary-yellow);

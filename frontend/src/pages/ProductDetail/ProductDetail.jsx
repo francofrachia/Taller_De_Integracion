@@ -144,8 +144,8 @@ const ProductDetail = () => {
           description: data.descripcion || 'Sin descripción disponible.',
           stock: data.stock,
           images: data.imagenes && data.imagenes.length > 0 ? data.imagenes : [placeholderProduct],
-          rating: data.calificacion || 4.5,
-          reviews: data.reseñas || 0
+          rating: parseFloat(data.calificacion) || 5,
+          reviews: parseInt(data.resenas || data.reseñas) || 0
         });
         
         // Ahora que tenemos la categoría, buscamos los relacionados y las reseñas en paralelo
@@ -377,10 +377,16 @@ const ProductDetail = () => {
             <h1 className="product-detail-title">{product.title}</h1>
             
             <div className="product-meta">
-              <span className="stars" style={{ color: '#FFB500', fontSize: '16px', verticalAlign: 'middle' }}>
-                {'★'.repeat(calculateAverageRating(reviews)).padEnd(5, '☆')}
-              </span>
-              <span className="reviews-count" style={{ color: 'var(--text-gray)', verticalAlign: 'middle' }}>({reviews.length} Reseñas)</span>
+              {reviews.length > 0 ? (
+                <>
+                  <span className="stars" style={{ color: '#FFB500', fontSize: '16px', verticalAlign: 'middle' }}>
+                    {'★'.repeat(calculateAverageRating(reviews)).padEnd(5, '☆')}
+                  </span>
+                  <span className="reviews-count" style={{ color: 'var(--text-gray)', verticalAlign: 'middle' }}>({reviews.length} Reseñas)</span>
+                </>
+              ) : (
+                <span className="no-reviews-text" style={{ color: 'var(--text-gray)', fontStyle: 'italic', fontSize: '14px', verticalAlign: 'middle' }}>Sin reseñas todavía</span>
+              )}
               <span className="meta-divider" style={{ verticalAlign: 'middle' }}>|</span>
               <span className="stock-status" style={{ verticalAlign: 'middle' }}>
                 {product.stock > 10 ? (
