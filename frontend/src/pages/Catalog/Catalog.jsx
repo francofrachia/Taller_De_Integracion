@@ -383,7 +383,7 @@ const Catalog = () => {
                   <>
                     <span className="catalog-result-count">{sortedProducts.length}</span>
                     <span className="catalog-result-label">
-                      {sortedProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+                      {sortedProducts.length === 1 ? ' producto encontrado' : ' productos encontrados'}
                       {productos.length !== sortedProducts.length && ` de ${productos.length}`}
                     </span>
                   </>
