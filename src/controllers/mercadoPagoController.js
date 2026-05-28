@@ -151,23 +151,48 @@ const receiveWebhook = async (req, res) => {
                     }
                 }
 
-                // 2. Actualizar stock
-                if (cartMetadataStr) {
+                // 2. Actualizar stock y registrar la compra en la base de datos
+                if (cartMetadataStr && idUsuario) {
                     try {
                         const items = JSON.parse(cartMetadataStr);
-                        console.log(`Pago aprobado. Actualizando stock de ${items.length} productos.`);
+                        console.log(`Pago aprobado. Actualizando stock de ${items.length} productos y registrando compra.`);
                         
+                        const itemsConPrecio = [];
+                        let subtotal = 0;
+
                         for (const item of items) {
+                            // Obtener precio actual de la base de datos
+                            const producto = await Producto.getById(item.product_id);
+                            if (producto) {
+                                const precioNum = parseFloat(producto.precio) || 0;
+                                itemsConPrecio.push({
+                                    id_producto: item.product_id,
+                                    cantidad: item.quantity,
+                                    precio: precioNum
+                                });
+                                subtotal += precioNum * item.quantity;
+                            }
+
                             const result = await Producto.updateStock(item.product_id, item.quantity);
                             if (result) {
                                 console.log(`Stock actualizado para producto ${item.product_id}. Nuevo stock: ${result.stock}`);
                             }
                         }
+
+                        // Registrar la compra en la base de datos
+                        if (itemsConPrecio.length > 0) {
+                            const Compra = require('../models/compraModel');
+                            const total = subtotal; // total es el subtotal si no hay descuentos en metadata
+                            const resultCompra = await Compra.create(idUsuario, itemsConPrecio, subtotal, 0, total, 'mercado_pago', 'Pago confirmado');
+                            console.log(`Compra registrada con éxito para el usuario ${idUsuario}: ID ${resultCompra.id_compra}`);
+                        } else {
+                            console.log('No se pudieron recuperar los precios de los productos para registrar la compra.');
+                        }
                     } catch (e) {
-                        console.error('Error parseando metadata cart JSON:', e);
+                        console.error('Error al actualizar stock o registrar la compra:', e);
                     }
                 } else {
-                    console.log('No se encontraron los metadatos de cart en el pago.');
+                    console.log('No se encontraron los metadatos de cart o usuario en el pago.');
                 }
             }
         }

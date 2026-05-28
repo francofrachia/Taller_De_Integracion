@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import placeholderImg from '../../assets/imagen no existente BM.png';
 import './Account.css';
 
 // ───────────────────────────────────────────────
@@ -272,6 +273,80 @@ function DireccionesSection({ usuario, API_URL, token }) {
 }
 
 // ───────────────────────────────────────────────
+// Sub-componente: Tarjeta de Compra
+// ───────────────────────────────────────────────
+function PurchaseCard({ compra }) {
+    const formattedDate = new Date(compra.fecha).toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const statusClass = compra.estado ? compra.estado.toLowerCase().replace(/\s+/g, '-') : '';
+
+    const translatePaymentMethod = (method) => {
+        switch (method) {
+            case 'mercado_pago': return 'Mercado Pago';
+            case 'tarjeta': return 'Tarjeta de Crédito/Débito';
+            case 'transferencia': return 'Transferencia Bancaria';
+            case 'efectivo': return 'Efectivo';
+            default: return method || 'Mercado Pago';
+        }
+    };
+
+    return (
+        <div className="purchase-card">
+            <div className="purchase-header">
+                <div className="purchase-meta">
+                    <span className="purchase-id">Compra #{compra.id_compra}</span>
+                    <span className="purchase-date">{formattedDate} hs</span>
+                </div>
+                <div className="purchase-status-container">
+                    <span className={`purchase-status-badge ${statusClass}`}>
+                        {compra.estado}
+                    </span>
+                </div>
+            </div>
+
+            <div className="purchase-items-list">
+                {compra.lineas && compra.lineas.map((linea, index) => (
+                    <div className="purchase-item-row" key={index}>
+                        <div className="purchase-item-img-wrapper">
+                            <img 
+                                src={linea.imagen_url || placeholderImg} 
+                                alt={linea.nombre} 
+                                className="purchase-item-img"
+                                onError={(e) => { e.target.src = placeholderImg; }}
+                            />
+                        </div>
+                        <div className="purchase-item-details">
+                            <div>
+                                <h4 className="purchase-item-name">{linea.nombre}</h4>
+                                <span className="purchase-item-qty">Cantidad: {linea.cantidad}</span>
+                            </div>
+                            <span className="purchase-item-price">
+                                ${parseFloat(linea.precio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="purchase-summary">
+                <span className="purchase-payment-method">
+                    Método de Pago: <strong>{translatePaymentMethod(compra.metodo_pago)}</strong>
+                </span>
+                <span className="purchase-total-price">
+                    Total: <span>${parseFloat(compra.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// ───────────────────────────────────────────────
 // Componente principal: Account
 // ───────────────────────────────────────────────
 export default function Account() {
@@ -290,6 +365,33 @@ export default function Account() {
     const [saveError, setSaveError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [avatarFeedback, setAvatarFeedback] = useState({ type: '', msg: '' });
+
+    const [compras, setCompras] = useState([]);
+    const [loadingCompras, setLoadingCompras] = useState(true);
+
+    const fetchCompras = useCallback(async () => {
+        if (!token) return;
+        setLoadingCompras(true);
+        try {
+            const res = await fetch(`${API_URL}/compras`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCompras(data.compras || []);
+            }
+        } catch (e) {
+            console.error('Error al obtener compras:', e);
+        } finally {
+            setLoadingCompras(false);
+        }
+    }, [API_URL, token]);
+
+    useEffect(() => {
+        fetchCompras();
+    }, [fetchCompras]);
 
     // ── Sección cambio de contraseña ──
     // passStep: 'locked' | 'verifying' | 'unlocked'
@@ -815,13 +917,23 @@ export default function Account() {
                         {activeSection === 'pendientes' && (
                             <div className="account-placeholder-section">
                                 <h2 className="account-section-title">Compras Pendientes</h2>
-                                <div className="placeholder-empty">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                                    </svg>
-                                    <p>No tenés compras pendientes.</p>
-                                </div>
+                                {loadingCompras ? (
+                                    <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
+                                ) : compras.filter(c => c.estado === 'Esperando Pago').length === 0 ? (
+                                    <div className="placeholder-empty">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                        </svg>
+                                        <p>No tenés compras pendientes.</p>
+                                    </div>
+                                ) : (
+                                    <div className="purchases-list">
+                                        {compras.filter(c => c.estado === 'Esperando Pago').map(compra => (
+                                            <PurchaseCard key={compra.id_compra} compra={compra} />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -829,13 +941,23 @@ export default function Account() {
                         {activeSection === 'historial' && (
                             <div className="account-placeholder-section">
                                 <h2 className="account-section-title">Compras Anteriores</h2>
-                                <div className="placeholder-empty">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/>
-                                        <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
-                                    </svg>
-                                    <p>Todavía no realizaste ninguna compra.</p>
-                                </div>
+                                {loadingCompras ? (
+                                    <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
+                                ) : compras.filter(c => c.estado !== 'Esperando Pago').length === 0 ? (
+                                    <div className="placeholder-empty">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/>
+                                            <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                        </svg>
+                                        <p>Todavía no realizaste ninguna compra.</p>
+                                    </div>
+                                ) : (
+                                    <div className="purchases-list">
+                                        {compras.filter(c => c.estado !== 'Esperando Pago').map(compra => (
+                                            <PurchaseCard key={compra.id_compra} compra={compra} />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -862,6 +984,8 @@ export default function Account() {
                                                 const productMapped = {
                                                     id: item.id_producto,
                                                     title: item.nombre || item.titulo || 'Producto sin nombre',
+                                                    description: item.descripcion || '',
+                                                    categoryName: item.categoria_nombre || '',
                                                     price: precioNum,
                                                     oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
                                                     discount: item.descuento || null,

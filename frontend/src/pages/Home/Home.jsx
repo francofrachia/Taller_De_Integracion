@@ -10,7 +10,7 @@ import './Home.css';
 // Import local placeholder images for banners
 import heroBanner from '../../assets/hero_banner.png';
 import secondaryBanner from '../../assets/secondary_banner.png';
-import placeholderProduct from '../../assets/product_placeholder.png';
+import placeholderProduct from '../../assets/imagen no existente BM.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -65,9 +65,11 @@ const Home = () => {
           return {
             id: item.id_producto,
             title: item.nombre || item.titulo || 'Producto sin nombre',
+            description: item.descripcion || '',
+            categoryName: item.categoria_nombre || '',
             price: precioNum,
             oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-            discount: item.descuento || null,
+            discount: item.discount || item.descuento || null,
             rating: item.calificacion || 5, // Valor por defecto si no existe
             reviews: item.reseñas || 0,
             image: item.imagen_url, // URL que viene del JOIN de la BD

@@ -2,389 +2,306 @@ import React, { useState, useEffect, useContext } from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import { AppContext } from '../../context/AppContext';
 import './Catalog.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+// ── Helper para emojis y colores de categorías dinámicas ──────────────────
+const getCategoryVisuals = (name) => {
+  if (!name) return { emoji: '🧱', color: '#FFD700' };
+  const lower = name.toLowerCase().trim();
+  if (lower.includes('star wars')) return { emoji: '🚀', color: '#263238' };
+  if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) return { emoji: '🦸', color: '#EF5350' };
+  if (lower.includes('harry potter')) return { emoji: '⚡', color: '#7E57C2' };
+  if (lower.includes('city')) return { emoji: '🏙️', color: '#4FC3F7' };
+  if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) return { emoji: '⚙️', color: '#455A64' };
+  if (lower.includes('minecraft')) return { emoji: '⛏️', color: '#4CAF50' };
+  if (lower.includes('icon') || lower.includes('creator')) return { emoji: '✨', color: '#FFB300' };
+  return { emoji: '🧱', color: '#FFD700' };
+};
+
+// ── Skeleton card ─────────────────────────────────────────────────────────
 const ProductCardSkeleton = () => (
-  <div className="product-card" style={{ height: '100%' }}>
-    <div className="product-card-image-container" style={{ display: 'block', padding: '0' }}>
-      <div className="skeleton" style={{ width: '100%', height: '100%', aspectRatio: '1', borderRadius: '0' }}></div>
+  <div className="product-card">
+    <div className="product-card-image-container" style={{ display:'block', padding:0 }}>
+      <div className="skeleton" style={{ width:'100%', aspectRatio:'1', borderRadius:0 }} />
     </div>
-    <div className="product-card-content" style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-      <div className="skeleton" style={{ width: '85%', height: '16px' }}></div>
-      <div className="skeleton" style={{ width: '60%', height: '14px' }}></div>
-      <div className="skeleton" style={{ width: '40%', height: '18px', marginTop: '5px' }}></div>
-      <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: 'auto' }}>
-        <div className="skeleton" style={{ width: '60px', height: '12px' }}></div>
-        <div className="skeleton" style={{ width: '25px', height: '12px' }}></div>
-      </div>
+    <div className="product-card-content" style={{ display:'flex', flexDirection:'column', gap:'10px', flex:1 }}>
+      <div className="skeleton" style={{ width:'85%', height:'16px' }} />
+      <div className="skeleton" style={{ width:'60%', height:'14px' }} />
+      <div className="skeleton" style={{ width:'40%', height:'18px', marginTop:'5px' }} />
     </div>
     <div className="product-card-actions">
-      <div className="skeleton" style={{ width: '100%', height: '40px', borderRadius: '4px' }}></div>
+      <div className="skeleton" style={{ width:'100%', height:'40px', borderRadius:'4px' }} />
     </div>
   </div>
 );
 
+// ── Componente principal ──────────────────────────────────────────────────
 const Catalog = () => {
-  const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Consumimos la búsqueda global y función del carrito
-  const { busqueda, setBusqueda } = useContext(AppContext);
-  
-  // Estados para nuestros filtros premium con "chiches"
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [activeTheme, setActiveTheme] = useState('');
-  const [activeAge, setActiveAge] = useState(null);
-  const [onlyExclusives, setOnlyExclusives] = useState(false);
-  const [onlyComingSoon, setOnlyComingSoon] = useState(false);
-  const [priceRange, setPriceRange] = useState(100000);
-  const [maxPriceLimit, setMaxPriceLimit] = useState(100000);
-  const [sortBy, setSortBy] = useState('default');
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [serverError, setServerError] = useState(false);
+  const [productos, setProductos]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const { busqueda, setBusqueda }       = useContext(AppContext);
+
+  const [filterMenuOpen, setFilterMenuOpen]   = useState(false);
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
+  const [dbCategories, setDbCategories]       = useState([]);
+  const [activeAge, setActiveAge]             = useState(null);
+  const [onlyExclusives, setOnlyExclusives]   = useState(false);
+  const [onlyComingSoon, setOnlyComingSoon]   = useState(false);
+  const [priceRange, setPriceRange]           = useState(100000);
+  const [maxPriceLimit, setMaxPriceLimit]     = useState(100000);
+  const [sortBy, setSortBy]                   = useState('default');
+  const [sortMenuOpen, setSortMenuOpen]       = useState(false);
+  const [serverError, setServerError]         = useState(false);
 
   useEffect(() => {
-    // Conectando con tu backend existente (Express + PostgreSQL)
+    fetch(`${API_URL}/productos/categorias`)
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(data => setDbCategories(data))
+      .catch(err => console.error('Error al obtener categorías:', err));
+  }, []);
+
+  useEffect(() => {
     fetch(`${API_URL}/productos`)
-      .then(res => {
-        if (!res.ok) throw new Error('Server response not ok');
-        return res.json();
-      })
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
       .then(data => {
-        // Mapeamos los datos de la DB al formato que espera nuestro ProductCard
-        const productosMapeados = data.map(item => {
-          const precioNum = parseFloat(item.precio) || 0;
+        const mapped = data.map(item => {
+          const price = parseFloat(item.precio) || 0;
           return {
             id: item.id_producto,
             title: item.nombre || item.titulo || 'Producto sin nombre',
-            price: precioNum,
-            oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-            discount: item.descuento || null,
-            rating: item.calificacion || 5, // Valor por defecto si no existe
-            reviews: item.reseñas || 0,
-            image: item.imagen_url, // URL que viene del JOIN de la BD
-            collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
-            age: item.edad_recomendada || null,
-            stock: item.stock || 0,
-            // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
-            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
-            // Próximamente: Demo interactivo si el id es divisible por 4
-            isComingSoon: item.id_producto % 4 === 0
+            description: item.descripcion || '',
+            categoryName: item.categoria_nombre || '',
+            categoryId: item.id_categoria,
+            price,
+            oldPrice:    item.precio_anterior ? parseFloat(item.precio_anterior) : null,
+            discount:    item.descuento || null,
+            rating:      item.calificacion || 5,
+            reviews:     item.reseñas || 0,
+            image:       item.imagen_url,
+            collection:  item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+            age:         item.edad_recomendada || null,
+            stock:       item.stock || 0,
+            isExclusive: (item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
+            isComingSoon: item.id_producto % 4 === 0,
           };
         });
-        
-        setProductos(productosMapeados);
-        
-        // Calcular el precio máximo dinámico para el slider de rango
-        if (productosMapeados.length > 0) {
-          const maxP = Math.ceil(Math.max(...productosMapeados.map(p => p.price)));
+        setProductos(mapped);
+        if (mapped.length > 0) {
+          const maxP = Math.ceil(Math.max(...mapped.map(p => p.price)));
           setMaxPriceLimit(maxP);
           setPriceRange(maxP);
         }
-        
         setLoading(false);
       })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-        setServerError(true);
-        setLoading(false);
-      });
+      .catch(() => { setServerError(true); setLoading(false); });
   }, []);
 
-  // Función para resetear todos los filtros
   const resetFilters = () => {
-    setActiveTheme('');
-    setActiveAge(null);
-    setOnlyExclusives(false);
-    setOnlyComingSoon(false);
-    setPriceRange(maxPriceLimit);
-    setSortBy('default');
+    setActiveCategoryId(null); setActiveAge(null);
+    setOnlyExclusives(false); setOnlyComingSoon(false);
+    setPriceRange(maxPriceLimit); setSortBy('default');
     if (setBusqueda) setBusqueda('');
   };
 
-  // Filtrar productos de forma reactiva en el frontend
-  const filteredProducts = productos.filter(product => {
-    // 1. Búsqueda por texto (Navbar)
-    if (busqueda && !product.title.toLowerCase().includes(busqueda.toLowerCase())) {
-      return false;
-    }
-    // 2. Tema / Colección
-    if (activeTheme && product.collection !== activeTheme) {
-      return false;
-    }
-    // 3. Edad recomendada
-    if (activeAge && product.age !== parseInt(activeAge)) {
-      return false;
-    }
-    // 4. Exclusivos
-    if (onlyExclusives && !product.isExclusive) {
-      return false;
-    }
-    // 5. Próximamente / Pre-orden
-    if (onlyComingSoon && !product.isComingSoon) {
-      return false;
-    }
-    // 6. Rango de precio
-    if (product.price > priceRange) {
-      return false;
-    }
+  const filteredProducts = productos.filter(p => {
+    if (busqueda && !p.title.toLowerCase().includes(busqueda.toLowerCase())) return false;
+    if (activeCategoryId !== null && p.categoryId !== activeCategoryId) return false;
+    if (activeAge && p.age !== parseInt(activeAge)) return false;
+    if (onlyExclusives && !p.isExclusive) return false;
+    if (onlyComingSoon && !p.isComingSoon) return false;
+    if (p.price > priceRange) return false;
     return true;
   });
 
-  // Ordenar productos reactivamente
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'price-asc') {
-      return a.price - b.price;
-    }
-    if (sortBy === 'price-desc') {
-      return b.price - a.price;
-    }
-    if (sortBy === 'rating-desc') {
-      return b.rating - a.rating;
-    }
-    if (sortBy === 'title-asc') {
-      return a.title.localeCompare(b.title);
-    }
+    if (sortBy === 'price-asc')    return a.price - b.price;
+    if (sortBy === 'price-desc')   return b.price - a.price;
+    if (sortBy === 'rating-desc')  return b.rating - a.rating;
+    if (sortBy === 'title-asc')    return a.title.localeCompare(b.title);
     return 0;
   });
 
-  // Verificamos si hay algún filtro activo para mostrar la barra de tags
-  const hasActiveFilters = activeTheme || activeAge || onlyExclusives || onlyComingSoon || priceRange < maxPriceLimit || busqueda;
+  const hasActiveFilters = activeCategoryId !== null || activeAge || onlyExclusives || onlyComingSoon || priceRange < maxPriceLimit || busqueda;
 
-  // --- Mouse Spotlight Effect ---
-  const sectionRef = React.useRef(null);
-  const handleMouseMove = (e) => {
-    if (!sectionRef.current) return;
-    const rect = sectionRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    sectionRef.current.style.setProperty('--mouse-x', `${x}px`);
-    sectionRef.current.style.setProperty('--mouse-y', `${y}px`);
-  };
-
-  // Renderizador de la barra de filtros activos (tags/pills) con botón de remover individual
+  // ── Active filters bar ──────────────────────────────────────────────────
   const activeFiltersBar = hasActiveFilters ? (
     <div className="active-filters-bar animate-fade-in">
       <span className="active-filters-title">Filtros activos:</span>
       <div className="active-filters-list">
         {busqueda && (
           <span className="active-filter-badge">
-            Buscar: "{busqueda}"
+            Buscar: &ldquo;{busqueda}&rdquo;
             <button className="remove-badge-btn" onClick={() => setBusqueda('')} title="Quitar búsqueda">✖</button>
           </span>
         )}
-        {activeTheme && (
+        {activeCategoryId !== null && (
           <span className="active-filter-badge">
-            Colección: {activeTheme.toUpperCase()}
-            <button className="remove-badge-btn" onClick={() => setActiveTheme('')} title="Quitar colección">✖</button>
+            {getCategoryVisuals(dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre).emoji}{' '}
+            {dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre || 'Categoría'}
+            <button className="remove-badge-btn" onClick={() => setActiveCategoryId(null)}>✖</button>
           </span>
         )}
         {activeAge && (
           <span className="active-filter-badge">
             Edad: {activeAge}+ años
-            <button className="remove-badge-btn" onClick={() => setActiveAge(null)} title="Quitar edad">✖</button>
+            <button className="remove-badge-btn" onClick={() => setActiveAge(null)}>✖</button>
           </span>
         )}
         {onlyExclusives && (
           <span className="active-filter-badge">
-            Exclusivos
-            <button className="remove-badge-btn" onClick={() => setOnlyExclusives(false)} title="Quitar exclusivo">✖</button>
+            ⭐ Exclusivos
+            <button className="remove-badge-btn" onClick={() => setOnlyExclusives(false)}>✖</button>
           </span>
         )}
         {onlyComingSoon && (
           <span className="active-filter-badge">
-            Próximamente
-            <button className="remove-badge-btn" onClick={() => setOnlyComingSoon(false)} title="Quitar próximamente">✖</button>
+            🔜 Próximamente
+            <button className="remove-badge-btn" onClick={() => setOnlyComingSoon(false)}>✖</button>
           </span>
         )}
         {priceRange < maxPriceLimit && (
           <span className="active-filter-badge">
-            Precio: ≤ ${priceRange.toLocaleString()}
-            <button className="remove-badge-btn" onClick={() => setPriceRange(maxPriceLimit)} title="Quitar límite de precio">✖</button>
+            Precio ≤ ${priceRange.toLocaleString()}
+            <button className="remove-badge-btn" onClick={() => setPriceRange(maxPriceLimit)}>✖</button>
           </span>
         )}
-        <button className="clear-filters-badge-btn" onClick={resetFilters}>
-          Limpiar todos
-        </button>
+        <button className="clear-filters-badge-btn" onClick={resetFilters}>Limpiar todos</button>
       </div>
     </div>
   ) : null;
 
-  // Render del selector de Filtros con sus "chiches" (diseño LEGO, studs, switches y slider)
+  // ── Filter dropdown (unchanged) ─────────────────────────────────────────
   const filterDropdownMenu = (
     <div className="filter-controls-container">
-      <button 
+      <button
         className={`filter-btn-toggle ${filterMenuOpen ? 'active' : ''}`}
         onClick={() => setFilterMenuOpen(!filterMenuOpen)}
-        title="Filtrar y Ordenar"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
           <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
         </svg>
         <span>Filtros</span>
-        {hasActiveFilters && <span className="filter-badge-dot"></span>}
+        {hasActiveFilters && <span className="filter-badge-dot" />}
       </button>
 
       {filterMenuOpen && (
         <>
-          <div className="filter-dropdown-overlay" onClick={() => setFilterMenuOpen(false)}></div>
+          <div className="filter-dropdown-overlay" onClick={() => setFilterMenuOpen(false)} />
           <div className="filter-dropdown-menu glassmorphic animate-slide-down">
             <div className="filter-dropdown-header">
               <h4>Filtrar Catálogo</h4>
               <button className="clear-all-link" onClick={resetFilters}>Limpiar todo</button>
             </div>
-            
             <div className="filter-dropdown-body">
-              {/* Colecciones / Temas */}
+
+              {/* Categorías */}
               <div className="filter-group">
-                <label className="filter-label">Colección</label>
+                <label className="filter-label">Categoría</label>
                 <div className="filter-pills">
-                  {['city', 'harry potter', 'star wars', 'marvel', 'super heroes'].map(theme => (
-                    <button 
-                      key={theme} 
-                      className={`filter-pill ${activeTheme === theme ? 'active' : ''}`}
-                      onClick={() => setActiveTheme(activeTheme === theme ? '' : theme)}
+                  {dbCategories.map(cat => (
+                    <button
+                      key={cat.id_categoria}
+                      className={`filter-pill ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
+                      onClick={() => setActiveCategoryId(activeCategoryId === cat.id_categoria ? null : cat.id_categoria)}
                     >
-                      {theme === 'super heroes' ? 'Super Héroes' : theme.charAt(0).toUpperCase() + theme.slice(1)}
+                      {cat.nombre}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Edad Recomendada como Slider */}
+              {/* Edad */}
               <div className="filter-group">
                 <div className="filter-group-header">
                   <label className="filter-label">Edad Recomendada</label>
                   <span className="price-value">{activeAge ? `${activeAge}+ años` : 'Todas las edades'}</span>
                 </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="7" 
-                  value={activeAge ? ['3', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7} 
-                  onChange={(e) => {
-                    const ages = ['3', '6', '8', '9', '12', '16', '18', 'Todos'];
+                <input
+                  type="range" min="0" max="7"
+                  value={activeAge ? ['3','6','8','9','12','16','18','Todos'].indexOf(activeAge) : 7}
+                  onChange={e => {
+                    const ages = ['3','6','8','9','12','16','18','Todos'];
                     const val = parseInt(e.target.value);
                     setActiveAge(ages[val] === 'Todos' ? null : ages[val]);
                   }}
                   className="price-range-slider age-range-slider"
                 />
-                <div className="price-range-labels">
-                  <span>3+</span>
-                  <span>Todas</span>
-                </div>
+                <div className="price-range-labels"><span>3+</span><span>Todas</span></div>
               </div>
 
-              {/* Rango de Precios */}
+              {/* Precio */}
               <div className="filter-group">
                 <div className="filter-group-header">
                   <label className="filter-label">Precio Máximo</label>
                   <span className="price-value">${priceRange.toLocaleString()}</span>
                 </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max={maxPriceLimit || 100000} 
-                  value={priceRange} 
-                  onChange={(e) => setPriceRange(Number(e.target.value))}
+                <input
+                  type="range" min="0" max={maxPriceLimit || 100000}
+                  value={priceRange}
+                  onChange={e => setPriceRange(Number(e.target.value))}
                   className="price-range-slider"
                 />
-                <div className="price-range-labels">
-                  <span>$0</span>
-                  <span>${(maxPriceLimit || 100000).toLocaleString()}</span>
-                </div>
+                <div className="price-range-labels"><span>$0</span><span>${(maxPriceLimit || 100000).toLocaleString()}</span></div>
               </div>
 
-              {/* Especiales Checkboxes (Switches de estilo) */}
+              {/* Especiales */}
               <div className="filter-group specials-group">
                 <div className="toggle-item">
                   <span className="toggle-label">Ediciones Exclusivas</span>
                   <label className="switch-toggle">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyExclusives} 
-                      onChange={(e) => setOnlyExclusives(e.target.checked)} 
-                    />
-                    <span className="switch-slider"></span>
+                    <input type="checkbox" checked={onlyExclusives} onChange={e => setOnlyExclusives(e.target.checked)} />
+                    <span className="switch-slider" />
                   </label>
                 </div>
-
                 <div className="toggle-item">
                   <span className="toggle-label">Próximos Lanzamientos</span>
                   <label className="switch-toggle">
-                    <input 
-                      type="checkbox" 
-                      checked={onlyComingSoon} 
-                      onChange={(e) => setOnlyComingSoon(e.target.checked)} 
-                    />
-                    <span className="switch-slider"></span>
+                    <input type="checkbox" checked={onlyComingSoon} onChange={e => setOnlyComingSoon(e.target.checked)} />
+                    <span className="switch-slider" />
                   </label>
                 </div>
               </div>
 
-              {/* Ordenamiento Custom */}
+              {/* Ordenar */}
               <div className="filter-group">
                 <label className="filter-label">Ordenar por</label>
                 <div className={`custom-sort-dropdown ${sortMenuOpen ? 'open' : ''}`}>
-                  <div 
-                    className="custom-sort-selected" 
-                    onClick={() => setSortMenuOpen(!sortMenuOpen)}
-                  >
+                  <div className="custom-sort-selected" onClick={() => setSortMenuOpen(!sortMenuOpen)}>
                     <span>
-                      {sortBy === 'default' ? 'Por defecto' :
-                       sortBy === 'price-asc' ? 'Precio: de menor a mayor' :
-                       sortBy === 'price-desc' ? 'Precio: de mayor a menor' :
-                       sortBy === 'rating-desc' ? 'Calificación más alta' :
-                       'Nombre: A - Z'}
+                      {sortBy === 'default'      ? 'Por defecto' :
+                       sortBy === 'price-asc'    ? 'Precio: menor a mayor' :
+                       sortBy === 'price-desc'   ? 'Precio: mayor a menor' :
+                       sortBy === 'rating-desc'  ? 'Calificación más alta' :
+                                                    'Nombre: A - Z'}
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" className="custom-sort-arrow">
                       <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
                     </svg>
                   </div>
-                  
                   {sortMenuOpen && (
                     <>
-                      <div className="custom-sort-overlay" onClick={() => setSortMenuOpen(false)}></div>
+                      <div className="custom-sort-overlay" onClick={() => setSortMenuOpen(false)} />
                       <ul className="custom-sort-options">
-                        <li 
-                          className={sortBy === 'default' ? 'active' : ''} 
-                          onClick={() => { setSortBy('default'); setSortMenuOpen(false); }}
-                        >
-                          Por defecto
-                        </li>
-                        <li 
-                          className={sortBy === 'price-asc' ? 'active' : ''} 
-                          onClick={() => { setSortBy('price-asc'); setSortMenuOpen(false); }}
-                        >
-                          Precio: de menor a mayor
-                        </li>
-                        <li 
-                          className={sortBy === 'price-desc' ? 'active' : ''} 
-                          onClick={() => { setSortBy('price-desc'); setSortMenuOpen(false); }}
-                        >
-                          Precio: de mayor a menor
-                        </li>
-                        <li 
-                          className={sortBy === 'rating-desc' ? 'active' : ''} 
-                          onClick={() => { setSortBy('rating-desc'); setSortMenuOpen(false); }}
-                        >
-                          Calificación más alta
-                        </li>
-                        <li 
-                          className={sortBy === 'name-asc' ? 'active' : ''} 
-                          onClick={() => { setSortBy('name-asc'); setSortMenuOpen(false); }}
-                        >
-                          Nombre: A - Z
-                        </li>
+                        {[
+                          { v:'default',    l:'Por defecto' },
+                          { v:'price-asc',  l:'Precio: menor a mayor' },
+                          { v:'price-desc', l:'Precio: mayor a menor' },
+                          { v:'rating-desc',l:'Calificación más alta' },
+                          { v:'name-asc',   l:'Nombre: A - Z' },
+                        ].map(({ v, l }) => (
+                          <li key={v} className={sortBy === v ? 'active' : ''} onClick={() => { setSortBy(v); setSortMenuOpen(false); }}>
+                            {l}
+                          </li>
+                        ))}
                       </ul>
                     </>
                   )}
                 </div>
               </div>
+
             </div>
           </div>
         </>
@@ -392,79 +309,115 @@ const Catalog = () => {
     </div>
   );
 
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="catalog-page">
       <Navbar />
-      
-      <main className="container" style={{ paddingTop: '100px' }}>
+
+      <main className="catalog-main container">
+
         {serverError ? (
-          <div className="server-error-state animate-fade-in" style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--bg-white)', borderRadius: '24px', margin: '40px 0', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔌</div>
-            <h2 style={{ fontSize: '32px', color: 'var(--text-dark)', marginBottom: '16px', fontWeight: '800' }}>¡Problemas de conexión!</h2>
-            <p style={{ color: 'var(--text-gray)', fontSize: '18px', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-              No pudimos conectarnos con nuestro catálogo de productos en este momento. Parece que el servidor está desenchufado o en mantenimiento.
-            </p>
-            <button className="btn-primary-custom" onClick={() => window.location.reload()} style={{ marginTop: '30px', border: 'none', cursor: 'pointer' }}>
+          /* ── Error state ── */
+          <div className="catalog-error-state animate-fade-in">
+            <div className="catalog-error-icon">🔌</div>
+            <h2>¡Problemas de conexión!</h2>
+            <p>No pudimos conectarnos con nuestro catálogo. El servidor está desenchufado o en mantenimiento.</p>
+            <button className="btn-primary-custom" onClick={() => window.location.reload()}>
               Reintentar Conexión
             </button>
           </div>
         ) : (
           <>
-            {/* Catálogo de Todos Los Productos */}
-        <section 
-          className="explore-products-section" 
-          id="productos" 
-          style={{ marginTop: 0 }}
-          ref={sectionRef}
-          onMouseMove={handleMouseMove}
-        >
-          {/* Spotlight overlay */}
-          <div className="spotlight-overlay"></div>
-
-          <div className="explore-header-container">
-            <div className="explore-title-wrapper">
-              <h2 className="explore-title premium-gradient-text">
-                Nuestros Productos
-              </h2>
-              <p className="explore-subtitle">Descubrí sets increíbles para todas las edades y constructores</p>
-            </div>
-            <div className="explore-actions">
-              {filterDropdownMenu}
-            </div>
-          </div>
-          
-          {activeFiltersBar}
-          
-          <div className="products-grid-wrapper">
-            <div className="products-toolbar animate-fade-in">
-              <div className="products-count-badge">
-                <span>Mostrando <strong>{sortedProducts.length}</strong> de {productos.length} productos</span>
-                <div className="count-stud"></div>
+            {/* ── Hero strip ── */}
+            <div className="catalog-hero-strip">
+              <div className="catalog-hero-text">
+                <span className="catalog-hero-eyebrow">BloqueMundo · Catálogo oficial</span>
+                <h1 className="catalog-hero-title">
+                  Nuestros <span className="catalog-hero-highlight">Productos</span>
+                </h1>
+                <p className="catalog-hero-desc">
+                  Encontrá el set LEGO perfecto para vos — desde ciudades épicas hasta galaxias lejanas.
+                </p>
               </div>
-              
-              {/* If we had active filters, we could show a mini reset button here too, but we have it in the activeFiltersBar */}
+              <div className="catalog-hero-bricks" aria-hidden="true">
+                {['🧱','🟡','🔴','🟢','🔵','🟠'].map((b, i) => (
+                  <span key={i} className={`catalog-brick catalog-brick-${i + 1}`}>{b}</span>
+                ))}
+              </div>
             </div>
-            
-            <div className="products-grid">
-              {loading ? (
-                [1, 2, 3, 4, 5, 6, 7, 8].map((n) => <ProductCardSkeleton key={`exp-loading-${n}`} />)
-              ) : sortedProducts.length > 0 ? (
-                sortedProducts.map((product, index) => (
-                  <div key={`exp-${product.id}`} className={`stagger-anim delay-${(index % 8) + 1}`}>
-                    <ProductCard product={product} />
+
+            {/* ── Categoría chips horizontales ── */}
+            <div className="catalog-collection-strip">
+              <button
+                className={`col-chip ${activeCategoryId === null ? 'active' : ''}`}
+                style={{ '--chip-accent': '#FFD700' }}
+                onClick={() => setActiveCategoryId(null)}
+              >
+                <span className="col-chip-emoji">🧱</span>
+                <span className="col-chip-label">Todos</span>
+                {activeCategoryId === null && <span className="col-chip-check">✓</span>}
+              </button>
+              {dbCategories.map(cat => {
+                const visuals = getCategoryVisuals(cat.nombre);
+                return (
+                  <button
+                    key={cat.id_categoria}
+                    className={`col-chip ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
+                    style={{ '--chip-accent': visuals.color }}
+                    onClick={() => setActiveCategoryId(cat.id_categoria)}
+                  >
+                    <span className="col-chip-emoji">{visuals.emoji}</span>
+                    <span className="col-chip-label">{cat.nombre}</span>
+                    {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Toolbar: contador + filtros ── */}
+            <div className="catalog-toolbar">
+              <div className="catalog-result-info">
+                {loading ? (
+                  <div className="skeleton" style={{ width: '160px', height: '16px', borderRadius: '6px' }} />
+                ) : (
+                  <>
+                    <span className="catalog-result-count">{sortedProducts.length}</span>
+                    <span className="catalog-result-label">
+                      {sortedProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+                      {productos.length !== sortedProducts.length && ` de ${productos.length}`}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="catalog-toolbar-right">
+                {filterDropdownMenu}
+              </div>
+            </div>
+
+            {/* ── Active filter tags ── */}
+            {activeFiltersBar}
+
+            {/* ── Grid de productos ── */}
+            <section className="catalog-grid-section" id="productos">
+              <div className="products-grid">
+                {loading ? (
+                  [1,2,3,4,5,6,7,8].map(n => <ProductCardSkeleton key={n} />)
+                ) : sortedProducts.length > 0 ? (
+                  sortedProducts.map((product, index) => (
+                    <div key={product.id} className={`stagger-anim delay-${(index % 8) + 1}`}>
+                      <ProductCard product={product} />
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-products-found animate-fade-in">
+                    <div className="no-products-icon">🧱</div>
+                    <h3>¡Uy! No hay bloques por aquí</h3>
+                    <p>Ningún producto coincide con los filtros aplicados. Intentá ajustarlos para seguir construyendo.</p>
+                    <button className="primary-btn-outline" onClick={resetFilters}>Limpiar Filtros</button>
                   </div>
-                ))
-              ) : (
-                <div className="no-products-found animate-fade-in glassmorphic-card">
-                  <div className="no-products-icon floating-anim">🔍</div>
-                  <h3>¡Uy! No encontramos esos bloques</h3>
-                  <p>Ningún producto coincide con los filtros aplicados. Intentá ajustarlos o limpialos para ver todo nuestro catálogo.</p>
-                  <button className="primary-btn-outline pulse-hover" onClick={resetFilters}>Ver Todos los Productos</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+                )}
+              </div>
+            </section>
           </>
         )}
       </main>

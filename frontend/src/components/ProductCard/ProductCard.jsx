@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
-import placeholderImg from '../../assets/product_placeholder.png';
+import placeholderImg from '../../assets/imagen no existente BM.png';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
@@ -23,6 +23,23 @@ const ProductCard = ({ product }) => {
   };
 
   const isFav = favoritos && favoritos.includes(product.id);
+
+  // Helper to resolve and format category name with fallback
+  const getCategoryDisplay = () => {
+    if (product.categoryName && product.categoryName.trim()) {
+      return product.categoryName;
+    }
+    if (product.collection && product.collection.trim() && product.collection.toLowerCase() !== 'otros') {
+      const coll = product.collection.toLowerCase();
+      if (coll === 'super heroes') return 'Super Héroes';
+      if (coll === 'star wars') return 'Star Wars';
+      if (coll === 'harry potter') return 'Harry Potter';
+      if (coll === 'marvel') return 'Marvel';
+      if (coll === 'city') return 'City';
+      return coll.charAt(0).toUpperCase() + coll.slice(1);
+    }
+    return 'LEGO';
+  };
 
   // Render stars based on rating (mock)
   const renderStars = (rating) => {
@@ -64,6 +81,11 @@ const ProductCard = ({ product }) => {
         
         <div className="product-card-content">
           <h3 className="product-title">{product.title}</h3>
+          
+          <div className="product-card-hover-container">
+            <span className="product-card-category">{getCategoryDisplay()}</span>
+            <p className="product-card-short-desc">{product.description || 'Set de colección LEGO.'}</p>
+          </div>
           
           <div className="product-prices">
             {product.oldPrice && (

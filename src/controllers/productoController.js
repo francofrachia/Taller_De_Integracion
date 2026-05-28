@@ -33,4 +33,14 @@ const getResenasByProductoId = async (req, res) => {
     }
 };
 
-module.exports = { getProductos, getProductoById, getResenasByProductoId };
+const getCategorias = async (req, res) => {
+    try {
+        const categorias = await Producto.getCategorias();
+        res.json(categorias);
+    } catch (error) {
+        console.error('Error en getCategorias:', error);
+        res.status(500).json({ error: 'Error al obtener categorías de Supabase' });
+    }
+};
+
+module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias };

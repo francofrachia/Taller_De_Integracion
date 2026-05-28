@@ -6,7 +6,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
-import placeholderProduct from '../../assets/product_placeholder.png';
+import placeholderProduct from '../../assets/imagen no existente BM.png';
 import './ProductDetail.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -78,11 +78,12 @@ const ProductDetail = () => {
         setProduct({
           id: data.id_producto,
           categoryId: data.id_categoria,
+          categoryName: data.categoria_nombre,
           title: data.nombre,
           price: data.precio,
           description: data.descripcion || 'Sin descripción disponible.',
           stock: data.stock,
-          images: data.imagenes && data.imagenes.length > 0 ? data.imagenes : ['https://via.placeholder.com/600x600?text=Sin+Imagen'],
+          images: data.imagenes && data.imagenes.length > 0 ? data.imagenes : [placeholderProduct],
           rating: data.calificacion || 4.5,
           reviews: data.reseñas || 0
         });
@@ -110,6 +111,9 @@ const ProductDetail = () => {
             const mapped = filteredData.map(item => ({
               id: item.id_producto,
               title: item.nombre,
+              description: item.descripcion || '',
+              categoryName: item.categoria_nombre || '',
+              collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
               price: item.precio,
               image: item.imagen_url || 'https://via.placeholder.com/300x300'
             }));
@@ -250,7 +254,7 @@ const ProductDetail = () => {
       <main className="container">
         {/* Breadcrumb */}
         <div className="breadcrumb">
-          <Link to="/">Inicio</Link> / <span className="current">Producto</span>
+          <Link to="/">Inicio</Link> / <Link to="/productos" className="breadcrumb-category-link">{product.categoryName || 'Catálogo'}</Link> / <span className="current">{product.title}</span>
         </div>
 
         <div className="product-detail-grid">
@@ -307,6 +311,9 @@ const ProductDetail = () => {
 
           {/* Información del producto */}
           <div className="product-info">
+            {product.categoryName && (
+              <span className="product-detail-category-badge">{product.categoryName}</span>
+            )}
             <h1 className="product-detail-title">{product.title}</h1>
             
             <div className="product-meta">
