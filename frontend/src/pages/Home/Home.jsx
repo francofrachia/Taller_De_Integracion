@@ -150,12 +150,35 @@ const Home = () => {
         <section className="collections-nav-section">
           <div className="container">
             <div className="collections-grid">
-              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Clásicos'].map((col, index) => (
-                <Link to="/productos" className="collection-card" key={col} style={{ animationDelay: `${index * 0.1}s` }}>
-                  <div className="col-icon">{['🚀', '🦸‍♂️', '🧙‍♂️', '🏙️', '⚙️', '🧱'][index]}</div>
-                  <span className="col-name">{col}</span>
-                </Link>
-              ))}
+              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Clásicos'].map((col, index) => {
+                const collectionVisuals = {
+                  'Star Wars': { icon: '/imagenes icons/star wars.svg', emoji: '🚀' },
+                  'Marvel': { icon: '/imagenes icons/marvel.svg', emoji: '🦸‍♂️' },
+                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg', emoji: '🧙‍♂️' },
+                  'City': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
+                  'Technic': { icon: null, emoji: '⚙️' },
+                  'Clásicos': { icon: '/imagenes icons/icons.svg', emoji: '🧱' }
+                };
+                const visuals = collectionVisuals[col] || { icon: null, emoji: '🧱' };
+                return (
+                  <Link 
+                    to="/productos" 
+                    state={{ theme: col }} 
+                    className="collection-card" 
+                    key={col} 
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="col-icon">
+                      {visuals.icon ? (
+                        <img src={visuals.icon} alt="" className="col-icon-svg" />
+                      ) : (
+                        <span>{visuals.emoji}</span>
+                      )}
+                    </div>
+                    <span className="col-name">{col}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

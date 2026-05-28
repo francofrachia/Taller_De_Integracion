@@ -43,4 +43,26 @@ const getCategorias = async (req, res) => {
     }
 };
 
-module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias };
+const calificarProducto = async (req, res) => {
+    try {
+        const id_producto = parseInt(req.params.id);
+        const id_usuario = req.usuario.id_usuario;
+        const { puntaje, texto, anonimo } = req.body;
+
+        if (puntaje === undefined || puntaje < 1 || puntaje > 5) {
+            return res.status(400).json({ error: 'La calificación (puntaje) debe ser un número entero entre 1 y 5' });
+        }
+
+        const result = await Producto.addCalificacionYComentario(id_producto, id_usuario, puntaje, texto, anonimo);
+        res.json({
+            success: true,
+            message: 'Calificación guardada correctamente',
+            data: result
+        });
+    } catch (error) {
+        console.error('Error en calificarProducto:', error);
+        res.status(500).json({ error: 'Error al calificar el producto' });
+    }
+};
+
+module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto };

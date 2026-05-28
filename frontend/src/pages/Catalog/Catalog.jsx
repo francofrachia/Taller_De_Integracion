@@ -18,30 +18,24 @@ const getCategoryVisuals = (name) => {
   let iconPath = null;
   
   if (lower.includes('star wars')) {
-    emoji = '🚀';
     color = '#263238';
     iconPath = '/imagenes icons/star wars.svg';
   } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) {
-    emoji = '🦸';
     color = '#EF5350';
     iconPath = '/imagenes icons/marvel.svg';
   } else if (lower.includes('harry potter')) {
-    emoji = '⚡';
     color = '#7E57C2';
     iconPath = '/imagenes icons/harry potter.svg';
   } else if (lower.includes('city')) {
-    emoji = '🏙️';
     color = '#4FC3F7';
     iconPath = '/imagenes icons/city.svg';
   } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) {
     emoji = '⚙️';
     color = '#455A64';
   } else if (lower.includes('minecraft')) {
-    emoji = '⛏️';
     color = '#4CAF50';
     iconPath = '/imagenes icons/minecraft.svg';
   } else if (lower.includes('icon') || lower.includes('creator')) {
-    emoji = '✨';
     color = '#FFB300';
     iconPath = '/imagenes icons/icons.svg';
   }
@@ -141,9 +135,6 @@ const Catalog = () => {
   useEffect(() => {
     // Cuando el usuario entra al catálogo, o si cambia el location state (viene de otro link), escrolear arriba
     window.scrollTo(0, 0);
-    if (location.state?.theme) {
-      setActiveTheme(location.state.theme);
-    }
   }, [location]);
 
   const resetFilters = () => {
@@ -395,8 +386,20 @@ const Catalog = () => {
                 </p>
               </div>
               <div className="catalog-hero-bricks" aria-hidden="true">
-                {['🧱','🟡','🔴','🟢','🔵','🟠'].map((b, i) => (
-                  <span key={i} className={`catalog-brick catalog-brick-${i + 1}`}>{b}</span>
+                {[
+                  '/imagenes icons/star wars.svg',
+                  '/imagenes icons/marvel.svg',
+                  '/imagenes icons/harry potter.svg',
+                  '/imagenes icons/city.svg',
+                  '/imagenes icons/icons.svg',
+                  '/imagenes icons/minecraft.svg'
+                ].map((iconPath, i) => (
+                  <img 
+                    key={i} 
+                    src={iconPath} 
+                    alt="" 
+                    className={`catalog-brick catalog-brick-${i + 1}`} 
+                  />
                 ))}
               </div>
             </div>
@@ -408,7 +411,7 @@ const Catalog = () => {
                 style={{ '--chip-accent': '#FFD700' }}
                 onClick={() => setActiveCategoryId(null)}
               >
-                <span className="col-chip-emoji">🧱</span>
+                <img src="/imagenes icons/all.svg" alt="" className="col-chip-svg" />
                 <span className="col-chip-label">Todos</span>
                 {activeCategoryId === null && <span className="col-chip-check">✓</span>}
               </button>

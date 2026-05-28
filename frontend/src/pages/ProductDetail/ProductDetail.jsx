@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { agregarAlCarrito, usuario, favoritos, toggleFavorito } = React.useContext(AppContext);
+  const { agregarAlCarrito, usuario, favoritos, toggleFavorito, token } = React.useContext(AppContext);
   const [quantity, setQuantity] = useState(1);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const navigate = useNavigate();
@@ -28,6 +28,16 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+
+  // Estados para reseña y calificación
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState('');
+  const [reviewErrorMsg, setReviewErrorMsg] = useState('');
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
   const handleBuyNow = async () => {
     if (!usuario || !usuario.id_usuario) {
@@ -60,6 +70,56 @@ const ProductDetail = () => {
       setPaymentError(err.message);
     } finally {
       setIsProcessingPayment(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (userRating < 1 || userRating > 5) {
+      setReviewErrorMsg('Por favor selecciona un puntaje entre 1 y 5 estrellas.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewErrorMsg('');
+    setReviewSuccessMsg('');
+
+    try {
+      const response = await fetch(`${API_URL}/productos/${id}/calificar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          puntaje: userRating,
+          texto: reviewText,
+          anonimo: isAnonymous
+        })
+      });
+
+      const resData = await response.json();
+
+      if (response.ok) {
+        setReviewSuccessMsg('¡Muchas gracias por calificar este producto!');
+        setReviewText('');
+        setUserRating(0);
+        
+        // Volver a cargar las reseñas en el frontend de forma reactiva e inmediata
+        fetch(`${API_URL}/productos/${id}/resenas`)
+          .then(r => r.json())
+          .then(data => {
+            setReviews(data || []);
+            setCurrentReviewIndex(0); // Mostrar la reseña más reciente primero
+          })
+          .catch(err => console.error('Error al actualizar reseñas:', err));
+      } else {
+        setReviewErrorMsg(resData.error || 'Ocurrió un error al enviar tu calificación.');
+      }
+    } catch (err) {
+      console.error('Error enviando calificación:', err);
+      setReviewErrorMsg('Problemas de conexión con el servidor. Intenta de nuevo.');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -415,33 +475,132 @@ const ProductDetail = () => {
         {/* Reseñas del Producto */}
         <section className="product-reviews-section">
           <SectionHeader title="Reseñas de Usuarios" />
+          
+          {usuario ? (
+            <div className="add-review-form glassmorphic animate-fade-in">
+              <h3>Calificar este Producto</h3>
+              <p className="add-review-subtitle">Dejanos tu puntaje y un comentario sobre tu experiencia de construcción.</p>
+              
+              <div className="rating-select-group">
+                <span className="rating-select-label">Tu Calificación:</span>
+                <div className="stars-selector">
+                  {[1, 2, 3, 4, 5].map((starValue) => (
+                    <button
+                      key={starValue}
+                      type="button"
+                      className={`star-select-btn ${(hoverRating || userRating) >= starValue ? 'active' : ''}`}
+                      onMouseEnter={() => setHoverRating(starValue)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setUserRating(starValue)}
+                      title={`${starValue} Estrella${starValue > 1 ? 's' : ''}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                {userRating > 0 && (
+                  <span className="rating-selected-text">
+                    ({userRating} Estrella{userRating > 1 ? 's' : ''})
+                  </span>
+                )}
+              </div>
+
+              <div className="review-input-group">
+                <label htmlFor="review-textarea">Tu Comentario (opcional):</label>
+                <textarea
+                  id="review-textarea"
+                  rows="4"
+                  placeholder="¿Qué te pareció el set? ¿Tiene detalles divertidos? ¿Faltaron piezas?"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                />
+              </div>
+
+              <div className="review-options-row">
+                <label className="anonymous-toggle">
+                  <input
+                    type="checkbox"
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                  />
+                  <span>Publicar como comentario anónimo</span>
+                </label>
+              </div>
+
+              {reviewErrorMsg && <p className="review-error-text">⚠️ {reviewErrorMsg}</p>}
+              {reviewSuccessMsg && <p className="review-success-text">✓ {reviewSuccessMsg}</p>}
+
+              <button
+                className="btn-primary-custom submit-review-btn"
+                onClick={handleSubmitReview}
+                disabled={submittingReview || userRating === 0}
+              >
+                {submittingReview ? 'Enviando...' : 'Enviar Calificación'}
+              </button>
+            </div>
+          ) : (
+            <div className="login-to-review-prompt glassmorphic">
+              <p>Debes <Link to="/login" state={{ from: `/producto/${id}` }}>iniciar sesión</Link> para calificar y dejar una reseña de este producto.</p>
+            </div>
+          )}
+
           <div className="reviews-container">
             {reviews.length === 0 ? (
               <p style={{ color: 'var(--text-gray)' }}>Aún no hay reseñas para este producto.</p>
             ) : (
-              reviews.map(review => (
-                <div className="review-card" key={review.id_comentario}>
-                  <div className="review-header">
-                    <div className="review-author">
-                      {review.anonimo ? 'Usuario Anónimo' : `${review.autor_nombre} ${review.autor_apellido}`}
-                    </div>
-                    <div className="review-stars">
-                      {/* Renderizar estrellas según puntaje si existe, o por defecto 5 */}
-                      {'★'.repeat(review.puntaje || 5).padEnd(5, '☆')}
-                    </div>
-                  </div>
-                  {review.fecha && (
-                    <p className="review-date">
-                      {new Date(review.fecha).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
+              <>
+                <div className="reviews-slider-wrapper">
+                  {reviews.length > 1 && (
+                    <button 
+                      className="reviews-slider-btn left" 
+                      onClick={() => setCurrentReviewIndex((prev) => (prev - 1 + reviews.length) % reviews.length)}
+                      title="Reseña anterior"
+                    >
+                      &lt;
+                    </button>
                   )}
-                  <p className="review-text">{review.texto}</p>
+
+                  <div className="review-card animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
+                    <div className="review-header">
+                      <div className="review-author">
+                        {reviews[currentReviewIndex].anonimo ? 'Usuario Anónimo' : `${reviews[currentReviewIndex].autor_nombre} ${reviews[currentReviewIndex].autor_apellido}`}
+                      </div>
+                      <div className="review-stars">
+                        {'★'.repeat(reviews[currentReviewIndex].puntaje || 5).padEnd(5, '☆')}
+                      </div>
+                    </div>
+                    {reviews[currentReviewIndex].fecha && (
+                      <p className="review-date">
+                        {new Date(reviews[currentReviewIndex].fecha).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
+                    <p className="review-text">{reviews[currentReviewIndex].texto || 'Calificó este producto sin dejar un comentario escrito.'}</p>
+                  </div>
+
+                  {reviews.length > 1 && (
+                    <button 
+                      className="reviews-slider-btn right" 
+                      onClick={() => setCurrentReviewIndex((prev) => (prev + 1) % reviews.length)}
+                      title="Siguiente reseña"
+                    >
+                      &gt;
+                    </button>
+                  )}
                 </div>
-              ))
-            )}
-            
-            {reviews.length > 0 && (
-              <button className="primary-btn-outline" style={{marginTop: '20px'}}>Ver todas las reseñas</button>
+
+                {reviews.length > 1 && (
+                  <div className="reviews-slider-dots">
+                    {reviews.map((_, idx) => (
+                      <button
+                        key={idx}
+                        className={`reviews-slider-dot ${idx === currentReviewIndex ? 'active' : ''}`}
+                        onClick={() => setCurrentReviewIndex(idx)}
+                        title={`Ver reseña ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>
