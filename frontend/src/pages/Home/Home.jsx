@@ -12,6 +12,7 @@ import './Home.css';
 import heroBanner from '../../assets/hero_banner.png';
 import secondaryBanner from '../../assets/secondary_banner.png';
 import starWarsBanner from '../../assets/starWars.jpg';
+import hulkBanner from '../../assets/hulk.jpg';
 import placeholderProduct from '../../assets/imagen no existente BM.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -46,6 +47,48 @@ const Home = () => {
   
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const hulkRef = useRef(null);
+  const newArrivalsRef = useRef(null);
+  const transitionRef = useRef(null);
+  const [transitionState, setTransitionState] = useState(0);
+  const [showGridItems, setShowGridItems] = useState(false);
+
+  useEffect(() => {
+    // Observer para la grilla de productos (Masonry)
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setShowGridItems(true);
+        observer.unobserve(entries[0].target);
+      }
+    }, { threshold: 0.1 });
+
+    if (newArrivalsRef.current) observer.observe(newArrivalsRef.current);
+
+    const handleScroll = () => {
+      if (!transitionRef.current) return;
+      const rect = transitionRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      
+      // Si la cinta asoma por la parte inferior de la pantalla (hasta un 60%)
+      if (rect.top < windowHeight * 0.9 && rect.top >= windowHeight * 0.5) {
+        setTransitionState(1); // Muestra primera parte
+      } 
+      // Si la cinta sube a la mitad superior de la pantalla
+      else if (rect.top < windowHeight * 0.5 && rect.bottom > 0) {
+        setTransitionState(2); // Muestra ambas partes
+      } else if (rect.top >= windowHeight * 0.9) {
+        setTransitionState(0); // Oculta todo si scrollea para arriba
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // Disparamos una vez para revisar el estado inicial
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (newArrivalsRef.current) observer.disconnect();
+    };
+  }, []);
 
   const checkScrollState = () => {
     if (flashCarouselRef.current) {
@@ -280,7 +323,7 @@ const Home = () => {
             </section>
 
             {/* Banner Parallax Secundario (Star Wars) */}
-            <section className="parallax-banner-section full-width">
+            <section className="parallax-banner-section full-width no-margin-bottom">
               <div className="parallax-container star-wars-theme">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
                 <div className="parallax-content left-aligned">
@@ -291,11 +334,57 @@ const Home = () => {
               </div>
             </section>
 
-            {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}
-            <section className="new-arrivals-modern container">
-              <div className="section-header modern-header">
-                <h2>✨ Nuevos Ingresos</h2>
+            {/* Transición entre universos animada al hacer scroll */}
+            <div className="universe-transition" ref={transitionRef}>
+              <span className={`transition-text-1 ${transitionState >= 1 ? 'visible' : ''}`}>
+                De una galaxia muy lejana...
+              </span>
+              <span className={`separator-dot ${transitionState >= 2 ? 'visible' : ''}`}>•</span>
+              <span className={`transition-text-2 ${transitionState >= 2 ? 'visible' : ''}`}>
+                A los héroes más poderosos
+              </span>
+            </div>
+
+            {/* Banner Parallax (Marvel - Hulk) como puente hacia los productos */}
+            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom cinematic-marvel-banner" ref={hulkRef}>
+              <div className="parallax-container cinematic-theme marvel-style large-banner">
+                <div className="parallax-bg" style={{ backgroundImage: `url(${hulkBanner})` }}></div>
+                <div className="parallax-content right-aligned">
+                  <h2 className="star-wars-title marvel-title">Nuevos<br/>Ingresos</h2>
+                  <p className="star-wars-subtitle">Descubre el poder de Marvel.</p>
+                  <button 
+                    onClick={() => {
+                      if (newArrivalsRef.current) {
+                        const offset = 80; // Compensar posible navbar
+                        const elementPosition = newArrivalsRef.current.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.scrollY - offset;
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }} 
+                    className="btn-star-wars btn-marvel"
+                    style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Ver Nuevos Ingresos
+                  </button>
+                </div>
               </div>
+            </section>
+
+            {/* Difuminado hacia abajo (negro-rojo a fondo oscuro) */}
+            <div className="marvel-fade-out"></div>
+
+            <div className="dark-marvel-bg">
+              {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}
+              <section className="new-arrivals-modern container" ref={newArrivalsRef}>
+                
+                <div className={`section-header-modern ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0s' }}>
+                <h2>Últimos Lanzamientos</h2>
+                <p>Explora nuestras novedades más recientes y expande tu colección con las piezas exclusivas que acaban de aterrizar.</p>
+              </div>
+
               <div className="masonry-grid">
                 {loading ? (
                   <>
@@ -307,7 +396,16 @@ const Home = () => {
                 ) : (
                   <>
                     {productos[8] && (
-                      <div className="masonry-item large-span">
+                      <div className={`masonry-item large-span ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.1s' }}>
+                        <button
+                          className="masonry-fav-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorito(productos[8]);
+                          }}
+                        >
+                          {favoritos.some(fav => fav.id === productos[8].id) ? <FaHeart color="red" size={24} /> : <FaRegHeart color="#999" size={24} />}
+                        </button>
                         <img src={productos[8].image || placeholderProduct} alt={productos[8].title} />
                         <div className="masonry-overlay">
                           <h3 style={{ fontSize: '18px' }}>{productos[8].title}</h3>
@@ -316,7 +414,16 @@ const Home = () => {
                       </div>
                     )}
                     {productos[9] && (
-                      <div className="masonry-item">
+                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.3s' }}>
+                        <button
+                          className="masonry-fav-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorito(productos[9]);
+                          }}
+                        >
+                          {favoritos.some(fav => fav.id === productos[9].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
+                        </button>
                         <img src={productos[9].image || placeholderProduct} alt={productos[9].title} />
                         <div className="masonry-overlay">
                           <h3 style={{ fontSize: '18px' }}>{productos[9].title}</h3>
@@ -325,7 +432,16 @@ const Home = () => {
                       </div>
                     )}
                     {productos[10] && (
-                      <div className="masonry-item tall-span">
+                      <div className={`masonry-item tall-span ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.5s' }}>
+                        <button
+                          className="masonry-fav-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorito(productos[10]);
+                          }}
+                        >
+                          {favoritos.some(fav => fav.id === productos[10].id) ? <FaHeart color="red" size={22} /> : <FaRegHeart color="#999" size={22} />}
+                        </button>
                         <img src={productos[10].image || placeholderProduct} alt={productos[10].title} />
                         <div className="masonry-overlay">
                           <h3 style={{ fontSize: '18px' }}>{productos[10].title}</h3>
@@ -334,7 +450,16 @@ const Home = () => {
                       </div>
                     )}
                     {productos[11] && (
-                      <div className="masonry-item">
+                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.7s' }}>
+                        <button
+                          className="masonry-fav-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorito(productos[11]);
+                          }}
+                        >
+                          {favoritos.some(fav => fav.id === productos[11].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
+                        </button>
                         <img src={productos[11].image || placeholderProduct} alt={productos[11].title} />
                         <div className="masonry-overlay">
                           <h3 style={{ fontSize: '18px' }}>{productos[11].title}</h3>
@@ -345,7 +470,8 @@ const Home = () => {
                   </>
                 )}
               </div>
-            </section>
+              </section>
+            </div>
           </>
         )}
       </main>
