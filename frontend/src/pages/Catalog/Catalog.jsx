@@ -10,16 +10,43 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ── Helper para emojis y colores de categorías dinámicas ──────────────────
 const getCategoryVisuals = (name) => {
-  if (!name) return { emoji: '🧱', color: '#FFD700' };
+  if (!name) return { emoji: '🧱', color: '#FFD700', icon: null };
   const lower = name.toLowerCase().trim();
-  if (lower.includes('star wars')) return { emoji: '🚀', color: '#263238' };
-  if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) return { emoji: '🦸', color: '#EF5350' };
-  if (lower.includes('harry potter')) return { emoji: '⚡', color: '#7E57C2' };
-  if (lower.includes('city')) return { emoji: '🏙️', color: '#4FC3F7' };
-  if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) return { emoji: '⚙️', color: '#455A64' };
-  if (lower.includes('minecraft')) return { emoji: '⛏️', color: '#4CAF50' };
-  if (lower.includes('icon') || lower.includes('creator')) return { emoji: '✨', color: '#FFB300' };
-  return { emoji: '🧱', color: '#FFD700' };
+  
+  let emoji = '🧱';
+  let color = '#FFD700';
+  let iconPath = null;
+  
+  if (lower.includes('star wars')) {
+    emoji = '🚀';
+    color = '#263238';
+    iconPath = '/imagenes icons/star wars.svg';
+  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) {
+    emoji = '🦸';
+    color = '#EF5350';
+    iconPath = '/imagenes icons/marvel.svg';
+  } else if (lower.includes('harry potter')) {
+    emoji = '⚡';
+    color = '#7E57C2';
+    iconPath = '/imagenes icons/harry potter.svg';
+  } else if (lower.includes('city')) {
+    emoji = '🏙️';
+    color = '#4FC3F7';
+    iconPath = '/imagenes icons/city.svg';
+  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) {
+    emoji = '⚙️';
+    color = '#455A64';
+  } else if (lower.includes('minecraft')) {
+    emoji = '⛏️';
+    color = '#4CAF50';
+    iconPath = '/imagenes icons/minecraft.svg';
+  } else if (lower.includes('icon') || lower.includes('creator')) {
+    emoji = '✨';
+    color = '#FFB300';
+    iconPath = '/imagenes icons/icons.svg';
+  }
+  
+  return { emoji, color, icon: iconPath };
 };
 
 // ── Skeleton card ─────────────────────────────────────────────────────────
@@ -157,13 +184,21 @@ const Catalog = () => {
             <button className="remove-badge-btn" onClick={() => setBusqueda('')} title="Quitar búsqueda">✖</button>
           </span>
         )}
-        {activeCategoryId !== null && (
-          <span className="active-filter-badge">
-            {getCategoryVisuals(dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre).emoji}{' '}
-            {dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre || 'Categoría'}
-            <button className="remove-badge-btn" onClick={() => setActiveCategoryId(null)}>✖</button>
-          </span>
-        )}
+        {activeCategoryId !== null && (() => {
+          const catName = dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre || 'Categoría';
+          const visuals = getCategoryVisuals(catName);
+          return (
+            <span className="active-filter-badge">
+              {visuals.icon ? (
+                <img src={visuals.icon} alt="" className="active-filter-badge-svg" />
+              ) : (
+                <span className="col-chip-emoji">{visuals.emoji}</span>
+              )}{' '}
+              {catName}
+              <button className="remove-badge-btn" onClick={() => setActiveCategoryId(null)}>✖</button>
+            </span>
+          );
+        })()}
         {activeAge && (
           <span className="active-filter-badge">
             Edad: {activeAge}+ años
@@ -386,7 +421,11 @@ const Catalog = () => {
                     style={{ '--chip-accent': visuals.color }}
                     onClick={() => setActiveCategoryId(cat.id_categoria)}
                   >
-                    <span className="col-chip-emoji">{visuals.emoji}</span>
+                    {visuals.icon ? (
+                      <img src={visuals.icon} alt="" className="col-chip-svg" />
+                    ) : (
+                      <span className="col-chip-emoji">{visuals.emoji}</span>
+                    )}
                     <span className="col-chip-label">{cat.nombre}</span>
                     {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}
                   </button>
