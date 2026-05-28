@@ -4,7 +4,7 @@ import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { busqueda, setBusqueda, cartCount, favoritos, usuario, logout } = useContext(AppContext);
+  const { busqueda, setBusqueda, cartCount, favoritos, usuario, logout, loginTooltipVisible, setLoginTooltipVisible } = useContext(AppContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -17,7 +17,7 @@ const Navbar = () => {
       <div className="navbar-container container">
         <div className="navbar-logo">
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <h1>Bloques Mundo</h1>
+            <h1>Bloque Mundo</h1>
           </Link>
         </div>
         
@@ -103,11 +103,55 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="icon-btn" title="Iniciar Sesión">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-              </svg>
-            </Link>
+            <div style={{ position: 'relative' }}>
+              <Link onClick={() => setLoginTooltipVisible(false)} to="/login" className="icon-btn" title="Iniciar Sesión" style={{ position: 'relative', zIndex: loginTooltipVisible ? 10001 : 1, backgroundColor: loginTooltipVisible ? 'white' : 'transparent', color: loginTooltipVisible ? 'var(--primary-yellow)' : 'inherit', borderRadius: '50%' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                </svg>
+              </Link>
+              {loginTooltipVisible && (
+                <>
+                  <div 
+                    className="login-overlay-backdrop" 
+                    onClick={() => setLoginTooltipVisible(false)}
+                    style={{
+                      position: 'fixed',
+                      top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      zIndex: 10000
+                    }}
+                  />
+                  <div 
+                    className="login-tooltip-bubble"
+                    style={{
+                      position: 'absolute',
+                      top: '150%',
+                      right: '-5px',
+                      backgroundColor: 'white',
+                      color: '#111',
+                      padding: '12px 18px',
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                      zIndex: 10001,
+                      width: 'max-content',
+                      fontWeight: '700',
+                      animation: 'fadeInUp 0.3s ease-out'
+                    }}
+                  >
+                    Debes iniciar sesión para realizar esta acción
+                    <div style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '15px',
+                      width: '12px',
+                      height: '12px',
+                      backgroundColor: 'white',
+                      transform: 'rotate(45deg)'
+                    }}></div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -13,6 +13,7 @@ export function AppProvider({ children }) {
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
+    const [loginTooltipVisible, setLoginTooltipVisible] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -353,8 +354,10 @@ export function AppProvider({ children }) {
     }
 
     async function toggleFavorito(id_producto) {
-        if (!usuario || !token || token === 'null' || token === 'undefined') {
-            alert('Debes iniciar sesión para agregar a favoritos');
+        if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
+            setLoginTooltipVisible(true);
+            // Ocultarlo automáticamente después de unos segundos
+            setTimeout(() => setLoginTooltipVisible(false), 2500);
             return;
         }
 
@@ -571,7 +574,9 @@ export function AppProvider({ children }) {
             loading,
             isInitialized,
             API_URL,
-            fetchError
+            fetchError,
+            loginTooltipVisible,
+            setLoginTooltipVisible
         }}>
             {children}
         </AppContext.Provider>

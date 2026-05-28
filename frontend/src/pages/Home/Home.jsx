@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -10,6 +11,7 @@ import './Home.css';
 // Import local placeholder images for banners
 import heroBanner from '../../assets/hero_banner.png';
 import secondaryBanner from '../../assets/secondary_banner.png';
+import starWarsBanner from '../../assets/starWars.jpg';
 import placeholderProduct from '../../assets/imagen no existente BM.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -39,15 +41,38 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
   const [activeFlashIndex, setActiveFlashIndex] = useState(2);
+  const { favoritos, toggleFavorito } = useContext(AppContext);
+  const flashCarouselRef = useRef(null);
+  
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollState = () => {
+    if (flashCarouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = flashCarouselRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      checkScrollState();
+    }, 150);
+    window.addEventListener('resize', checkScrollState);
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('resize', checkScrollState);
+    };
+  }, [productos]);
 
   const scrollFlashCarousel = (direction) => {
-    const totalFlash = Math.min(10, productos.length);
-    if (totalFlash === 0) return;
-    
-    if (direction === 'left') {
-      setActiveFlashIndex(prev => (prev === 0 ? totalFlash - 1 : prev - 1));
-    } else {
-      setActiveFlashIndex(prev => (prev === totalFlash - 1 ? 0 : prev + 1));
+    if (flashCarouselRef.current) {
+      const scrollAmount = 340; // width of card (320) + gap (20)
+      flashCarouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -108,7 +133,7 @@ const Home = () => {
               Construye tu imaginación <span className="highlight-text">bloque a bloque</span>
             </h1>
             <p className="hero-subtitle animate-fade-in-up delay-2">
-              Descubre las colecciones más increíbles y sumérgete en un mundo de posibilidades infinitas con Bloques Mundo.
+              Descubre las colecciones más increíbles y sumérgete en un mundo de posibilidades infinitas con Bloque Mundo.
             </p>
             <div className="hero-actions animate-fade-in-up delay-3">
               <Link to="/productos" className="btn-primary-glow">
@@ -161,48 +186,74 @@ const Home = () => {
                     <span className="time-block">56<small>s</small></span>
                   </div>
                 </div>
+              </div>
                 
-                <div className="flash-carousel-container">
-                  <button className="flash-carousel-btn left" onClick={() => scrollFlashCarousel('left')}>&lt;</button>
-                  <div className="products-carousel-3d">
+              <div className="flash-carousel-container" style={{ position: 'relative' }}>
+                {canScrollLeft && (
+                  <button className="flash-carousel-btn left" onClick={() => scrollFlashCarousel('left')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                  </button>
+                )}
+                
+                <div className="apple-carousel-container" ref={flashCarouselRef} onScroll={checkScrollState}>
                     {loading ? (
-                      <div className="carousel-3d-card" style={{ transform: 'translateX(0) scale(1)', zIndex: 10, opacity: 1 }}>
+                      <div className="apple-card" style={{ padding: '0', display: 'block' }}>
                         <ProductCardSkeleton />
                       </div>
                     ) : (
                       productos.slice(0, 10).map((product, i) => {
-                        const total = Math.min(10, productos.length);
-                        // Lógica para carrusel infinito (ruleta)
-                        let offset = i - activeFlashIndex;
-                        if (offset > Math.floor(total / 2)) offset -= total;
-                        if (offset < -Math.floor(total / 2)) offset += total;
-                        
-                        const absOffset = Math.abs(offset);
-                        const direction = Math.sign(offset);
-                        const isActive = absOffset === 0;
+                        const isFav = favoritos && favoritos.includes(product.id);
+                        const isDark = i % 3 === 0;
+                        const isAccent = i % 3 === 1;
 
                         return (
-                          <div 
-                            className={`carousel-3d-card ${isActive ? 'active' : ''}`}
-                            style={{ 
-                              transform: `translateX(${offset * 150}px) scale(${isActive ? 1.15 : 1 - absOffset * 0.2}) perspective(1000px) rotateY(${direction * 35}deg)`,
-                              zIndex: 10 - absOffset,
-                              opacity: absOffset > 2 ? 0 : 1,
-                              filter: `brightness(${isActive ? 1 : Math.max(0.3, 1 - absOffset * 0.4)})`,
-                              pointerEvents: isActive ? 'auto' : 'none'
-                            }} 
-                            key={`flash-${product.id}`}
-                          >
-                            <div className={isActive ? 'active-pulse' : 'idle-float'} style={{ animationDelay: `${i * 0.3}s` }}>
-                              <ProductCard product={product} />
+                          <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')}`} key={product.id}>
+                            <button 
+                              className={`apple-card-fav ${isFav ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleFavorito(product.id);
+                              }}
+                              title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                            >
+                              {isFav ? <FaHeart /> : <FaRegHeart />}
+                            </button>
+
+                            <div className="apple-card-content">
+                              <div className="apple-card-tag">Oferta Limitada</div>
+                              <h3 className="apple-card-title">{product.title}</h3>
+                              <p className="apple-card-subtitle">
+                                {product.category_name || "Construye tu imaginación."}
+                              </p>
+                              <div className="apple-card-price">
+                                Desde ${product.price}
+                              </div>
                             </div>
-                          </div>
+
+                            <img 
+                              src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
+                              alt={product.title} 
+                              className="apple-card-image"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = placeholderProduct;
+                              }}
+                            />
+                          </Link>
                         );
                       })
                     )}
                   </div>
-                  <button className="flash-carousel-btn right" onClick={() => scrollFlashCarousel('right')}>&gt;</button>
-                </div>
+                
+                {canScrollRight && (
+                  <button className="flash-carousel-btn right" onClick={() => scrollFlashCarousel('right')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                  </button>
+                )}
+              </div>
+
+              <div className="container">
                 <div className="center-btn-container" style={{ marginTop: '40px' }}>
                   <Link to="/productos" className="btn-glass-outline">Ver Todas las Promociones</Link>
                 </div>
@@ -228,14 +279,14 @@ const Home = () => {
               </div>
             </section>
 
-            {/* Banner Parallax Secundario */}
-            <section className="parallax-banner-section container">
-              <div className="parallax-container">
-                <div className="parallax-bg" style={{ backgroundImage: `url(${secondaryBanner})` }}></div>
-                <div className="parallax-content">
-                  <h2>Colecciones Especiales</h2>
-                  <p>Descubre el lado oscuro de la fuerza</p>
-                  <Link to="/productos" className="btn-primary-glow">Descubrir</Link>
+            {/* Banner Parallax Secundario (Star Wars) */}
+            <section className="parallax-banner-section full-width">
+              <div className="parallax-container star-wars-theme">
+                <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
+                <div className="parallax-content left-aligned">
+                  <h2 className="star-wars-title">Colecciones<br/>Especiales</h2>
+                  <p className="star-wars-subtitle">Descubre el lado oscuro de la fuerza.</p>
+                  <Link to="/productos" state={{ theme: 'star wars' }} className="btn-star-wars">Únete al Imperio</Link>
                 </div>
               </div>
             </section>

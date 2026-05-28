@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -44,9 +45,20 @@ const Catalog = () => {
   const [loading, setLoading]           = useState(true);
   const { busqueda, setBusqueda }       = useContext(AppContext);
 
+  const location = useLocation();
   const [filterMenuOpen, setFilterMenuOpen]   = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [dbCategories, setDbCategories]       = useState([]);
+
+  useEffect(() => {
+    if (location.state?.theme && dbCategories.length > 0) {
+      const redirectedTheme = location.state.theme.toLowerCase().trim();
+      const matchedCat = dbCategories.find(c => c.nombre.toLowerCase().includes(redirectedTheme));
+      if (matchedCat) {
+        setActiveCategoryId(matchedCat.id_categoria);
+      }
+    }
+  }, [location.state, dbCategories]);
   const [activeAge, setActiveAge]             = useState(null);
   const [onlyExclusives, setOnlyExclusives]   = useState(false);
   const [onlyComingSoon, setOnlyComingSoon]   = useState(false);
@@ -98,6 +110,14 @@ const Catalog = () => {
       })
       .catch(() => { setServerError(true); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    // Cuando el usuario entra al catálogo, o si cambia el location state (viene de otro link), escrolear arriba
+    window.scrollTo(0, 0);
+    if (location.state?.theme) {
+      setActiveTheme(location.state.theme);
+    }
+  }, [location]);
 
   const resetFilters = () => {
     setActiveCategoryId(null); setActiveAge(null);
