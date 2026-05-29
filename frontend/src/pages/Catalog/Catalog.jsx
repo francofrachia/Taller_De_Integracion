@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -10,37 +10,49 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ── Helper para emojis y colores de categorías dinámicas ──────────────────
 const getCategoryVisuals = (name) => {
-  if (!name) return { emoji: '🧱', color: '#FFD700', icon: null };
+  if (!name) return { emoji: '🧱', color: '#FFD700', icon: null, textColor: '#1a1a1a' };
   const lower = name.toLowerCase().trim();
   
   let emoji = '🧱';
   let color = '#FFD700';
   let iconPath = null;
+  let textColor = '#1a1a1a';
   
   if (lower.includes('star wars')) {
     color = '#263238';
     iconPath = '/imagenes icons/star wars.svg';
+    textColor = '#ffffff';
   } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) {
     color = '#EF5350';
     iconPath = '/imagenes icons/marvel.svg';
+    textColor = '#ffffff';
   } else if (lower.includes('harry potter')) {
     color = '#7E57C2';
     iconPath = '/imagenes icons/harry potter.svg';
+    textColor = '#ffffff';
   } else if (lower.includes('city')) {
     color = '#4FC3F7';
     iconPath = '/imagenes icons/city.svg';
+    textColor = '#1a1a1a';
   } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) {
     emoji = '⚙️';
     color = '#455A64';
+    textColor = '#ffffff';
   } else if (lower.includes('minecraft')) {
     color = '#4CAF50';
     iconPath = '/imagenes icons/minecraft.svg';
+    textColor = '#ffffff';
   } else if (lower.includes('icon') || lower.includes('creator')) {
     color = '#FFB300';
     iconPath = '/imagenes icons/icons.svg';
+    textColor = '#1a1a1a';
+  } else if (lower.includes('cartoon') || lower.includes('network') || lower.includes('looney')) {
+    color = '#1a1a1a';
+    iconPath = '/imagenes icons/cartoonNetwork.svg';
+    textColor = '#ffffff';
   }
   
-  return { emoji, color, icon: iconPath };
+  return { emoji, color, icon: iconPath, textColor };
 };
 
 // ── Skeleton card ─────────────────────────────────────────────────────────
@@ -88,6 +100,38 @@ const Catalog = () => {
   const [sortBy, setSortBy]                   = useState('default');
   const [sortMenuOpen, setSortMenuOpen]       = useState(false);
   const [serverError, setServerError]         = useState(false);
+
+  const stripRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    if (stripRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = stripRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (strip) {
+      strip.addEventListener('scroll', checkScroll);
+      setTimeout(checkScroll, 150);
+      window.addEventListener('resize', checkScroll);
+    }
+    return () => {
+      if (strip) strip.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [dbCategories, productos]);
+
+  const handleScroll = (direction) => {
+    if (stripRef.current) {
+      const offset = direction === 'left' ? -220 : 220;
+      stripRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     fetch(`${API_URL}/productos/categorias`)
@@ -392,7 +436,8 @@ const Catalog = () => {
                   '/imagenes icons/harry potter.svg',
                   '/imagenes icons/city.svg',
                   '/imagenes icons/icons.svg',
-                  '/imagenes icons/minecraft.svg'
+                  '/imagenes icons/minecraft.svg',
+                  '/imagenes icons/cartoonNetwork.svg'
                 ].map((iconPath, i) => (
                   <img 
                     key={i} 
@@ -405,35 +450,67 @@ const Catalog = () => {
             </div>
 
             {/* ── Categoría chips horizontales ── */}
-            <div className="catalog-collection-strip">
-              <button
-                className={`col-chip ${activeCategoryId === null ? 'active' : ''}`}
-                style={{ '--chip-accent': '#FFD700' }}
-                onClick={() => setActiveCategoryId(null)}
-              >
-                <img src="/imagenes icons/all.svg" alt="" className="col-chip-svg" />
-                <span className="col-chip-label">Todos</span>
-                {activeCategoryId === null && <span className="col-chip-check">✓</span>}
-              </button>
-              {dbCategories.map(cat => {
-                const visuals = getCategoryVisuals(cat.nombre);
-                return (
-                  <button
-                    key={cat.id_categoria}
-                    className={`col-chip ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
-                    style={{ '--chip-accent': visuals.color }}
-                    onClick={() => setActiveCategoryId(cat.id_categoria)}
-                  >
-                    {visuals.icon ? (
-                      <img src={visuals.icon} alt="" className="col-chip-svg" />
-                    ) : (
-                      <span className="col-chip-emoji">{visuals.emoji}</span>
-                    )}
-                    <span className="col-chip-label">{cat.nombre}</span>
-                    {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}
-                  </button>
-                );
-              })}
+            <div className="catalog-collection-wrapper">
+              {canScrollLeft && (
+                <button 
+                  className="scroll-arrow scroll-arrow-left" 
+                  onClick={() => handleScroll('left')} 
+                  aria-label="Desplazar izquierda"
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+              )}
+              
+              <div className="catalog-collection-strip" ref={stripRef}>
+                <button
+                  className={`col-chip ${activeCategoryId === null ? 'active' : ''}`}
+                  style={{ 
+                    '--chip-accent': '#FFD700',
+                    '--chip-text': '#1a1a1a'
+                  }}
+                  onClick={() => setActiveCategoryId(null)}
+                >
+                  <img src="/imagenes icons/all.svg" alt="" className="col-chip-svg" />
+                  <span className="col-chip-label">Todos</span>
+                  {activeCategoryId === null && <span className="col-chip-check">✓</span>}
+                </button>
+                {dbCategories.map(cat => {
+                  const visuals = getCategoryVisuals(cat.nombre);
+                  return (
+                    <button
+                      key={cat.id_categoria}
+                      className={`col-chip ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
+                      style={{ 
+                        '--chip-accent': visuals.color,
+                        '--chip-text': visuals.textColor || '#1a1a1a'
+                      }}
+                      onClick={() => setActiveCategoryId(cat.id_categoria)}
+                    >
+                      {visuals.icon ? (
+                        <img src={visuals.icon} alt="" className="col-chip-svg" />
+                      ) : (
+                        <span className="col-chip-emoji">{visuals.emoji}</span>
+                      )}
+                      <span className="col-chip-label">{cat.nombre}</span>
+                      {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {canScrollRight && (
+                <button 
+                  className="scroll-arrow scroll-arrow-right" 
+                  onClick={() => handleScroll('right')} 
+                  aria-label="Desplazar derecha"
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* ── Toolbar: contador + filtros ── */}

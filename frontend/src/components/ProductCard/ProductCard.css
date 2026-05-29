@@ -209,3 +209,28 @@
   transform: translateY(0);
   opacity: 1;
 }
+
+/* Estilos de productos agotados */
+.out-of-stock-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #d32f2f; /* Red color for Sold Out */
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 4px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  text-transform: uppercase;
+}
+
+.add-to-cart-btn:disabled {
+  background-color: #e0e0e0 !important;
+  color: #888888 !important;
+  cursor: not-allowed !important;
+  border: 1.5px solid #d0d0d0 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}

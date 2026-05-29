@@ -69,12 +69,45 @@ const loginOauth = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const id_usuario = req.usuario.id_usuario;
-        const { nombre, apellido, email } = req.body;
+        const { nombre, apellido, email, telefono } = req.body;
 
-        const result = await pool.query(
-            'UPDATE usuario SET nombre = COALESCE($1, nombre), apellido = COALESCE($2, apellido), email = COALESCE($3, email) WHERE id_usuario = $4 RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro, avatar_url',
-            [nombre || null, apellido || null, email || null, id_usuario]
-        );
+        // Validar y normalizar formato de teléfono
+        let normalizedTelefono = undefined;
+        if (telefono !== undefined) {
+            if (telefono === null || telefono.trim() === '') {
+                normalizedTelefono = null; // Permitir borrar el teléfono
+            } else {
+                const cleanTel = telefono.replace(/\D/g, '');
+                if (cleanTel.length !== 10) {
+                    return res.status(400).json({ 
+                        error: 'El teléfono debe tener exactamente 10 dígitos (ej: 3446-123456).' 
+                    });
+                }
+                const invalidChars = telefono.replace(/[\d\s-]/g, '');
+                if (invalidChars.length > 0) {
+                    return res.status(400).json({
+                        error: 'El teléfono solo puede contener números y guiones.'
+                    });
+                }
+                normalizedTelefono = `${cleanTel.slice(0, 4)}-${cleanTel.slice(4)}`;
+            }
+        }
+
+        const queryParams = [nombre || null, apellido || null, email || null];
+        let queryStr = 'UPDATE usuario SET nombre = COALESCE($1, nombre), apellido = COALESCE($2, apellido), email = COALESCE($3, email)';
+        
+        if (normalizedTelefono !== undefined) {
+            queryParams.push(normalizedTelefono);
+            queryStr += `, telefono = $4 WHERE id_usuario = $5`;
+            queryParams.push(id_usuario);
+        } else {
+            queryStr += ` WHERE id_usuario = $4`;
+            queryParams.push(id_usuario);
+        }
+        
+        queryStr += ' RETURNING id_usuario, nombre, apellido, email, telefono, rol, id_direccion, fecha_registro, avatar_url';
+
+        const result = await pool.query(queryStr, queryParams);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -141,7 +174,7 @@ const registerUser = async (req, res) => {
         // 9. Registrar el usuario en la base de datos
         console.log("[Register] Registrando usuario por email:", email);
         const result = await pool.query(
-            'INSERT INTO usuario (nombre, apellido, email, rol, contrasena) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, nombre, apellido, email, rol, fecha_registro, avatar_url',
+            'INSERT INTO usuario (nombre, apellido, email, rol, contrasena) VALUES ($1, $2, $3, $4, $5) RETURNING id_usuario, nombre, apellido, email, telefono, rol, fecha_registro, avatar_url',
             [primerNombre, apellido, email, 'usuario', hashContrasena]
         );
 

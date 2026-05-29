@@ -193,13 +193,14 @@ const Home = () => {
         <section className="collections-nav-section">
           <div className="container">
             <div className="collections-grid">
-              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Clásicos'].map((col, index) => {
+              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Cartoon Network', 'Clásicos'].map((col, index) => {
                 const collectionVisuals = {
                   'Star Wars': { icon: '/imagenes icons/star wars.svg', emoji: '🚀' },
                   'Marvel': { icon: '/imagenes icons/marvel.svg', emoji: '🦸‍♂️' },
                   'Harry Potter': { icon: '/imagenes icons/harry potter.svg', emoji: '🧙‍♂️' },
                   'City': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
                   'Technic': { icon: null, emoji: '⚙️' },
+                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg', emoji: '🎬' },
                   'Clásicos': { icon: '/imagenes icons/icons.svg', emoji: '🧱' }
                 };
                 const visuals = collectionVisuals[col] || { icon: null, emoji: '🧱' };
@@ -273,7 +274,7 @@ const Home = () => {
                         const isAccent = i % 3 === 1;
 
                         return (
-                          <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')}`} key={product.id}>
+                          <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
                             <button 
                               className={`apple-card-fav ${isFav ? 'active' : ''}`}
                               onClick={(e) => {
@@ -287,13 +288,17 @@ const Home = () => {
                             </button>
 
                             <div className="apple-card-content">
-                              <div className="apple-card-tag">Oferta Limitada</div>
+                              {product.stock <= 0 ? (
+                                <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                              ) : (
+                                <div className="apple-card-tag">Oferta Limitada</div>
+                              )}
                               <h3 className="apple-card-title">{product.title}</h3>
                               <p className="apple-card-subtitle">
                                 {product.category_name || "Construye tu imaginación."}
                               </p>
                               <div className="apple-card-price">
-                                Desde ${product.price}
+                                {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
                               </div>
                             </div>
 
@@ -419,74 +424,74 @@ const Home = () => {
                 ) : (
                   <>
                     {productos[8] && (
-                      <div className={`masonry-item large-span ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.1s' }}>
+                      <div className={`masonry-item large-span ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[8].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.1s' }}>
                         <button
                           className="masonry-fav-btn"
                           onClick={(e) => {
                             e.preventDefault();
-                            toggleFavorito(productos[8]);
+                            toggleFavorito(productos[8].id);
                           }}
                         >
-                          {favoritos.some(fav => fav.id === productos[8].id) ? <FaHeart color="red" size={24} /> : <FaRegHeart color="#999" size={24} />}
+                          {favoritos.includes(productos[8].id) ? <FaHeart color="red" size={24} /> : <FaRegHeart color="#999" size={24} />}
                         </button>
                         <img src={productos[8].image || placeholderProduct} alt={productos[8].title} />
                         <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[8].title}</h3>
-                          <Link to={`/producto/${productos[8].id}`}>Explorar</Link>
+                          <h3 style={{ fontSize: '18px' }}>{productos[8].title} {productos[8].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                          <Link to={`/producto/${productos[8].id}`}>{productos[8].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
                         </div>
                       </div>
                     )}
                     {productos[9] && (
-                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.3s' }}>
+                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[9].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.3s' }}>
                         <button
                           className="masonry-fav-btn"
                           onClick={(e) => {
                             e.preventDefault();
-                            toggleFavorito(productos[9]);
+                            toggleFavorito(productos[9].id);
                           }}
                         >
-                          {favoritos.some(fav => fav.id === productos[9].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
+                          {favoritos.includes(productos[9].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
                         </button>
                         <img src={productos[9].image || placeholderProduct} alt={productos[9].title} />
                         <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[9].title}</h3>
-                          <Link to={`/producto/${productos[9].id}`}>Explorar</Link>
+                          <h3 style={{ fontSize: '18px' }}>{productos[9].title} {productos[9].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                          <Link to={`/producto/${productos[9].id}`}>{productos[9].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
                         </div>
                       </div>
                     )}
                     {productos[10] && (
-                      <div className={`masonry-item tall-span ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.5s' }}>
+                      <div className={`masonry-item tall-span ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[10].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.5s' }}>
                         <button
                           className="masonry-fav-btn"
                           onClick={(e) => {
                             e.preventDefault();
-                            toggleFavorito(productos[10]);
+                            toggleFavorito(productos[10].id);
                           }}
                         >
-                          {favoritos.some(fav => fav.id === productos[10].id) ? <FaHeart color="red" size={22} /> : <FaRegHeart color="#999" size={22} />}
+                          {favoritos.includes(productos[10].id) ? <FaHeart color="red" size={22} /> : <FaRegHeart color="#999" size={22} />}
                         </button>
                         <img src={productos[10].image || placeholderProduct} alt={productos[10].title} />
                         <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[10].title}</h3>
-                          <Link to={`/producto/${productos[10].id}`}>Explorar</Link>
+                          <h3 style={{ fontSize: '18px' }}>{productos[10].title} {productos[10].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                          <Link to={`/producto/${productos[10].id}`}>{productos[10].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
                         </div>
                       </div>
                     )}
                     {productos[11] && (
-                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0.7s' }}>
+                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[11].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.7s' }}>
                         <button
                           className="masonry-fav-btn"
                           onClick={(e) => {
                             e.preventDefault();
-                            toggleFavorito(productos[11]);
+                            toggleFavorito(productos[11].id);
                           }}
                         >
-                          {favoritos.some(fav => fav.id === productos[11].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
+                          {favoritos.includes(productos[11].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
                         </button>
                         <img src={productos[11].image || placeholderProduct} alt={productos[11].title} />
                         <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[11].title}</h3>
-                          <Link to={`/producto/${productos[11].id}`}>Explorar</Link>
+                          <h3 style={{ fontSize: '18px' }}>{productos[11].title} {productos[11].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                          <Link to={`/producto/${productos[11].id}`}>{productos[11].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
                         </div>
                       </div>
                     )}

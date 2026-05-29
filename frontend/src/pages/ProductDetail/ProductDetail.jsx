@@ -38,6 +38,31 @@ const ProductDetail = () => {
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState('');
   const [reviewErrorMsg, setReviewErrorMsg] = useState('');
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const [eligibility, setEligibility] = useState(null);
+
+  const fetchEligibility = React.useCallback(async () => {
+    if (!token || !usuario) {
+      setEligibility(null);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/productos/${id}/elegibilidad-resena`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEligibility(data);
+      }
+    } catch (err) {
+      console.error('Error al obtener elegibilidad:', err);
+    }
+  }, [id, token, usuario]);
+
+  useEffect(() => {
+    fetchEligibility();
+  }, [id, token, usuario, fetchEligibility]);
 
   const handleBuyNow = async () => {
     if (!usuario || !usuario.id_usuario) {
@@ -103,6 +128,7 @@ const ProductDetail = () => {
         setReviewSuccessMsg('¡Muchas gracias por calificar este producto!');
         setReviewText('');
         setUserRating(0);
+        fetchEligibility();
         
         // Volver a cargar las reseñas en el frontend de forma reactiva e inmediata
         fetch(`${API_URL}/productos/${id}/resenas`)
@@ -168,15 +194,27 @@ const ProductDetail = () => {
               );
             }
             
-            const mapped = filteredData.map(item => ({
-              id: item.id_producto,
-              title: item.nombre,
-              description: item.descripcion || '',
-              categoryName: item.categoria_nombre || '',
-              collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
-              price: item.precio,
-              image: item.imagen_url || 'https://via.placeholder.com/300x300'
-            }));
+            const mapped = filteredData.map(item => {
+              const price = parseFloat(item.precio) || 0;
+              return {
+                id: item.id_producto,
+                title: item.nombre || item.titulo || 'Producto sin nombre',
+                description: item.descripcion || '',
+                categoryName: item.categoria_nombre || '',
+                categoryId: item.id_categoria,
+                price,
+                oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
+                discount: item.discount || item.descuento || null,
+                rating: parseFloat(item.calificacion) || 5,
+                reviews: parseInt(item.resenas || item.reseñas) || 0,
+                image: item.imagen_url,
+                collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+                age: item.edad_recomendada || null,
+                stock: item.stock !== undefined ? parseInt(item.stock, 10) : 0,
+                isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
+                isComingSoon: item.id_producto % 4 === 0
+              };
+            });
             setRelatedProducts(mapped);
             setReviews(resenasData || []);
           });
@@ -482,10 +520,87 @@ const ProductDetail = () => {
         <section className="product-reviews-section">
           <SectionHeader title="Reseñas de Usuarios" />
           
-          {usuario ? (
+          {/* Listado de comentarios/reseñas existentes - Se muestra PRIMERO */}
+          <div className="reviews-container" style={{ marginBottom: '20px' }}>
+            {reviews.length === 0 ? (
+              <p style={{ color: 'var(--text-gray)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
+                Aún no hay reseñas para este producto. ¡Sé el primero en calificar tu compra!
+              </p>
+            ) : (
+              <>
+                <div className="reviews-slider-wrapper">
+                  {reviews.length > 1 && (
+                    <button 
+                      className="reviews-slider-btn left" 
+                      onClick={() => setCurrentReviewIndex((prev) => (prev - 1 + reviews.length) % reviews.length)}
+                      title="Reseña anterior"
+                    >
+                      &lt;
+                    </button>
+                  )}
+
+                  <div className="review-card animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
+                    <div className="review-header">
+                      <div className="review-author">
+                        {reviews[currentReviewIndex].anonimo ? 'Usuario Anónimo' : `${reviews[currentReviewIndex].autor_nombre} ${reviews[currentReviewIndex].autor_apellido}`}
+                      </div>
+                      <div className="review-stars">
+                        {'★'.repeat(reviews[currentReviewIndex].puntaje || 5).padEnd(5, '☆')}
+                      </div>
+                    </div>
+                    {reviews[currentReviewIndex].fecha && (
+                      <p className="review-date">
+                        {new Date(reviews[currentReviewIndex].fecha).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
+                    <p className="review-text">{reviews[currentReviewIndex].texto || 'Calificó este producto sin dejar un comentario escrito.'}</p>
+                  </div>
+
+                  {reviews.length > 1 && (
+                    <button 
+                      className="reviews-slider-btn right" 
+                      onClick={() => setCurrentReviewIndex((prev) => (prev + 1) % reviews.length)}
+                      title="Siguiente reseña"
+                    >
+                      &gt;
+                    </button>
+                  )}
+                </div>
+
+                {reviews.length > 1 && (
+                  <div className="reviews-slider-dots">
+                    {reviews.map((_, idx) => (
+                      <button
+                        key={idx}
+                        className={`reviews-slider-dot ${idx === currentReviewIndex ? 'active' : ''}`}
+                        onClick={() => setCurrentReviewIndex(idx)}
+                        title={`Ver reseña ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Formulario de Calificación (Solo compradores verificados) - Se muestra SEGUNDO (al final) */}
+          {!usuario ? (
+            <div className="login-to-review-prompt glassmorphic">
+              <p>Debes <Link to="/login" state={{ from: `/producto/${id}` }}>iniciar sesión</Link> para calificar y dejar una reseña de este producto.</p>
+            </div>
+          ) : eligibility === null ? (
+            <div className="skeleton" style={{ width: '100%', height: '180px', borderRadius: '16px', marginTop: '40px' }}></div>
+          ) : eligibility.puedeResenar ? (
             <div className="add-review-form glassmorphic animate-fade-in">
               <h3>Calificar este Producto</h3>
-              <p className="add-review-subtitle">Dejanos tu puntaje y un comentario sobre tu experiencia de construcción.</p>
+              <p className="add-review-subtitle">
+                Dejanos tu puntaje y un comentario sobre tu experiencia de construcción. 
+                {eligibility.totalComprado > 0 && (
+                  <span style={{ display: 'block', fontSize: '12px', color: '#4caf50', marginTop: '6px', fontWeight: '600' }}>
+                    ✔ Compra verificada: Has adquirido este set {eligibility.totalComprado} {eligibility.totalComprado === 1 ? 'vez' : 'veces'} y publicado {eligibility.totalResenas} {eligibility.totalResenas === 1 ? 'reseña' : 'reseñas'}.
+                  </span>
+                )}
+              </p>
               
               <div className="rating-select-group">
                 <span className="rating-select-label">Tu Calificación:</span>
@@ -544,71 +659,19 @@ const ProductDetail = () => {
                 {submittingReview ? 'Enviando...' : 'Enviar Calificación'}
               </button>
             </div>
+          ) : eligibility.comprado ? (
+            <div className="verified-review-limit-msg glassmorphic">
+              <div className="verified-icon">🏆</div>
+              <p><strong>¡Reseñas Completadas!</strong></p>
+              <p>Ya has calificado todas tus compras de este producto ({eligibility.totalComprado} {eligibility.totalComprado === 1 ? 'unidad comprada' : 'unidades compradas'} y {eligibility.totalResenas} {eligibility.totalResenas === 1 ? 'reseña publicada' : 'reseñas publicadas'}). ¡Muchísimas gracias por tu valiosa opinión!</p>
+            </div>
           ) : (
-            <div className="login-to-review-prompt glassmorphic">
-              <p>Debes <Link to="/login" state={{ from: `/producto/${id}` }}>iniciar sesión</Link> para calificar y dejar una reseña de este producto.</p>
+            <div className="verified-purchase-lock-msg glassmorphic">
+              <div className="lock-icon">🔒</div>
+              <p><strong>Reseña Exclusiva para Compradores Verificados</strong></p>
+              <p>En BloqueMundo queremos que todas las opiniones sean auténticas y útiles. Para calificar este set de Lego, primero debés adquirirlo a través de nuestra tienda. ¡Esperamos ver tu opinión de construcción pronto!</p>
             </div>
           )}
-
-          <div className="reviews-container">
-            {reviews.length === 0 ? (
-              <p style={{ color: 'var(--text-gray)' }}>Aún no hay reseñas para este producto.</p>
-            ) : (
-              <>
-                <div className="reviews-slider-wrapper">
-                  {reviews.length > 1 && (
-                    <button 
-                      className="reviews-slider-btn left" 
-                      onClick={() => setCurrentReviewIndex((prev) => (prev - 1 + reviews.length) % reviews.length)}
-                      title="Reseña anterior"
-                    >
-                      &lt;
-                    </button>
-                  )}
-
-                  <div className="review-card animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
-                    <div className="review-header">
-                      <div className="review-author">
-                        {reviews[currentReviewIndex].anonimo ? 'Usuario Anónimo' : `${reviews[currentReviewIndex].autor_nombre} ${reviews[currentReviewIndex].autor_apellido}`}
-                      </div>
-                      <div className="review-stars">
-                        {'★'.repeat(reviews[currentReviewIndex].puntaje || 5).padEnd(5, '☆')}
-                      </div>
-                    </div>
-                    {reviews[currentReviewIndex].fecha && (
-                      <p className="review-date">
-                        {new Date(reviews[currentReviewIndex].fecha).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    )}
-                    <p className="review-text">{reviews[currentReviewIndex].texto || 'Calificó este producto sin dejar un comentario escrito.'}</p>
-                  </div>
-
-                  {reviews.length > 1 && (
-                    <button 
-                      className="reviews-slider-btn right" 
-                      onClick={() => setCurrentReviewIndex((prev) => (prev + 1) % reviews.length)}
-                      title="Siguiente reseña"
-                    >
-                      &gt;
-                    </button>
-                  )}
-                </div>
-
-                {reviews.length > 1 && (
-                  <div className="reviews-slider-dots">
-                    {reviews.map((_, idx) => (
-                      <button
-                        key={idx}
-                        className={`reviews-slider-dot ${idx === currentReviewIndex ? 'active' : ''}`}
-                        onClick={() => setCurrentReviewIndex(idx)}
-                        title={`Ver reseña ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
         </section>
       </main>
 

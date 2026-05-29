@@ -944,3 +944,30 @@
   .parallax-banner-section { height: 300px; }
   .parallax-content h2 { font-size: 32px; }
 }
+
+/* Estilos de productos sin stock en Home */
+.apple-card.out-of-stock .apple-card-image {
+  filter: grayscale(0.8) opacity(0.5);
+  transition: filter 0.3s;
+}
+
+.apple-card.out-of-stock .apple-card-title {
+  opacity: 0.7;
+}
+
+.apple-card-tag.out-of-stock-tag {
+  color: #ff4d4d !important;
+  font-weight: 800;
+  background-color: rgba(255, 77, 77, 0.15);
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.masonry-item.out-of-stock img {
+  filter: grayscale(0.8) opacity(0.4);
+}
+
+.masonry-item.out-of-stock .masonry-overlay {
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%) !important;
+}

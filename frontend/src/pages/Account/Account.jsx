@@ -275,7 +275,9 @@ function DireccionesSection({ usuario, API_URL, token }) {
 // ───────────────────────────────────────────────
 // Sub-componente: Tarjeta de Compra
 // ───────────────────────────────────────────────
-function PurchaseCard({ compra }) {
+function PurchaseCard({ compra, isActive }) {
+    const [copied, setCopied] = useState(false);
+
     const formattedDate = new Date(compra.fecha).toLocaleDateString('es-AR', {
         day: '2-digit',
         month: '2-digit',
@@ -295,6 +297,38 @@ function PurchaseCard({ compra }) {
             default: return method || 'Mercado Pago';
         }
     };
+
+    const handleCopy = () => {
+        if (compra.codigo_seguimiento) {
+            navigator.clipboard.writeText(compra.codigo_seguimiento);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    // Calcular progreso e índice del stepper
+    let progressWidth = '0%';
+    let currentStepIndex = 0; // 0: Pago, 1: Prep, 2: Camino, 3: Entregado
+
+    if (compra.estado === 'Esperando Pago') {
+        progressWidth = '0%';
+        currentStepIndex = 0;
+    } else if (compra.estado === 'Pago confirmado') {
+        progressWidth = '33%';
+        currentStepIndex = 1;
+    } else if (compra.estado === 'Preparando Pedido') {
+        progressWidth = '50%';
+        currentStepIndex = 1;
+    } else if (compra.estado === 'Pedido Despachado') {
+        progressWidth = '66%';
+        currentStepIndex = 2;
+    } else if (compra.estado === 'En Camino') {
+        progressWidth = '83%';
+        currentStepIndex = 2;
+    } else if (compra.estado === 'Entregado') {
+        progressWidth = '100%';
+        currentStepIndex = 3;
+    }
 
     return (
         <div className="purchase-card">
@@ -333,6 +367,71 @@ function PurchaseCard({ compra }) {
                     </div>
                 ))}
             </div>
+
+            {/* Nueva sección: Línea de Tiempo de Seguimiento (Solo si isActive es true) */}
+            {isActive && (
+                <div className="purchase-timeline-wrapper">
+                    <p className="timeline-section-title">Seguimiento de tu pedido</p>
+                    <div className="purchase-tracking-timeline">
+                        {/* Línea de progreso de fondo */}
+                        <div className="timeline-progress-bar">
+                            <div className="timeline-progress-fill" style={{ width: progressWidth }}></div>
+                        </div>
+
+                        {/* Pasos de la Línea de Tiempo */}
+                        {[
+                            { label: 'Pago', key: 'pago', emoji: '💰', desc: compra.estado === 'Esperando Pago' ? 'Esperando Pago' : 'Aprobado' },
+                            { label: 'Preparación', key: 'prep', emoji: '📦', desc: compra.estado === 'Preparando Pedido' ? 'Armando paquete' : (compra.estado === 'Pago confirmado' ? 'En espera' : (currentStepIndex > 1 ? 'Completado' : 'Pendiente')) },
+                            { label: 'En Camino', key: 'camino', emoji: '🚚', desc: compra.estado === 'En Camino' ? 'En tránsito' : (compra.estado === 'Pedido Despachado' ? 'Despachado' : (currentStepIndex > 2 ? 'Completado' : 'Pendiente')) },
+                            { label: 'Entregado', key: 'entregado', emoji: '🏠', desc: compra.estado === 'Entregado' ? '¡Entregado!' : 'Pendiente' }
+                        ].map((step, index) => {
+                            let stepClass = 'pending';
+                            if (index < currentStepIndex || (index === 0 && compra.estado !== 'Esperando Pago')) {
+                                stepClass = 'completed';
+                            } else if (index === currentStepIndex) {
+                                stepClass = compra.estado === 'Esperando Pago' ? 'active-warning' : 'active';
+                            }
+
+                            return (
+                                <div className={`timeline-step ${stepClass}`} key={step.key}>
+                                    <div className="step-circle">
+                                        <span className="step-emoji">{step.emoji}</span>
+                                        {stepClass === 'completed' && (
+                                            <div className="step-check-badge">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span className="step-label">{step.label}</span>
+                                    <span className="step-desc">{step.desc}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Código de Seguimiento de Envío */}
+            {isActive && compra.codigo_seguimiento && (
+                <div className="tracking-code-container">
+                    <div className="tracking-code-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="tracking-icon">
+                            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5v-7zm1.294 7.456A1.999 1.999 0 0 1 4.732 11h5.536a2.01 2.01 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456zM12 10a2 2 0 0 1 1.732-1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12v4zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                        </svg>
+                        <span className="tracking-label">Código de Seguimiento:</span>
+                        <code className="tracking-code-val">{compra.codigo_seguimiento}</code>
+                    </div>
+                    <button 
+                        type="button" 
+                        className={`btn-copy-tracking ${copied ? 'copied' : ''}`}
+                        onClick={handleCopy}
+                    >
+                        {copied ? '¡Copiado! ✓' : 'Copiar código'}
+                    </button>
+                </div>
+            )}
 
             <div className="purchase-summary">
                 <span className="purchase-payment-method">
@@ -452,6 +551,7 @@ export default function Account() {
         nombre: '',
         apellido: '',
         correo: '',
+        telefono: '',
     });
 
     useEffect(() => {
@@ -460,9 +560,17 @@ export default function Account() {
                 nombre: usuario.nombre || '',
                 apellido: usuario.apellido || '',
                 correo: usuario.email || usuario.correo || '',
+                telefono: usuario.telefono || '',
             });
         }
     }, [usuario]);
+
+    const isDirty = usuario && (
+        formData.nombre !== (usuario.nombre || '') ||
+        formData.apellido !== (usuario.apellido || '') ||
+        formData.telefono !== (usuario.telefono || '') ||
+        (passStep === 'unlocked' && (passwordData.nueva !== '' || passwordData.confirmar !== ''))
+    );
 
     useEffect(() => {
         if (!isInitialized) return;
@@ -473,7 +581,19 @@ export default function Account() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        
+        let finalValue = value;
+        if (name === 'telefono') {
+            // Eliminar todo lo que no sea número
+            const digits = value.replace(/\D/g, '').slice(0, 10);
+            if (digits.length <= 4) {
+                finalValue = digits;
+            } else {
+                finalValue = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+            }
+        }
+
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
         setSaveSuccess(false);
         setSaveError('');
     };
@@ -484,6 +604,7 @@ export default function Account() {
                 nombre: usuario.nombre || '',
                 apellido: usuario.apellido || '',
                 correo: usuario.email || usuario.correo || '',
+                telefono: usuario.telefono || '',
             });
         }
         setSaveSuccess(false);
@@ -495,6 +616,15 @@ export default function Account() {
         setSaveSuccess(false);
         setSaveError('');
         setPassError('');
+
+        // Validar formato del teléfono si fue ingresado
+        if (formData.telefono) {
+            const cleanTel = formData.telefono.replace(/\D/g, '');
+            if (cleanTel.length > 0 && cleanTel.length < 10) {
+                setSaveError('El número de teléfono debe tener exactamente 10 dígitos (ej: 3446-123456).');
+                return;
+            }
+        }
 
         // Validar campos de nueva contraseña si está desbloqueada
         if (passStep === 'unlocked') {
@@ -530,6 +660,7 @@ export default function Account() {
                     nombre: formData.nombre.trim(),
                     apellido: formData.apellido.trim(),
                     email: formData.correo.trim(),
+                    telefono: formData.telefono.trim(),
                 }),
             });
             const profileData = await profileRes.json();
@@ -740,7 +871,7 @@ export default function Account() {
                                             name="nombre"
                                             value={formData.nombre}
                                             onChange={handleChange}
-                                            placeholder="----"
+                                            placeholder="Tu nombre"
                                         />
                                     </div>
                                     <div className="account-form-group">
@@ -751,19 +882,96 @@ export default function Account() {
                                             name="apellido"
                                             value={formData.apellido}
                                             onChange={handleChange}
-                                            placeholder="----"
+                                            placeholder="Tu apellido"
                                         />
                                     </div>
-                                    <div className="account-form-group" style={{ gridColumn: '1 / -1' }}>
-                                        <label htmlFor="correo">Correo</label>
+                                    <div className="account-form-group">
+                                        <label htmlFor="telefono">Teléfono</label>
+                                        <input
+                                            type="text"
+                                            id="telefono"
+                                            name="telefono"
+                                            value={formData.telefono}
+                                            onChange={handleChange}
+                                            placeholder="Ej: 3446-123456"
+                                        />
+                                    </div>
+                                    <div className="account-form-group">
+                                        <label htmlFor="correo" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            Correo 
+                                            <span style={{ fontSize: '12px', color: '#888', fontWeight: 'normal', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                🔒 Protegido
+                                            </span>
+                                        </label>
                                         <input
                                             type="email"
                                             id="correo"
                                             name="correo"
                                             value={formData.correo}
-                                            onChange={handleChange}
+                                            disabled
+                                            style={{ 
+                                                backgroundColor: '#f5f5f5', 
+                                                color: '#888', 
+                                                cursor: 'not-allowed',
+                                                border: '1px solid #ddd'
+                                            }}
                                             placeholder="bloquemundo@gmail.com"
                                         />
+                                        <p style={{ fontSize: '11px', color: '#888', margin: '4px 0 0 4px' }}>
+                                            El correo electrónico es el identificador principal de tu cuenta y no puede ser modificado.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Nueva sección premium de datos informativos de la cuenta */}
+                                <div className="account-info-panel" style={{
+                                    marginTop: '25px',
+                                    padding: '18px 24px',
+                                    background: '#f8f9fa',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(0,0,0,0.06)',
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                                    gap: '20px',
+                                    marginBottom: '30px'
+                                }}>
+                                    <div className="info-panel-item">
+                                        <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>
+                                            ID de Usuario
+                                        </span>
+                                        <span style={{ fontSize: '16px', fontWeight: '700', color: '#1a1a1a', display: 'block', marginTop: '4px' }}>
+                                            #{usuario.id_usuario}
+                                        </span>
+                                    </div>
+                                    <div className="info-panel-item">
+                                        <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>
+                                            Tipo de Cuenta
+                                        </span>
+                                        <span className={`role-badge ${usuario.rol}`} style={{
+                                            display: 'inline-block',
+                                            fontSize: '12px',
+                                            fontWeight: '800',
+                                            padding: '4px 10px',
+                                            borderRadius: '20px',
+                                            marginTop: '6px',
+                                            textTransform: 'uppercase',
+                                            backgroundColor: usuario.rol === 'administrador' ? '#EF5350' : '#FFD700',
+                                            color: usuario.rol === 'administrador' ? '#ffffff' : '#1a1a1a'
+                                        }}>
+                                            {usuario.rol === 'administrador' ? 'Administrador' : 'Cliente'}
+                                        </span>
+                                    </div>
+                                    <div className="info-panel-item">
+                                        <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#888', letterSpacing: '0.5px' }}>
+                                            Miembro Desde
+                                        </span>
+                                        <span style={{ fontSize: '15px', fontWeight: '600', color: '#333', display: 'block', marginTop: '6px' }}>
+                                            {usuario.fecha_registro ? new Date(usuario.fecha_registro).toLocaleDateString('es-AR', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric'
+                                            }) : 'Reciente'}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -896,9 +1104,11 @@ export default function Account() {
                                 {saveError && <p className="save-feedback error">✖ {saveError}</p>}
 
                                 <div className="account-form-actions">
-                                    <button type="button" className="btn-cancel" onClick={handleCancel} disabled={isSaving}>
-                                        Cancelar
-                                    </button>
+                                    {isDirty && (
+                                        <button type="button" className="btn-cancel" onClick={handleCancel} disabled={isSaving}>
+                                            Cancelar
+                                        </button>
+                                    )}
                                     <button type="submit" className="btn-save" disabled={isSaving}>
                                         {isSaving ? 'Guardando...' : 'Guardar Cambios'}
                                     </button>
@@ -916,21 +1126,21 @@ export default function Account() {
                         {/* ─── Compras Pendientes ─── */}
                         {activeSection === 'pendientes' && (
                             <div className="account-placeholder-section">
-                                <h2 className="account-section-title">Compras Pendientes</h2>
+                                <h2 className="account-section-title">Compras en Curso y Pendientes</h2>
                                 {loadingCompras ? (
                                     <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
-                                ) : compras.filter(c => c.estado === 'Esperando Pago').length === 0 ? (
+                                ) : compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado').length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
                                             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
                                         </svg>
-                                        <p>No tenés compras pendientes.</p>
+                                        <p>No tenés compras activas o pendientes en este momento.</p>
                                     </div>
                                 ) : (
                                     <div className="purchases-list">
-                                        {compras.filter(c => c.estado === 'Esperando Pago').map(compra => (
-                                            <PurchaseCard key={compra.id_compra} compra={compra} />
+                                        {compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado').map(compra => (
+                                            <PurchaseCard key={compra.id_compra} compra={compra} isActive={true} />
                                         ))}
                                     </div>
                                 )}
@@ -940,21 +1150,21 @@ export default function Account() {
                         {/* ─── Historial ─── */}
                         {activeSection === 'historial' && (
                             <div className="account-placeholder-section">
-                                <h2 className="account-section-title">Compras Anteriores</h2>
+                                <h2 className="account-section-title">Compras Anteriores y Entregas</h2>
                                 {loadingCompras ? (
                                     <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
-                                ) : compras.filter(c => c.estado !== 'Esperando Pago').length === 0 ? (
+                                ) : compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado').length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/>
                                             <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                                         </svg>
-                                        <p>Todavía no realizaste ninguna compra.</p>
+                                        <p>No tenés compras finalizadas en tu historial.</p>
                                     </div>
                                 ) : (
                                     <div className="purchases-list">
-                                        {compras.filter(c => c.estado !== 'Esperando Pago').map(compra => (
-                                            <PurchaseCard key={compra.id_compra} compra={compra} />
+                                        {compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado').map(compra => (
+                                            <PurchaseCard key={compra.id_compra} compra={compra} isActive={false} />
                                         ))}
                                     </div>
                                 )}
