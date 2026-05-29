@@ -6,6 +6,12 @@ import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import { AppContext } from '../../context/AppContext';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectCoverflow, Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/effect-coverflow';
+import 'swiper/css/autoplay';
+import 'swiper/css/navigation';
 import './Home.css';
 
 // Import local placeholder images for banners
@@ -49,20 +55,45 @@ const Home = () => {
   const [canScrollRight, setCanScrollRight] = useState(true);
   const hulkRef = useRef(null);
   const newArrivalsRef = useRef(null);
+  const bestSellersRef = useRef(null);
+  const swiperRef = useRef(null);
   const transitionRef = useRef(null);
-  const [transitionState, setTransitionState] = useState(0);
-  const [showGridItems, setShowGridItems] = useState(false);
+  const darkSectionRef = useRef(null);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   useEffect(() => {
-    // Observer para la grilla de productos (Masonry)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsDarkTheme(entry.isIntersecting || entry.boundingClientRect.top <= 0);
+      },
+      { rootMargin: '-250px 0px 0px 0px', threshold: 0 }
+    );
+
+    if (darkSectionRef.current) {
+      observer.observe(darkSectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+  const [transitionState, setTransitionState] = useState(0);
+  const [showGridItems, setShowGridItems] = useState(false);
+  const [showBestSellers, setShowBestSellers] = useState(false);
+
+  useEffect(() => {
+    // Observer para animaciones on scroll
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setShowGridItems(true);
-        observer.unobserve(entries[0].target);
-      }
+      entries.forEach(entry => {
+        if (entry.target === newArrivalsRef.current && entry.isIntersecting) {
+          setShowGridItems(true);
+        }
+        if (entry.target === bestSellersRef.current && entry.isIntersecting) {
+          setShowBestSellers(true);
+        }
+      });
     }, { threshold: 0.1 });
 
     if (newArrivalsRef.current) observer.observe(newArrivalsRef.current);
+    if (bestSellersRef.current) observer.observe(bestSellersRef.current);
 
     const handleScroll = () => {
       if (!transitionRef.current) return;
@@ -86,7 +117,7 @@ const Home = () => {
     handleScroll();
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (newArrivalsRef.current) observer.disconnect();
+      observer.disconnect();
     };
   }, []);
 
@@ -117,6 +148,58 @@ const Home = () => {
         behavior: 'smooth'
       });
     }
+  };
+
+  const freezeSwiper = (swiper) => {
+    if (swiper && swiper.autoplay && swiper.autoplay.running) {
+      const wrapper = swiper.wrapperEl;
+      if (!wrapper) return;
+      const transform = window.getComputedStyle(wrapper).getPropertyValue('transform');
+      if (transform && transform !== 'none') {
+        const matrix = new DOMMatrix(transform);
+        if (!isNaN(matrix.m41)) {
+          swiper.setTranslate(matrix.m41);
+        }
+      }
+      wrapper.style.transitionDuration = '0ms';
+      swiper.autoplay.stop();
+    }
+  };
+
+  const resumeSwiperLinear = (swiper) => {
+    if (!swiper || !swiper.autoplay || swiper.autoplay.running) return;
+    if (!swiper.snapGrid || swiper.snapGrid.length === 0) {
+      swiper.autoplay.start();
+      return;
+    }
+    
+    swiper.animating = false;
+    const currentTranslate = swiper.translate;
+    let targetIndex = swiper.activeIndex || 0;
+    
+    for (let i = 0; i < swiper.snapGrid.length; i++) {
+      if (swiper.snapGrid[i] < currentTranslate - 1) {
+        targetIndex = i;
+        break;
+      }
+    }
+    
+    const startTranslate = swiper.snapGrid[targetIndex - 1] !== undefined ? swiper.snapGrid[targetIndex - 1] : (swiper.snapGrid[targetIndex] || 0) + 300;
+    const targetTranslate = swiper.snapGrid[targetIndex] || 0;
+    const totalDist = Math.abs(startTranslate - targetTranslate);
+    const remainingDist = Math.abs((currentTranslate || 0) - targetTranslate);
+    
+    const proportionalSpeed = totalDist > 0 ? Math.max(10, (remainingDist / totalDist) * 5000) : 5000;
+    
+    swiper.params.speed = proportionalSpeed;
+    swiper.autoplay.start();
+    swiper.slideTo(targetIndex, proportionalSpeed);
+    
+    setTimeout(() => {
+      if (swiper && swiper.params) {
+        swiper.params.speed = 5000;
+      }
+    }, proportionalSpeed);
   };
 
   useEffect(() => {
@@ -164,7 +247,8 @@ const Home = () => {
 
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${isDarkTheme ? 'dark-theme' : ''}`}>
+      <div className={`fixed-background ${isDarkTheme ? 'dark-active' : ''}`}></div>
       <Navbar />
       
       <main className="home-main">
@@ -215,7 +299,7 @@ const Home = () => {
                       {visuals.icon ? (
                         <img src={visuals.icon} alt="" className="col-icon-svg" />
                       ) : (
-                        <span>{visuals.emoji}</span>
+                        <span className="col-emoji">{visuals.emoji}</span>
                       )}
                     </div>
                     <span className="col-name">{col}</span>
@@ -237,8 +321,10 @@ const Home = () => {
           </div>
         ) : (
           <>
+            <div style={{ height: '150px' }}></div> {/* Espaciador en lugar del gradiente duro */}
+
             {/* Ofertas Relámpago con Glassmorphism */}
-            <section className="flash-deals-modern">
+            <section className="flash-deals-modern" ref={darkSectionRef}>
               <div className="container">
                 <div className="flash-header">
                   <div className="flash-title-group">
@@ -326,27 +412,119 @@ const Home = () => {
               </div>
             </section>
 
+            {/* Transición suave hacia Los Más Vendidos */}
+            <div className="flash-to-white-transition"></div>
+
             {/* Productos Más Vendidos */}
-            <section className="best-sellers-section container">
-              <div className="section-header modern-header">
-                <h2>👑 Los Más Vendidos</h2>
-                <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
-              </div>
-              <div className="products-grid">
-                {loading ? (
-                  [1, 2, 3, 4].map((n) => <ProductCardSkeleton key={`b-load-${n}`} />)
-                ) : (
-                  productos.slice(4, 8).map((product, i) => (
-                    <div className="stagger-up" style={{ animationDelay: `${i * 0.15}s` }} key={`best-${product.id}`}>
-                      <ProductCard product={product} />
+            <div className="best-sellers-dark-wrapper" ref={bestSellersRef}>
+              <section className="best-sellers-section container">
+                <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
+                  <h2 style={{ color: 'white' }}>👑 Los Más Vendidos</h2>
+                  <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+                </div>
+                <div className="coverflow-carousel-container">
+                  {loading ? (
+                    <div className="coverflow-item active" style={{ transform: 'translateX(0) scale(1)', margin: '0 auto' }}>
+                      <ProductCardSkeleton />
                     </div>
-                  ))
-                )}
-              </div>
-            </section>
+                  ) : (
+                    <Swiper
+                      onSwiper={(swiper) => swiperRef.current = swiper}
+                      onSlideChange={(swiper) => {
+                        if (!swiper || !swiper.slides) return;
+                        const activeSlide = swiper.slides[swiper.activeIndex];
+                        if (activeSlide && activeSlide.matches && activeSlide.matches(':hover')) {
+                          freezeSwiper(swiper);
+                        }
+                      }}
+                      onClick={(swiper) => {
+                        if (swiper.clickedIndex !== undefined) {
+                          swiper.autoplay.start();
+                          swiper.slideTo(swiper.clickedIndex, 600);
+                        }
+                      }}
+                      effect={'coverflow'}
+                      grabCursor={false}
+                      centeredSlides={true}
+                      slidesPerView={'auto'}
+                      loop={true}
+                      speed={5000} // Transición hiper lenta y constante
+                      navigation={true}
+                      autoplay={{
+                        delay: 0, // Movimiento continuo sin esperas
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: false, // Manejado manualmente
+                      }}
+                      coverflowEffect={{
+                        rotate: 15,
+                        stretch: 0,
+                        depth: 250,
+                        modifier: 1,
+                        slideShadows: false,
+                      }}
+                      modules={[EffectCoverflow, Autoplay, Navigation]}
+                      className="bestsellers-swiper"
+                    >
+                      {[...productos.slice(4, 9), ...productos.slice(4, 9), ...productos.slice(4, 9)].map((product, i) => {
+                        const baseProductsCount = productos.slice(4, 9).length;
+                        return (
+                          <SwiperSlide 
+                            key={`best-${product.id}-${i}`} 
+                            className="bestseller-slide"
+                            onMouseEnter={(e) => {
+                              if (e.currentTarget && e.currentTarget.classList && e.currentTarget.classList.contains('swiper-slide-active')) {
+                                freezeSwiper(swiperRef.current);
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              resumeSwiperLinear(swiperRef.current);
+                            }}
+                          >
+                            {({ isActive }) => (
+                              <Link 
+                                to={`/producto/${product.id}`} 
+                                className="elite-card dark-mode-card"
+                                onClick={(e) => {
+                                  if (!isActive) {
+                                    e.preventDefault();
+                                  }
+                                }}
+                              >
+                                {/* Rango (el ranking real es sobre los baseProducts) */}
+                                <span className="elite-rank">0{(i % baseProductsCount) + 1}</span>
+                                <div className="elite-image-wrapper">
+                                  <img 
+                                    src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
+                                    alt={product.title} 
+                                    className="elite-image"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = placeholderProduct;
+                                    }}
+                                  />
+                                </div>
+                                <div className="elite-content">
+                                  <h3 className="elite-title">{product.title}</h3>
+                                  <div className="elite-bottom">
+                                    <div className="elite-price-wrapper">
+                                      <span className="elite-currency">$</span>
+                                      <span className="elite-price">{parseFloat(product.price || product.precio).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Link>
+                            )}
+                          </SwiperSlide>
+                        );
+                      })}
+                    </Swiper>
+                  )}
+                </div>
+              </section>
+            </div>
 
             {/* Banner Parallax Secundario (Star Wars) */}
-            <section className="parallax-banner-section full-width no-margin-bottom">
+            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom">
               <div className="parallax-container star-wars-theme">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
                 <div className="parallax-content left-aligned">
