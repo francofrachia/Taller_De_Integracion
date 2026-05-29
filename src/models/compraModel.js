@@ -49,8 +49,9 @@ const Compra = {
 
     getByUserId: async (id_usuario) => {
         const queryCompras = `
-            SELECT c.* 
+            SELECT c.*, e.codigo_seguimiento
             FROM compra c
+            LEFT JOIN envio e ON c.id_compra = e.id_compra
             WHERE c.id_usuario = $1
             ORDER BY c.fecha DESC
         `;

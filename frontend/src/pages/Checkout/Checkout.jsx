@@ -202,9 +202,20 @@ export default function Checkout() {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        
+        let finalValue = value;
+        if (name === 'telefono') {
+            const digits = value.replace(/\D/g, '').slice(0, 10);
+            if (digits.length <= 4) {
+                finalValue = digits;
+            } else {
+                finalValue = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+            }
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === 'checkbox' ? checked : finalValue
         }));
         // Limpiar el error del campo que se está editando
         if (errors[name]) {
@@ -225,6 +236,13 @@ export default function Checkout() {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(formData.correo)) {
                 tempErrors.correo = 'El formato del correo es inválido';
+            }
+        }
+
+        if (formData.telefono) {
+            const cleanTel = formData.telefono.replace(/\D/g, '');
+            if (cleanTel.length > 0 && cleanTel.length !== 10) {
+                tempErrors.telefono = 'El teléfono debe tener exactamente 10 dígitos (ej: 3446-123456)';
             }
         }
 
@@ -386,8 +404,10 @@ export default function Checkout() {
                                         name="telefono" 
                                         value={formData.telefono} 
                                         onChange={handleChange} 
+                                        className={errors.telefono ? 'input-error' : ''}
                                         placeholder="Número de Teléfono"
                                     />
+                                    {errors.telefono && <span className="error-text">{errors.telefono}</span>}
                                 </div>
                             </div>
 

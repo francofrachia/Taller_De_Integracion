@@ -58,9 +58,11 @@ const ProductCard = ({ product }) => {
     <div className="product-card">
       <Link to={`/producto/${product.id}`} className="product-card-link">
         <div className="product-card-image-container">
-          {product.discount && (
+          {product.stock <= 0 ? (
+            <span className="out-of-stock-badge">Agotado</span>
+          ) : product.discount ? (
             <span className="discount-badge">-{product.discount}%</span>
-          )}
+          ) : null}
           <button 
             className={`favorite-btn ${isFav ? 'active' : ''}`} 
             title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"} 
@@ -107,9 +109,15 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
       <div className="product-card-actions">
-        <button className="add-to-cart-btn" onClick={handleAddCart}>
-          Agregar al Carrito
-        </button>
+        {product.stock > 0 ? (
+          <button className="add-to-cart-btn" onClick={handleAddCart}>
+            Agregar al Carrito
+          </button>
+        ) : (
+          <button className="add-to-cart-btn out-of-stock-btn" disabled>
+            Sin stock
+          </button>
+        )}
       </div>
     </div>
   );

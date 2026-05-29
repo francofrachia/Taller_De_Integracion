@@ -1119,6 +1119,7 @@ input:checked + .switch-slider:before {
 .catalog-brick-4 { animation: floatBrick 2.6s ease-in-out infinite 0.2s; }
 .catalog-brick-5 { animation: floatBrick 3.8s ease-in-out infinite 0.6s; }
 .catalog-brick-6 { animation: floatBrick 3.0s ease-in-out infinite 1.0s; }
+.catalog-brick-7 { animation: floatBrick 3.3s ease-in-out infinite 0.5s; }
 
 @keyframes floatBrick {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
@@ -1126,17 +1127,77 @@ input:checked + .switch-slider:before {
 }
 
 /* --- COLLECTION CHIPS STRIP --- */
+.catalog-collection-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
 .catalog-collection-strip {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding: 4px 2px 12px;
+  padding: 4px 8px 12px; /* solid padding for complete button visibility */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  margin-bottom: 20px;
+  width: 100%;
+  scroll-behavior: smooth;
 }
 
 .catalog-collection-strip::-webkit-scrollbar { display: none; }
+
+/* Premium Glassmorphic Left/Right Scroll Arrows */
+.scroll-arrow {
+  position: absolute;
+  top: calc(50% - 6px); /* offsets horizontal scroll height */
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08), inset 0 2px rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scroll-arrow:hover {
+  background: #ffffff;
+  color: var(--primary-yellow, #FFD700);
+  border-color: rgba(255, 215, 0, 0.4);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.scroll-arrow-left {
+  left: -12px;
+}
+
+.scroll-arrow-right {
+  right: -12px;
+  /* Pulsing micro-animation on the right arrow to hint at horizontal motion initially */
+  animation: pulseArrow 2.5s infinite ease-in-out;
+}
+
+.scroll-arrow-left:hover, .scroll-arrow-right:hover {
+  animation: none; /* Stops when user hovers */
+}
+
+.scroll-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+@keyframes pulseArrow {
+  0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); }
+  50% { transform: translateY(-50%) scale(1.08); box-shadow: 0 4px 14px rgba(255, 215, 0, 0.25), 0 0 0 4px rgba(255, 215, 0, 0.12); }
+}
 
 .col-chip {
   display: inline-flex;
@@ -1166,7 +1227,7 @@ input:checked + .switch-slider:before {
 .col-chip.active {
   background: var(--chip-accent, #FFD700);
   border-color: var(--chip-accent, #FFD700);
-  color: #1a1a1a;
+  color: var(--chip-text, #1a1a1a);
   font-weight: 700;
   box-shadow: 0 6px 20px color-mix(in srgb, var(--chip-accent, #FFD700) 40%, transparent);
   transform: translateY(-2px);
@@ -1184,7 +1245,7 @@ input:checked + .switch-slider:before {
 .col-chip-check {
   font-size: 11px;
   font-weight: 800;
-  background: rgba(0,0,0,0.12);
+  background: color-mix(in srgb, currentColor 15%, transparent);
   border-radius: 50%;
   width: 18px;
   height: 18px;

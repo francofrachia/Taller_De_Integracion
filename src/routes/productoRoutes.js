@@ -12,4 +12,7 @@ router.get('/:id/resenas', productoController.getResenasByProductoId);
 // Guardar/Actualizar calificación e insertar reseña opcional
 router.post('/:id/calificar', verificarToken, productoController.calificarProducto);
 
+// Obtener elegibilidad de calificación del usuario para un producto
+router.get('/:id/elegibilidad-resena', verificarToken, productoController.checkReviewEligibility);
+
 module.exports = router;

@@ -34,6 +34,20 @@ const MiCuenta = () => {
     }
   }, [usuario]);
 
+  const nombreCompleto = (usuario && usuario.nombre) || '';
+  const partes = nombreCompleto.trim().split(' ');
+  const origNombre = partes[0] || '';
+  const origApellido = partes.length > 1 ? partes.slice(1).join(' ') : '';
+  const origCorreo = (usuario && (usuario.email || usuario.correo)) || '';
+  const origDireccion = (usuario && usuario.direccion) || '';
+
+  const isDirty = usuario && (
+    formData.nombre !== origNombre ||
+    formData.apellido !== origApellido ||
+    formData.correo !== origCorreo ||
+    formData.direccion !== origDireccion
+  );
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -174,9 +188,11 @@ const MiCuenta = () => {
               </div>
 
               <div className="form-actions">
-                <button type="button" className="cuenta-btn-cancel" onClick={handleCancel}>
-                  Cancelar
-                </button>
+                {isDirty && (
+                  <button type="button" className="cuenta-btn-cancel" onClick={handleCancel}>
+                    Cancelar
+                  </button>
+                )}
                 <button
                   type="submit"
                   className={`cuenta-btn-primary${saveStatus === 'saving' ? ' btn-loading' : ''}${saveStatus === 'saved' ? ' btn-saved' : ''}`}

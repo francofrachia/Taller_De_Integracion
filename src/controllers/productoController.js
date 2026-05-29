@@ -61,8 +61,21 @@ const calificarProducto = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en calificarProducto:', error);
-        res.status(500).json({ error: 'Error al calificar el producto' });
+        res.status(500).json({ error: error.message || 'Error al calificar el producto' });
     }
 };
 
-module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto };
+const checkReviewEligibility = async (req, res) => {
+    try {
+        const id_producto = parseInt(req.params.id);
+        const id_usuario = req.usuario.id_usuario;
+
+        const eligibility = await Producto.getReviewEligibility(id_producto, id_usuario);
+        res.json(eligibility);
+    } catch (error) {
+        console.error('Error en checkReviewEligibility:', error);
+        res.status(500).json({ error: 'Error al verificar la elegibilidad para calificar' });
+    }
+};
+
+module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto, checkReviewEligibility };
