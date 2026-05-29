@@ -94,7 +94,7 @@ function DireccionesSection({ usuario, API_URL, token }) {
         try {
             const res = await fetch(`${API_URL}/direccion`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
@@ -126,7 +126,7 @@ function DireccionesSection({ usuario, API_URL, token }) {
         try {
             const res = await fetch(`${API_URL}/direccion`, {
                 method: 'DELETE',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
@@ -170,8 +170,8 @@ function DireccionesSection({ usuario, API_URL, token }) {
                 <div className="dir-card">
                     <div className="dir-card-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z" />
+                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                         </svg>
                     </div>
                     <div className="dir-card-body">
@@ -195,8 +195,8 @@ function DireccionesSection({ usuario, API_URL, token }) {
             {!direccion && !showForm && (
                 <div className="placeholder-empty">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
-                        <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                        <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z" />
+                        <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                     </svg>
                     <p>Todavía no tenés ninguna dirección guardada.</p>
                 </div>
@@ -206,7 +206,7 @@ function DireccionesSection({ usuario, API_URL, token }) {
             {!showForm && !direccion && (
                 <button className="btn-add-dir" onClick={handleEdit}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
                     </svg>
                     Agregar dirección
                 </button>
@@ -348,9 +348,9 @@ function PurchaseCard({ compra, isActive }) {
                 {compra.lineas && compra.lineas.map((linea, index) => (
                     <div className="purchase-item-row" key={index}>
                         <div className="purchase-item-img-wrapper">
-                            <img 
-                                src={linea.imagen_url || placeholderImg} 
-                                alt={linea.nombre} 
+                            <img
+                                src={linea.imagen_url || placeholderImg}
+                                alt={linea.nombre}
                                 className="purchase-item-img"
                                 onError={(e) => { e.target.src = placeholderImg; }}
                             />
@@ -399,7 +399,7 @@ function PurchaseCard({ compra, isActive }) {
                                         {stepClass === 'completed' && (
                                             <div className="step-check-badge">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
                                                 </svg>
                                             </div>
                                         )}
@@ -418,13 +418,13 @@ function PurchaseCard({ compra, isActive }) {
                 <div className="tracking-code-container">
                     <div className="tracking-code-info">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="tracking-icon">
-                            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5v-7zm1.294 7.456A1.999 1.999 0 0 1 4.732 11h5.536a2.01 2.01 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456zM12 10a2 2 0 0 1 1.732-1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12v4zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5v-7zm1.294 7.456A1.999 1.999 0 0 1 4.732 11h5.536a2.01 2.01 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456zM12 10a2 2 0 0 1 1.732-1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12v4zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
                         </svg>
                         <span className="tracking-label">Código de Seguimiento:</span>
                         <code className="tracking-code-val">{compra.codigo_seguimiento}</code>
                     </div>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         className={`btn-copy-tracking ${copied ? 'copied' : ''}`}
                         onClick={handleCopy}
                     >
@@ -581,7 +581,7 @@ export default function Account() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         let finalValue = value;
         if (name === 'telefono') {
             // Eliminar todo lo que no sea número
@@ -824,7 +824,7 @@ export default function Account() {
                                     <p className="avatar-panel-desc">
                                         Elegí el avatar que te represente. Aparecerá en el menú de navegación superior:
                                     </p>
-                                    
+
                                     <div className="avatar-grid">
                                         {[
                                             { id: 'mario', path: '/images/logo mario.png', name: 'Lego Mario' },
@@ -833,8 +833,8 @@ export default function Account() {
                                         ].map(av => {
                                             const isSelected = (usuario.avatar_url || '/images/logo mario.png') === av.path;
                                             return (
-                                                <div 
-                                                    key={av.id} 
+                                                <div
+                                                    key={av.id}
                                                     className={`avatar-option-card ${isSelected ? 'selected' : ''}`}
                                                     onClick={() => handleAvatarChange(av.path)}
                                                     title={`Seleccionar ${av.name}`}
@@ -844,7 +844,7 @@ export default function Account() {
                                                         {isSelected && (
                                                             <div className="avatar-check-badge">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
                                                                 </svg>
                                                             </div>
                                                         )}
@@ -854,7 +854,7 @@ export default function Account() {
                                             );
                                         })}
                                     </div>
-                                    
+
                                     {avatarFeedback.msg && (
                                         <p className={`save-feedback ${avatarFeedback.type}`} style={{ marginTop: '16px', marginBottom: '0' }}>
                                             {avatarFeedback.type === 'success' ? '✔ ' : '✖ '}{avatarFeedback.msg}
@@ -898,7 +898,7 @@ export default function Account() {
                                     </div>
                                     <div className="account-form-group">
                                         <label htmlFor="correo" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            Correo 
+                                            Correo
                                             <span style={{ fontSize: '12px', color: '#888', fontWeight: 'normal', display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                 🔒 Protegido
                                             </span>
@@ -909,9 +909,9 @@ export default function Account() {
                                             name="correo"
                                             value={formData.correo}
                                             disabled
-                                            style={{ 
-                                                backgroundColor: '#f5f5f5', 
-                                                color: '#888', 
+                                            style={{
+                                                backgroundColor: '#f5f5f5',
+                                                color: '#888',
                                                 cursor: 'not-allowed',
                                                 border: '1px solid #ddd'
                                             }}
@@ -983,8 +983,8 @@ export default function Account() {
                                         <div className="oauth-password-warning">
                                             <div className="oauth-warning-icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
                                                 </svg>
                                             </div>
                                             <div className="oauth-warning-text">
@@ -997,7 +997,7 @@ export default function Account() {
                                         <div className="pass-locked-gate">
                                             <div className="pass-locked-icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
                                                 </svg>
                                             </div>
                                             <div className="pass-locked-text">
@@ -1053,7 +1053,7 @@ export default function Account() {
                                         <div className="password-fields-container">
                                             <div className="pass-unlocked-badge">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z"/>
+                                                    <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z" />
                                                 </svg>
                                                 Identidad verificada — ingresá tu nueva contraseña
                                                 <button type="button" className="pass-relock-btn" onClick={handleLockPass} title="Cancelar cambio">
@@ -1132,8 +1132,8 @@ export default function Account() {
                                 ) : compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado').length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+                                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
                                         </svg>
                                         <p>No tenés compras activas o pendientes en este momento.</p>
                                     </div>
@@ -1156,8 +1156,8 @@ export default function Account() {
                                 ) : compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado').length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z"/>
-                                            <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z" />
+                                            <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
                                         </svg>
                                         <p>No tenés compras finalizadas en tu historial.</p>
                                     </div>
@@ -1178,7 +1178,7 @@ export default function Account() {
                                 {favoritos.length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748z"/>
+                                            <path d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748z" />
                                         </svg>
                                         <p>Todavía no marcaste productos como favoritos.</p>
                                         <Link to="/" className="btn-save" style={{ marginTop: '16px', display: 'inline-block', textDecoration: 'none' }}>

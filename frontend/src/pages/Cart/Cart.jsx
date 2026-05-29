@@ -11,8 +11,8 @@ export default function Cart() {
     const [localQuantities, setLocalQuantities] = useState({});
 
     const handleQuantityChange = (id_producto, currentQty, change, stock) => {
-        const baseQty = localQuantities[id_producto] !== undefined 
-            ? (parseInt(localQuantities[id_producto], 10) || 1) 
+        const baseQty = localQuantities[id_producto] !== undefined
+            ? (parseInt(localQuantities[id_producto], 10) || 1)
             : currentQty;
         const newQty = baseQty + change;
         if (newQty > 0) {
@@ -28,8 +28,8 @@ export default function Cart() {
     };
 
     const hasAnyQtyError = cart && cart.items && productos ? cart.items.some(item => {
-        const qty = localQuantities[item.id_producto] !== undefined 
-            ? localQuantities[item.id_producto] 
+        const qty = localQuantities[item.id_producto] !== undefined
+            ? localQuantities[item.id_producto]
             : item.cantidad;
         if (qty === '' || isNaN(parseInt(qty, 10)) || parseInt(qty, 10) < 1) {
             return true;
@@ -66,8 +66,8 @@ export default function Cart() {
     };
 
     const subtotal = cart && cart.items ? cart.items.reduce((sum, item) => {
-        const qty = localQuantities[item.id_producto] !== undefined 
-            ? (parseInt(localQuantities[item.id_producto], 10) || 0) 
+        const qty = localQuantities[item.id_producto] !== undefined
+            ? (parseInt(localQuantities[item.id_producto], 10) || 0)
             : item.cantidad;
         return sum + (parseFloat(item.precio) * qty);
     }, 0) : 0;
@@ -77,7 +77,7 @@ export default function Cart() {
     return (
         <div className="cart-page">
             <Navbar />
-            
+
             <main className="cart-main container">
                 <div className="breadcrumb">
                     <Link to="/">Inicio</Link> / <span className="current">Carrito</span>
@@ -120,173 +120,157 @@ export default function Cart() {
                 ) : !usuario || !usuario.id_usuario ? (
                     <div className="empty-cart">
                         <h2>Iniciá sesión para ver tu carrito</h2>
-                        <Link to="/login" className="primary-btn-outline" style={{marginTop: '20px', display: 'inline-block'}}>
+                        <Link to="/login" className="primary-btn-outline" style={{ marginTop: '20px', display: 'inline-block' }}>
                             Ir a Iniciar Sesión
                         </Link>
                     </div>
                 ) : !cart || !cart.items || cart.items.length === 0 ? (
                     <div className="empty-cart">
                         <h2>Tu carrito está vacío</h2>
-                        <Link to="/" className="primary-btn-outline" style={{marginTop: '20px', display: 'inline-block'}}>
+                        <Link to="/" className="primary-btn-outline" style={{ marginTop: '20px', display: 'inline-block' }}>
                             Volver a la tienda
                         </Link>
                     </div>
                 ) : (
                     <>
-                        {itemsConProblemasStock.length > 0 && (
-                            <div className="cart-stock-alert-banner glassmorphic animate-fade-in">
-                                <div className="alert-icon">⚠️</div>
-                                <div className="alert-content">
-                                    <h4>Atención: Cambios en el Stock Disponible</h4>
-                                    <p>Algunos productos en tu carrito ya no tienen suficiente stock o se han agotado debido a compras recientes de otros usuarios. Por favor, ajustá las cantidades o remové los productos agotados para continuar.</p>
-                                    <ul className="cart-stock-alert-list">
-                                        {itemsConProblemasStock.map(item => {
-                                            const productData = productos.find(p => p.id_producto === item.id_producto);
-                                            const itemStock = productData ? productData.stock : 0;
-                                            return (
-                                                <li key={item.id_producto}>
-                                                    <strong>{item.nombre}</strong>: Solicitado {item.cantidad} u. | Stock real: {itemStock === 0 ? <span className="alert-badge-out">Agotado (0 u.)</span> : <span className="alert-badge-low">Límite {itemStock} u.</span>}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                    <button 
-                                        className="btn-yellow auto-adjust-btn" 
-                                        onClick={handleAutoAdjust}
+                        <div className="cart-layout">
+                            <div className="cart-items-section">
+                                <div className="cart-table-header">
+                                    <span>Producto</span>
+                                    <span>Precio</span>
+                                    <span>Cantidad</span>
+                                    <span>Total</span>
+                                </div>
+
+                                <div className="cart-items-list">
+                                    {cart.items.map(item => {
+                                        const qty = localQuantities[item.id_producto] !== undefined
+                                            ? localQuantities[item.id_producto]
+                                            : item.cantidad;
+                                        const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
+                                        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+                                        const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
+
+                                        return (
+                                            <div className={`cart-item ${isInvalidQty ? 'cart-item--stock-issue' : ''}`} key={item.id_producto}>
+                                                <div className="item-product">
+                                                    <button className="remove-btn" onClick={() => handleRemove(item.id_producto)}>×</button>
+                                                    {/* Si hay imagen, la mostramos. Asumiendo que item.imagenes es un array */}
+                                                    {item.imagenes && item.imagenes[0] ? (
+                                                        <img src={item.imagenes[0]} alt={item.nombre} />
+                                                    ) : (
+                                                        <div className="img-placeholder"></div>
+                                                    )}
+                                                    <span className="item-name">{item.nombre}</span>
+                                                </div>
+                                                <div className="item-price">${item.precio}</div>
+                                                <div className="item-quantity">
+                                                    <div className={`quantity-controls ${isInvalidQty ? 'qty-controls-error' : ''}`}>
+                                                        <input
+                                                            type="number"
+                                                            value={qty}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (val === '') {
+                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: '' }));
+                                                                    return;
+                                                                }
+                                                                const num = parseInt(val, 10);
+                                                                if (!isNaN(num)) {
+                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: num }));
+                                                                }
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                let val = parseInt(e.target.value, 10);
+                                                                if (isNaN(val) || val < 1) {
+                                                                    val = 1;
+                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: 1 }));
+                                                                    if (item.cantidad !== 1) {
+                                                                        actualizarCantidadCarrito(item.id_producto, 1);
+                                                                    }
+                                                                    return;
+                                                                }
+                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: val }));
+                                                                if (!itemStock || val <= itemStock) {
+                                                                    if (val !== item.cantidad) {
+                                                                        actualizarCantidadCarrito(item.id_producto, val);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.target.blur();
+                                                                }
+                                                            }}
+                                                            min="1"
+                                                            max={itemStock || undefined}
+                                                        />
+                                                        <div className="qty-arrows">
+                                                            <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>▲</button>
+                                                            <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>▼</button>
+                                                        </div>
+                                                    </div>
+                                                    {isInvalidQty && (
+                                                        <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px', fontWeight: '600', display: 'block', textAlign: 'center' }}>
+                                                            {itemStock === 0 ? 'Agotado' : `Máx: ${itemStock} u`}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="item-total">
+                                                    ${(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)).toFixed(2)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="cart-actions">
+                                    <Link to="/" className="btn-outline">Volver al Inicio</Link>
+                                </div>
+                            </div>
+
+                            <div className="cart-summary-section">
+                                <div className="summary-box">
+                                    <h3>Total Carrito</h3>
+                                    <div className="summary-row">
+                                        <span>Subtotal:</span>
+                                        <span>${subtotal.toFixed(2)}</span>
+                                    </div>
+                                    <hr />
+                                    <div className="summary-row">
+                                        <span>Envío:</span>
+                                        <span>Free</span>
+                                    </div>
+                                    <hr />
+                                    <div className="summary-row total-row">
+                                        <span>Total:</span>
+                                        <span>${total.toFixed(2)}</span>
+                                    </div>
+                                    {/* Aviso simple de stock entre Total y Comprar */}
+                                    {itemsConProblemasStock.length > 0 && (
+                                        <div className="cart-stock-warning-simple">
+                                            {itemsConProblemasStock.map(item => {
+                                                const productData = productos.find(p => p.id_producto === item.id_producto);
+                                                const itemStock = productData ? productData.stock : 0;
+                                                return (
+                                                    <p className="stock-warning-item" key={item.id_producto}>
+                                                        <strong>{item.nombre}</strong> {itemStock === 0 ? 'está agotado' : `supera el stock disponible (máx: ${itemStock} u.)`}
+                                                    </p>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        className="btn-yellow full-width"
+                                        onClick={handleCheckout}
+                                        disabled={hasAnyQtyError}
                                     >
-                                        Auto-ajustar cantidades al stock disponible
+                                        Comprar
                                     </button>
                                 </div>
                             </div>
-                        )}
-                        <div className="cart-layout">
-                        <div className="cart-items-section">
-                            <div className="cart-table-header">
-                                <span>Producto</span>
-                                <span>Precio</span>
-                                <span>Cantidad</span>
-                                <span>Total</span>
-                            </div>
-
-                            <div className="cart-items-list">
-                                {cart.items.map(item => {
-                                    const qty = localQuantities[item.id_producto] !== undefined 
-                                        ? localQuantities[item.id_producto] 
-                                        : item.cantidad;
-                                    const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
-                                    const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
-                                    const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
-
-                                    return (
-                                        <div className="cart-item" key={item.id_producto}>
-                                            <div className="item-product">
-                                                <button className="remove-btn" onClick={() => handleRemove(item.id_producto)}>×</button>
-                                                {/* Si hay imagen, la mostramos. Asumiendo que item.imagenes es un array */}
-                                                {item.imagenes && item.imagenes[0] ? (
-                                                    <img src={item.imagenes[0]} alt={item.nombre} />
-                                                ) : (
-                                                    <div className="img-placeholder"></div>
-                                                )}
-                                                <span className="item-name">{item.nombre}</span>
-                                            </div>
-                                            <div className="item-price">${item.precio}</div>
-                                            <div className="item-quantity">
-                                                <div className={`quantity-controls ${isInvalidQty ? 'qty-controls-error' : ''}`}>
-                                                    <input 
-                                                        type="number" 
-                                                        value={qty}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            if (val === '') {
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: '' }));
-                                                                return;
-                                                            }
-                                                            const num = parseInt(val, 10);
-                                                            if (!isNaN(num)) {
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: num }));
-                                                            }
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            let val = parseInt(e.target.value, 10);
-                                                            if (isNaN(val) || val < 1) {
-                                                                val = 1;
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: 1 }));
-                                                                if (item.cantidad !== 1) {
-                                                                    actualizarCantidadCarrito(item.id_producto, 1);
-                                                                }
-                                                                return;
-                                                            }
-                                                            setLocalQuantities(prev => ({ ...prev, [item.id_producto]: val }));
-                                                            if (!itemStock || val <= itemStock) {
-                                                                if (val !== item.cantidad) {
-                                                                    actualizarCantidadCarrito(item.id_producto, val);
-                                                                }
-                                                            }
-                                                        }}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                e.target.blur();
-                                                            }
-                                                        }}
-                                                        min="1"
-                                                        max={itemStock || undefined}
-                                                    />
-                                                    <div className="qty-arrows">
-                                                        <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>▲</button>
-                                                        <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>▼</button>
-                                                    </div>
-                                                </div>
-                                                {isInvalidQty && (
-                                                    <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px', fontWeight: '600', display: 'block', textAlign: 'center' }}>
-                                                        {itemStock === 0 ? '❌ Agotado' : `⚠️ Máx: ${itemStock} u`}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="item-total">
-                                                ${(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="cart-actions">
-                                <Link to="/" className="btn-outline">Volver al Inicio</Link>
-                            </div>
                         </div>
-
-                        <div className="cart-summary-section">
-                            <div className="summary-box">
-                                <h3>Total Carrito</h3>
-                                <div className="summary-row">
-                                    <span>Subtotal:</span>
-                                    <span>${subtotal.toFixed(2)}</span>
-                                </div>
-                                <hr />
-                                <div className="summary-row">
-                                    <span>Envío:</span>
-                                    <span>Free</span>
-                                </div>
-                                <hr />
-                                <div className="summary-row total-row">
-                                    <span>Total:</span>
-                                    <span>${total.toFixed(2)}</span>
-                                </div>
-                                <button 
-                                    className="btn-yellow full-width" 
-                                    onClick={handleCheckout}
-                                    disabled={hasAnyQtyError}
-                                >
-                                    Comprar
-                                </button>
-                                {hasAnyQtyError && (
-                                    <p className="cart-checkout-warning" style={{ color: '#d32f2f', fontSize: '13px', marginTop: '10px', textAlign: 'center', fontWeight: '500' }}>
-                                        ⚠️ Revisá las cantidades antes de comprar.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
                     </>
                 )}
             </main>

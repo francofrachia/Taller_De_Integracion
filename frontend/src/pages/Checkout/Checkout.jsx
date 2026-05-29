@@ -341,45 +341,29 @@ export default function Checkout() {
                     <Link to="/">Inicio</Link> / <Link to="/carrito">Carrito</Link> / <span className="current">Facturación</span>
                 </div>
 
-                {itemsConProblemasStock.length > 0 && (
-                    <div className="cart-stock-alert-banner glassmorphic animate-fade-in" style={{ marginBottom: '30px' }}>
-                        <div className="alert-icon">⚠️</div>
-                        <div className="alert-content">
-                            <h4>Conflicto de Stock Detectado</h4>
-                            <p>El stock de algunos productos en tu orden ha cambiado debido a compras recientes de otros usuarios. Por favor, auto-ajustá las cantidades al stock disponible real para poder confirmar tu pedido de forma segura.</p>
-                            <ul className="cart-stock-alert-list">
-                                {itemsConProblemasStock.map(item => {
-                                    const productData = productos.find(p => p.id_producto === item.id_producto);
-                                    const itemStock = productData ? productData.stock : 0;
-                                    return (
-                                        <li key={item.id_producto}>
-                                            <strong>{item.nombre}</strong>: En tu orden {item.cantidad} u. | Stock real: {itemStock === 0 ? <span className="alert-badge-out">Agotado (0 u.)</span> : <span className="alert-badge-low">Límite {itemStock} u.</span>}
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                <button 
-                                    className="btn-yellow auto-adjust-btn" 
-                                    onClick={handleAutoAdjustCheckout}
-                                    style={{ marginTop: '4px' }}
-                                >
-                                    Auto-ajustar mi orden
-                                </button>
-                                <Link 
-                                    to="/carrito" 
-                                    className="btn-outline" 
-                                    style={{ textDecoration: 'none', padding: '10px 20px', borderRadius: '6px', fontSize: '13.5px', fontWeight: '700', marginTop: '4px', display: 'inline-flex', alignItems: 'center' }}
-                                >
-                                    Volver al Carrito
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                )}
                 <div className="checkout-layout">
                     {/* Sección Izquierda: Formulario de Facturación */}
-                    <div className="checkout-form-section">
+                    <div className={`checkout-form-section ${hasAnyQtyError ? 'checkout-form-blocked' : ''}`}>
+                        {hasAnyQtyError && (
+                            <div className="checkout-form-overlay animate-fade-in">
+                                <div className="overlay-content">
+                                    <span className="overlay-icon">🛒</span>
+                                    <h3>Tu carrito necesita ajustes</h3>
+                                    <p>Algunos productos superaron el stock disponible. Ajustá las cantidades antes de completar la facturación.</p>
+                                    <div className="overlay-actions">
+                                        <button 
+                                            className="btn-yellow"
+                                            onClick={handleAutoAdjustCheckout}
+                                        >
+                                            ⚡ Auto-ajustar cantidades
+                                        </button>
+                                        <Link to="/carrito" className="btn-outline" style={{ textDecoration: 'none' }}>
+                                            Ir al Carrito
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <h2>Factura</h2>
                         <form onSubmit={handleSubmit} noValidate>
                             <div className="form-grid">
@@ -393,6 +377,7 @@ export default function Checkout() {
                                         onChange={handleChange} 
                                         className={errors.nombre ? 'input-error' : ''} 
                                         placeholder="Nombre"
+                                        disabled={hasAnyQtyError}
                                     />
                                     {errors.nombre && <span className="error-text">{errors.nombre}</span>}
                                 </div>
@@ -407,6 +392,7 @@ export default function Checkout() {
                                         onChange={handleChange} 
                                         className={errors.apellido ? 'input-error' : ''} 
                                         placeholder="Apellido"
+                                        disabled={hasAnyQtyError}
                                     />
                                     {errors.apellido && <span className="error-text">{errors.apellido}</span>}
                                 </div>
@@ -423,6 +409,7 @@ export default function Checkout() {
                                         onChange={handleChange} 
                                         className={errors.codigoPostal ? 'input-error' : ''} 
                                         placeholder="Código Postal"
+                                        disabled={hasAnyQtyError}
                                     />
                                     {errors.codigoPostal && <span className="error-text">{errors.codigoPostal}</span>}
                                 </div>
@@ -436,6 +423,7 @@ export default function Checkout() {
                                         value={formData.departamentoPiso} 
                                         onChange={handleChange} 
                                         placeholder="Depto / Piso"
+                                        disabled={hasAnyQtyError}
                                     />
                                 </div>
                             </div>
@@ -451,6 +439,7 @@ export default function Checkout() {
                                         onChange={handleChange} 
                                         className={errors.ciudad ? 'input-error' : ''} 
                                         placeholder="Ciudad"
+                                        disabled={hasAnyQtyError}
                                     />
                                     {errors.ciudad && <span className="error-text">{errors.ciudad}</span>}
                                 </div>
@@ -465,6 +454,7 @@ export default function Checkout() {
                                         onChange={handleChange} 
                                         className={errors.telefono ? 'input-error' : ''}
                                         placeholder="Número de Teléfono"
+                                        disabled={hasAnyQtyError}
                                     />
                                     {errors.telefono && <span className="error-text">{errors.telefono}</span>}
                                 </div>
@@ -480,6 +470,7 @@ export default function Checkout() {
                                     onChange={handleChange} 
                                     className={errors.correo ? 'input-error' : ''} 
                                     placeholder="Correo Electrónico"
+                                    disabled={hasAnyQtyError}
                                 />
                                 {errors.correo && <span className="error-text">{errors.correo}</span>}
                             </div>
@@ -493,6 +484,7 @@ export default function Checkout() {
                                         checked={formData.aceptoTerminos} 
                                         onChange={handleChange} 
                                         className={errors.aceptoTerminos ? 'input-error' : ''}
+                                        disabled={hasAnyQtyError}
                                     />
                                     <span className="checkmark"></span>
                                     <span className="checkbox-label-text">Acepto los Términos de Uso*</span>
@@ -506,12 +498,20 @@ export default function Checkout() {
                     <div className="checkout-summary-section">
                         <div className="summary-box">
                             <div className="summary-items">
-                                {cart.items.map(item => (
-                                    <div className="summary-item-row" key={item.id_producto}>
-                                        <span className="summary-item-name">{item.nombre} x {item.cantidad}</span>
-                                        <span className="summary-item-total">${(parseFloat(item.precio) * item.cantidad).toFixed(2)}</span>
-                                    </div>
-                                ))}
+                                {cart.items.map(item => {
+                                    const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
+                                    const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : Infinity);
+                                    const isOverStock = item.cantidad > itemStock;
+                                    return (
+                                        <div className={`summary-item-row ${isOverStock ? 'summary-item-row--issue' : ''}`} key={item.id_producto}>
+                                            <span className="summary-item-name">
+                                                {isOverStock && <span className="summary-item-warning">⚠️ </span>}
+                                                {item.nombre} x {item.cantidad}
+                                            </span>
+                                            <span className="summary-item-total">${(parseFloat(item.precio) * item.cantidad).toFixed(2)}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             <hr />
@@ -541,13 +541,43 @@ export default function Checkout() {
                                     placeholder="Código de Cupón" 
                                     value={coupon}
                                     onChange={(e) => setCoupon(e.target.value)}
+                                    disabled={hasAnyQtyError}
                                 />
-                                <button className="btn-yellow" type="button">Aplicar Cupón</button>
+                                <button className="btn-yellow" type="button" disabled={hasAnyQtyError}>Aplicar Cupón</button>
                             </div>
 
                             <div className="payment-options-centered">
                                 <img src={mercadopagoLogo} alt="Mercado Pago" className="mercadopago-centered-logo" />
                             </div>
+
+                            {/* Alerta inline de stock en el resumen del checkout */}
+                            {hasAnyQtyError && (
+                                <div className="checkout-stock-inline-alert animate-fade-in">
+                                    <div className="inline-alert-header">
+                                        <span className="inline-alert-icon">⚠️</span>
+                                        <strong>Stock insuficiente</strong>
+                                    </div>
+                                    <ul className="inline-alert-list">
+                                        {itemsConProblemasStock.map(item => {
+                                            const productData = productos.find(p => p.id_producto === item.id_producto);
+                                            const itemStock = productData ? productData.stock : 0;
+                                            return (
+                                                <li key={item.id_producto}>
+                                                    <span className="inline-alert-product">{item.nombre}</span>
+                                                    <span>: {itemStock === 0 ? <span className="alert-badge-out">Agotado</span> : <span className="alert-badge-low">Máx {itemStock} u.</span>}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <button 
+                                        className="btn-yellow full-width"
+                                        onClick={handleAutoAdjustCheckout}
+                                        style={{ fontSize: '13px', fontWeight: '700' }}
+                                    >
+                                        ⚡ Auto-ajustar cantidades
+                                    </button>
+                                </div>
+                            )}
 
                             <button 
                                 type="button" 
@@ -560,7 +590,7 @@ export default function Checkout() {
 
                             {hasAnyQtyError && (
                                 <p className="checkout-warning-text">
-                                    ⚠️ Por favor, corregí las cantidades en el carrito.
+                                    ⚠️ Ajustá las cantidades para poder confirmar.
                                 </p>
                             )}
                         </div>
