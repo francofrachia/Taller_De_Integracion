@@ -269,3 +269,122 @@
     width: 100%;
   }
 }
+
+/* --- BANNER DE ALERTA DE STOCK --- */
+.cart-stock-alert-banner {
+  background: rgba(255, 235, 235, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(211, 47, 47, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+  display: flex;
+  gap: 18px;
+  box-shadow: 0 8px 32px rgba(211, 47, 47, 0.04);
+}
+
+.cart-stock-alert-banner .alert-icon {
+  font-size: 32px;
+  background-color: rgba(211, 47, 47, 0.1);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d32f2f;
+  flex-shrink: 0;
+}
+
+.cart-stock-alert-banner .alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cart-stock-alert-banner .alert-content h4 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #c62828;
+}
+
+.cart-stock-alert-banner .alert-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.cart-stock-alert-list {
+  margin: 0 0 16px 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cart-stock-alert-list li {
+  font-size: 13.5px;
+  color: #444;
+}
+
+.alert-badge-out {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.alert-badge-low {
+  background-color: rgba(245, 124, 0, 0.1);
+  color: #f57c00;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.cart-stock-alert-banner .auto-adjust-btn {
+  align-self: flex-start;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.cart-stock-alert-banner .auto-adjust-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.25);
+}
+
+@media (max-width: 600px) {
+  .cart-stock-alert-banner {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    text-align: center;
+  }
+  .cart-stock-alert-banner .alert-content {
+    align-items: center;
+  }
+  .cart-stock-alert-banner .auto-adjust-btn {
+    align-self: center;
+  }
+  .cart-stock-alert-list {
+    padding-left: 0;
+    list-style: none;
+  }
+}

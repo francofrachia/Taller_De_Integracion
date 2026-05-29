@@ -35,9 +35,30 @@ export default function Cart() {
             return true;
         }
         const productData = productos.find(p => p.id_producto === item.id_producto);
-        const itemStock = productData ? productData.stock : (item.stock || 0);
-        return itemStock && parseInt(qty, 10) > itemStock;
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        return itemStock !== undefined && parseInt(qty, 10) > itemStock;
     }) : false;
+
+    // Detectar si hay artículos con problemas de stock para mostrar una alerta en la parte superior
+    const itemsConProblemasStock = cart && cart.items && productos ? cart.items.filter(item => {
+        const productData = productos.find(p => p.id_producto === item.id_producto);
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        return itemStock !== undefined && item.cantidad > itemStock;
+    }) : [];
+
+    const handleAutoAdjust = async () => {
+        for (const item of itemsConProblemasStock) {
+            const productData = productos.find(p => p.id_producto === item.id_producto);
+            const itemStock = productData ? productData.stock : 0;
+            if (itemStock === 0) {
+                await removerDelCarrito(item.id_producto);
+            } else {
+                await actualizarCantidadCarrito(item.id_producto, itemStock);
+            }
+        }
+        // Limpiar localQuantities para sincronizar la UI
+        setLocalQuantities({});
+    };
 
     const handleCheckout = () => {
         if (!cart || !cart.items || cart.items.length === 0 || hasAnyQtyError) return;
@@ -111,7 +132,34 @@ export default function Cart() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="cart-layout">
+                    <>
+                        {itemsConProblemasStock.length > 0 && (
+                            <div className="cart-stock-alert-banner glassmorphic animate-fade-in">
+                                <div className="alert-icon">⚠️</div>
+                                <div className="alert-content">
+                                    <h4>Atención: Cambios en el Stock Disponible</h4>
+                                    <p>Algunos productos en tu carrito ya no tienen suficiente stock o se han agotado debido a compras recientes de otros usuarios. Por favor, ajustá las cantidades o remové los productos agotados para continuar.</p>
+                                    <ul className="cart-stock-alert-list">
+                                        {itemsConProblemasStock.map(item => {
+                                            const productData = productos.find(p => p.id_producto === item.id_producto);
+                                            const itemStock = productData ? productData.stock : 0;
+                                            return (
+                                                <li key={item.id_producto}>
+                                                    <strong>{item.nombre}</strong>: Solicitado {item.cantidad} u. | Stock real: {itemStock === 0 ? <span className="alert-badge-out">Agotado (0 u.)</span> : <span className="alert-badge-low">Límite {itemStock} u.</span>}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <button 
+                                        className="btn-yellow auto-adjust-btn" 
+                                        onClick={handleAutoAdjust}
+                                    >
+                                        Auto-ajustar cantidades al stock disponible
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="cart-layout">
                         <div className="cart-items-section">
                             <div className="cart-table-header">
                                 <span>Producto</span>
@@ -126,8 +174,8 @@ export default function Cart() {
                                         ? localQuantities[item.id_producto] 
                                         : item.cantidad;
                                     const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
-                                    const itemStock = productData ? productData.stock : (item.stock || 0);
-                                    const isInvalidQty = qty !== '' && itemStock && parseInt(qty, 10) > itemStock;
+                                    const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+                                    const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
 
                                     return (
                                         <div className="cart-item" key={item.id_producto}>
@@ -189,8 +237,8 @@ export default function Cart() {
                                                     </div>
                                                 </div>
                                                 {isInvalidQty && (
-                                                    <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '11px', marginTop: '4px', fontWeight: '500', display: 'block', textAlign: 'center' }}>
-                                                        Máx: {itemStock} u
+                                                    <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px', fontWeight: '600', display: 'block', textAlign: 'center' }}>
+                                                        {itemStock === 0 ? '❌ Agotado' : `⚠️ Máx: ${itemStock} u`}
                                                     </div>
                                                 )}
                                             </div>
@@ -239,6 +287,7 @@ export default function Cart() {
                             </div>
                         </div>
                     </div>
+                    </>
                 )}
             </main>
 

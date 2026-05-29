@@ -7,7 +7,7 @@ import mercadopagoLogo from '../../assets/mercadopago-seeklogo.png';
 import './Checkout.css';
 
 export default function Checkout() {
-    const { cart, API_URL, usuario, productos, loading, isInitialized, token } = useContext(AppContext);
+    const { cart, API_URL, usuario, productos, loading, isInitialized, token, removerDelCarrito, actualizarCantidadCarrito } = useContext(AppContext);
     const navigate = useNavigate();
     const [coupon, setCoupon] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -196,9 +196,32 @@ export default function Checkout() {
     // Validación de stock en tiempo real
     const hasAnyQtyError = cart && cart.items && productos ? cart.items.some(item => {
         const productData = productos.find(p => p.id_producto === item.id_producto);
-        const itemStock = productData ? productData.stock : (item.stock || 0);
-        return itemStock && item.cantidad > itemStock;
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        return itemStock !== undefined && item.cantidad > itemStock;
     }) : false;
+
+    // Detectar si hay artículos con problemas de stock para mostrar una alerta en la parte superior
+    const itemsConProblemasStock = cart && cart.items && productos ? cart.items.filter(item => {
+        const productData = productos.find(p => p.id_producto === item.id_producto);
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        return itemStock !== undefined && item.cantidad > itemStock;
+    }) : [];
+
+    const handleAutoAdjustCheckout = async () => {
+        for (const item of itemsConProblemasStock) {
+            const productData = productos.find(p => p.id_producto === item.id_producto);
+            const itemStock = productData ? productData.stock : 0;
+            if (itemStock === 0) {
+                await removerDelCarrito(item.id_producto);
+            } else {
+                await actualizarCantidadCarrito(item.id_producto, itemStock);
+            }
+        }
+        // Si el carrito se vacía o se limpia, redirigir
+        if (cart && cart.items && (cart.items.length <= itemsConProblemasStock.length)) {
+            navigate('/carrito');
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -318,6 +341,42 @@ export default function Checkout() {
                     <Link to="/">Inicio</Link> / <Link to="/carrito">Carrito</Link> / <span className="current">Facturación</span>
                 </div>
 
+                {itemsConProblemasStock.length > 0 && (
+                    <div className="cart-stock-alert-banner glassmorphic animate-fade-in" style={{ marginBottom: '30px' }}>
+                        <div className="alert-icon">⚠️</div>
+                        <div className="alert-content">
+                            <h4>Conflicto de Stock Detectado</h4>
+                            <p>El stock de algunos productos en tu orden ha cambiado debido a compras recientes de otros usuarios. Por favor, auto-ajustá las cantidades al stock disponible real para poder confirmar tu pedido de forma segura.</p>
+                            <ul className="cart-stock-alert-list">
+                                {itemsConProblemasStock.map(item => {
+                                    const productData = productos.find(p => p.id_producto === item.id_producto);
+                                    const itemStock = productData ? productData.stock : 0;
+                                    return (
+                                        <li key={item.id_producto}>
+                                            <strong>{item.nombre}</strong>: En tu orden {item.cantidad} u. | Stock real: {itemStock === 0 ? <span className="alert-badge-out">Agotado (0 u.)</span> : <span className="alert-badge-low">Límite {itemStock} u.</span>}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                <button 
+                                    className="btn-yellow auto-adjust-btn" 
+                                    onClick={handleAutoAdjustCheckout}
+                                    style={{ marginTop: '4px' }}
+                                >
+                                    Auto-ajustar mi orden
+                                </button>
+                                <Link 
+                                    to="/carrito" 
+                                    className="btn-outline" 
+                                    style={{ textDecoration: 'none', padding: '10px 20px', borderRadius: '6px', fontSize: '13.5px', fontWeight: '700', marginTop: '4px', display: 'inline-flex', alignItems: 'center' }}
+                                >
+                                    Volver al Carrito
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="checkout-layout">
                     {/* Sección Izquierda: Formulario de Facturación */}
                     <div className="checkout-form-section">
