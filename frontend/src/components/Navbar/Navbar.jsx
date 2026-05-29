@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
 
@@ -22,9 +22,10 @@ const Navbar = () => {
         </div>
         
         <ul className="navbar-links">
-          <li><Link to="/">Inicio</Link></li>
-          <li><Link to="/productos">Nuestros Productos</Link></li>
-          <li><Link to="/nosotros">Sobre la APP</Link></li>
+          <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""}>Inicio</NavLink></li>
+          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""}>Nuestros Productos</NavLink></li>
+          <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""}>Sobre la APP</NavLink></li>
+          <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""}>Ofertas</NavLink></li>
         </ul>
 
         <div className="navbar-search">

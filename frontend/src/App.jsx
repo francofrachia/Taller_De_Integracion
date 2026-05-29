@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home/Home';
 import Catalog from './pages/Catalog/Catalog';
+import Promociones from './pages/Promociones/Promociones';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Catalog />} />
+        <Route path="/promociones" element={<Promociones />} />
         <Route path="/producto/:id" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

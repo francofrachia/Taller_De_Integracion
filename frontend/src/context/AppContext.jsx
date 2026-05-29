@@ -14,6 +14,7 @@ export function AppProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
     const [loginTooltipVisible, setLoginTooltipVisible] = useState(false);
+    const [promociones, setPromociones] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -57,19 +58,20 @@ export function AppProvider({ children }) {
                     // Esperamos tanto productos como carrito antes de marcar como inicializado
                     await Promise.all([
                         obtenerProductos(),
+                        obtenerPromociones(),
                         obtenerCarrito(loadedToken),
                         obtenerFavoritos(loadedToken)
                     ]);
                 } catch (e) {
                     console.error("Error al parsear el usuario guardado:", e);
-                    await obtenerProductos();
+                    await Promise.all([obtenerProductos(), obtenerPromociones()]);
                 }
             } else {
                 // Si no hay usuario, no cargamos carrito (limpiar estado)
                 setCart(null);
                 setCartCount(0);
                 setFavoritos([]);
-                await obtenerProductos();
+                await Promise.all([obtenerProductos(), obtenerPromociones()]);
             }
             setIsInitialized(true);
         };
@@ -94,6 +96,19 @@ export function AppProvider({ children }) {
             setFetchError(true);
         } finally {
             setLoading(false);
+        }
+    }
+
+    // 2.5 Fetch promociones del backend
+    async function obtenerPromociones() {
+        try {
+            const response = await fetch(`${API_URL}/productos/promociones`);
+            if (response.ok) {
+                const data = await response.json();
+                setPromociones(data);
+            }
+        } catch (error) {
+            console.error("Error obteniendo promociones:", error);
         }
     }
 
@@ -552,6 +567,7 @@ export function AppProvider({ children }) {
     return (
         <AppContext.Provider value={{
             productos,
+            promociones,
             busqueda,
             setBusqueda,
             cart,

@@ -5,6 +5,7 @@ const verificarToken = require('../middlewares/authMiddleware');
 
 // La ruta será: http://localhost:3000/api/productos
 router.get('/', productoController.getProductos);
+router.get('/promociones', productoController.getPromociones);
 router.get('/categorias', productoController.getCategorias);
 router.get('/:id', productoController.getProductoById);
 router.get('/:id/resenas', productoController.getResenasByProductoId);

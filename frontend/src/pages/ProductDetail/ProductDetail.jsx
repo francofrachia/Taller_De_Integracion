@@ -488,7 +488,7 @@ const ProductDetail = () => {
               </div>
               {quantity > product.stock && (
                 <p className="stock-warning-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '-5px', fontWeight: '500' }}>
-                  ⚠️ No hay suficiente stock. El máximo es {product.stock} unidades.
+                   No hay suficiente stock. El máximo es {product.stock} unidades.
                 </p>
               )}
               {paymentError && (

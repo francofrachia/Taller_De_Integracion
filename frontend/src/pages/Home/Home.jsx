@@ -48,7 +48,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
   const [activeFlashIndex, setActiveFlashIndex] = useState(2);
-  const { favoritos, toggleFavorito } = useContext(AppContext);
+  const { favoritos, toggleFavorito, promociones } = useContext(AppContext);
   const flashCarouselRef = useRef(null);
   
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -354,52 +354,56 @@ const Home = () => {
                         <ProductCardSkeleton />
                       </div>
                     ) : (
-                      productos.slice(0, 10).map((product, i) => {
-                        const isFav = favoritos && favoritos.includes(product.id);
-                        const isDark = i % 3 === 0;
-                        const isAccent = i % 3 === 1;
-
-                        return (
-                          <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
-                            <button 
-                              className={`apple-card-fav ${isFav ? 'active' : ''}`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleFavorito(product.id);
-                              }}
-                              title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
-                            >
-                              {isFav ? <FaHeart /> : <FaRegHeart />}
-                            </button>
-
-                            <div className="apple-card-content">
-                              {product.stock <= 0 ? (
-                                <div className="apple-card-tag out-of-stock-tag">Agotado</div>
-                              ) : (
-                                <div className="apple-card-tag">Oferta Limitada</div>
-                              )}
-                              <h3 className="apple-card-title">{product.title}</h3>
-                              <p className="apple-card-subtitle">
-                                {product.category_name || "Construye tu imaginación."}
-                              </p>
-                              <div className="apple-card-price">
-                                {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
+                      (() => {
+                        // El Home mapea id_producto→id, precio→price
+                        const promoItems = (promociones || []).map(promo => {
+                          const p = productos.find(pr => pr.id === promo.id_producto);
+                          if (!p) return null;
+                          const orig = parseFloat(p.price);
+                          const disc = parseFloat(promo.porcentaje);
+                          return { ...p, discount_pct: disc, original_price: orig.toFixed(2), final_price: (orig - orig * disc / 100).toFixed(2) };
+                        }).filter(Boolean);
+                        const itemsToShow = promoItems.length > 0 ? promoItems : productos.slice(0, 10);
+                        const isRealPromo = promoItems.length > 0;
+                        return itemsToShow.map((product, i) => {
+                          const isFav = favoritos && favoritos.includes(product.id);
+                          const isDark = i % 3 === 0;
+                          const isAccent = i % 3 === 1;
+                          return (
+                            <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
+                              <button 
+                                className={`apple-card-fav ${isFav ? 'active' : ''}`}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorito(product.id); }}
+                                title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                              >
+                                {isFav ? <FaHeart /> : <FaRegHeart />}
+                              </button>
+                              <div className="apple-card-content">
+                                {product.stock <= 0 ? (
+                                  <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                                ) : (
+                                  <div className="apple-card-tag">{isRealPromo ? `🔥 -${product.discount_pct}%` : 'Oferta Limitada'}</div>
+                                )}
+                                <h3 className="apple-card-title">{product.title}</h3>
+                                <p className="apple-card-subtitle">{product.categoryName || "Construye tu imaginación."}</p>
+                                <div className="apple-card-price">
+                                  {product.stock <= 0 ? "Sin stock" : (
+                                    isRealPromo ? (
+                                      <><span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '13px', marginRight: '6px' }}>${product.original_price}</span><strong>${product.final_price}</strong></>
+                                    ) : `Desde $${product.price}`
+                                  )}
+                                </div>
                               </div>
-                            </div>
-
-                            <img 
-                              src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
-                              alt={product.title} 
-                              className="apple-card-image"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = placeholderProduct;
-                              }}
-                            />
-                          </Link>
-                        );
-                      })
+                              <img 
+                                src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
+                                alt={product.title} 
+                                className="apple-card-image"
+                                onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
+                              />
+                            </Link>
+                          );
+                        });
+                      })()
                     )}
                   </div>
                 
