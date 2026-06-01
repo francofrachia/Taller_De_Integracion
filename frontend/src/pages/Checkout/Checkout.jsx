@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -9,8 +9,12 @@ import './Checkout.css';
 export default function Checkout() {
     const { cart, API_URL, usuario, productos, loading, isInitialized, token, removerDelCarrito, actualizarCantidadCarrito } = useContext(AppContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const [coupon, setCoupon] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const selectedItemIds = location.state?.selectedItems || null;
+    const checkoutItems = cart && cart.items ? (selectedItemIds ? cart.items.filter(i => selectedItemIds.includes(String(i.id_producto))) : cart.items) : [];
 
     const [formData, setFormData] = useState(() => {
         const savedData = sessionStorage.getItem('checkout_form_data');
@@ -194,14 +198,14 @@ export default function Checkout() {
     }
 
     // Validación de stock en tiempo real
-    const hasAnyQtyError = cart && cart.items && productos ? cart.items.some(item => {
+    const hasAnyQtyError = checkoutItems.length > 0 && productos ? checkoutItems.some(item => {
         const productData = productos.find(p => p.id_producto === item.id_producto);
         const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
         return itemStock !== undefined && item.cantidad > itemStock;
     }) : false;
 
     // Detectar si hay artículos con problemas de stock para mostrar una alerta en la parte superior
-    const itemsConProblemasStock = cart && cart.items && productos ? cart.items.filter(item => {
+    const itemsConProblemasStock = checkoutItems.length > 0 && productos ? checkoutItems.filter(item => {
         const productData = productos.find(p => p.id_producto === item.id_producto);
         const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
         return itemStock !== undefined && item.cantidad > itemStock;
@@ -293,7 +297,7 @@ export default function Checkout() {
 
         try {
             // Mapeamos los items al formato que espera el backend
-            const cartItems = cart.items.map(item => ({
+            const cartItems = checkoutItems.map(item => ({
                 id_producto: item.id_producto,
                 cantidad: item.cantidad
             }));
@@ -328,7 +332,7 @@ export default function Checkout() {
         }
     };
 
-    const subtotal = cart.items.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+    const subtotal = checkoutItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
     const shipping = 0; // Envío gratis
     const total = subtotal + shipping;
 
@@ -498,7 +502,7 @@ export default function Checkout() {
                     <div className="checkout-summary-section">
                         <div className="summary-box">
                             <div className="summary-items">
-                                {cart.items.map(item => {
+                                {checkoutItems.map(item => {
                                     const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
                                     const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : Infinity);
                                     const isOverStock = item.cantidad > itemStock;

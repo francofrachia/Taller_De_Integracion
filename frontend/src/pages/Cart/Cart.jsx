@@ -1,6 +1,7 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
+import { MdCheckBox, MdCheckBoxOutlineBlank } from 'react-icons/md';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Cart.css';
@@ -9,6 +10,54 @@ export default function Cart() {
     const { cart, actualizarCantidadCarrito, removerDelCarrito, vaciarCarrito, API_URL, usuario, productos, isInitialized } = useContext(AppContext);
     const navigate = useNavigate();
     const [localQuantities, setLocalQuantities] = useState({});
+    const [selectedItems, setSelectedItems] = useState({});
+
+    useEffect(() => {
+        if (cart && cart.items && productos) {
+            setSelectedItems(prev => {
+                const newSel = { ...prev };
+                let hasChanges = false;
+                cart.items.forEach(item => {
+                    const productData = productos.find(p => p.id_producto === item.id_producto);
+                    const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+                    
+                    if (newSel[item.id_producto] === undefined) {
+                        newSel[item.id_producto] = itemStock > 0;
+                        hasChanges = true;
+                    } else if (itemStock === 0 && newSel[item.id_producto] === true) {
+                        newSel[item.id_producto] = false;
+                        hasChanges = true;
+                    }
+                });
+                return hasChanges ? newSel : prev;
+            });
+        }
+    }, [cart, productos]);
+
+    const toggleSelection = (id_producto) => {
+        setSelectedItems(prev => ({
+            ...prev,
+            [id_producto]: !prev[id_producto]
+        }));
+    };
+
+    const itemsConStock = cart && cart.items && productos ? cart.items.filter(item => {
+        const productData = productos.find(p => p.id_producto === item.id_producto);
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        return itemStock > 0;
+    }) : [];
+    
+    const allSelected = itemsConStock.length > 0 && itemsConStock.every(item => selectedItems[item.id_producto]);
+
+    const handleSelectAll = () => {
+        setSelectedItems(prev => {
+            const newSel = { ...prev };
+            itemsConStock.forEach(item => {
+                newSel[item.id_producto] = !allSelected;
+            });
+            return newSel;
+        });
+    };
 
     const handleQuantityChange = (id_producto, currentQty, change, stock) => {
         const baseQty = localQuantities[id_producto] !== undefined
@@ -28,6 +77,7 @@ export default function Cart() {
     };
 
     const hasAnyQtyError = cart && cart.items && productos ? cart.items.some(item => {
+        if (!selectedItems[item.id_producto]) return false;
         const qty = localQuantities[item.id_producto] !== undefined
             ? localQuantities[item.id_producto]
             : item.cantidad;
@@ -41,6 +91,7 @@ export default function Cart() {
 
     // Detectar si hay artículos con problemas de stock para mostrar una alerta en la parte superior
     const itemsConProblemasStock = cart && cart.items && productos ? cart.items.filter(item => {
+        if (!selectedItems[item.id_producto]) return false;
         const productData = productos.find(p => p.id_producto === item.id_producto);
         const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
         return itemStock !== undefined && item.cantidad > itemStock;
@@ -61,11 +112,22 @@ export default function Cart() {
     };
 
     const handleCheckout = () => {
+        const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+        if (selectedIds.length === 0) {
+            alert('Debes seleccionar al menos un producto para comprar.');
+            return;
+        }
         if (!cart || !cart.items || cart.items.length === 0 || hasAnyQtyError) return;
-        navigate('/checkout');
+        navigate('/checkout', { state: { selectedItems: selectedIds } });
     };
 
     const subtotal = cart && cart.items ? cart.items.reduce((sum, item) => {
+        if (!selectedItems[item.id_producto]) return sum;
+        const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
+        const itemStock = productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+        
+        if (itemStock === 0) return sum;
+
         const qty = localQuantities[item.id_producto] !== undefined
             ? (parseInt(localQuantities[item.id_producto], 10) || 0)
             : item.cantidad;
@@ -140,6 +202,15 @@ export default function Cart() {
                                     <span>Precio</span>
                                     <span>Cantidad</span>
                                     <span>Total</span>
+                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button 
+                                            className="select-btn" 
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: allSelected ? 'var(--primary-yellow)' : '#ccc' }}
+                                            onClick={handleSelectAll}
+                                        >
+                                            {allSelected ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="cart-items-list">
@@ -155,69 +226,82 @@ export default function Cart() {
                                             <div className={`cart-item ${isInvalidQty ? 'cart-item--stock-issue' : ''}`} key={item.id_producto}>
                                                 <div className="item-product">
                                                     <button className="remove-btn" onClick={() => handleRemove(item.id_producto)}>×</button>
-                                                    {/* Si hay imagen, la mostramos. Asumiendo que item.imagenes es un array */}
-                                                    {item.imagenes && item.imagenes[0] ? (
-                                                        <img src={item.imagenes[0]} alt={item.nombre} />
-                                                    ) : (
-                                                        <div className="img-placeholder"></div>
-                                                    )}
-                                                    <span className="item-name">{item.nombre}</span>
+                                                    <Link to={`/producto/${item.id_producto}`} style={{ display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit' }}>
+                                                        {/* Si hay imagen, la mostramos. Asumiendo que item.imagenes es un array */}
+                                                        {item.imagenes && item.imagenes[0] ? (
+                                                            <img src={item.imagenes[0]} alt={item.nombre} />
+                                                        ) : (
+                                                            <div className="img-placeholder"></div>
+                                                        )}
+                                                        <span className="item-name">{item.nombre}</span>
+                                                    </Link>
                                                 </div>
                                                 <div className="item-price">${item.precio}</div>
                                                 <div className="item-quantity">
-                                                    <div className={`quantity-controls ${isInvalidQty ? 'qty-controls-error' : ''}`}>
-                                                        <input
-                                                            type="number"
-                                                            value={qty}
-                                                            onChange={(e) => {
-                                                                const val = e.target.value;
-                                                                if (val === '') {
-                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: '' }));
-                                                                    return;
-                                                                }
-                                                                const num = parseInt(val, 10);
-                                                                if (!isNaN(num)) {
-                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: num }));
-                                                                }
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                let val = parseInt(e.target.value, 10);
-                                                                if (isNaN(val) || val < 1) {
-                                                                    val = 1;
-                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: 1 }));
-                                                                    if (item.cantidad !== 1) {
-                                                                        actualizarCantidadCarrito(item.id_producto, 1);
+                                                    {itemStock > 0 && (
+                                                        <div className={`quantity-controls ${isInvalidQty ? 'qty-controls-error' : ''}`}>
+                                                            <input
+                                                                type="number"
+                                                                value={qty}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    if (val === '') {
+                                                                        setLocalQuantities(prev => ({ ...prev, [item.id_producto]: '' }));
+                                                                        return;
                                                                     }
-                                                                    return;
-                                                                }
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: val }));
-                                                                if (!itemStock || val <= itemStock) {
-                                                                    if (val !== item.cantidad) {
-                                                                        actualizarCantidadCarrito(item.id_producto, val);
+                                                                    const num = parseInt(val, 10);
+                                                                    if (!isNaN(num)) {
+                                                                        setLocalQuantities(prev => ({ ...prev, [item.id_producto]: num }));
                                                                     }
-                                                                }
-                                                            }}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    e.target.blur();
-                                                                }
-                                                            }}
-                                                            min="1"
-                                                            max={itemStock || undefined}
-                                                        />
-                                                        <div className="qty-arrows">
-                                                            <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>▲</button>
-                                                            <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>▼</button>
+                                                                }}
+                                                                onBlur={(e) => {
+                                                                    let val = parseInt(e.target.value, 10);
+                                                                    if (isNaN(val) || val < 1) {
+                                                                        val = 1;
+                                                                        setLocalQuantities(prev => ({ ...prev, [item.id_producto]: 1 }));
+                                                                        if (item.cantidad !== 1) {
+                                                                            actualizarCantidadCarrito(item.id_producto, 1);
+                                                                        }
+                                                                        return;
+                                                                    }
+                                                                    setLocalQuantities(prev => ({ ...prev, [item.id_producto]: val }));
+                                                                    if (!itemStock || val <= itemStock) {
+                                                                        if (val !== item.cantidad) {
+                                                                            actualizarCantidadCarrito(item.id_producto, val);
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.target.blur();
+                                                                    }
+                                                                }}
+                                                                min="1"
+                                                                max={itemStock || undefined}
+                                                            />
+                                                            <div className="qty-arrows">
+                                                                <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>▲</button>
+                                                                <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>▼</button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    {isInvalidQty && (
+                                                    )}
+                                                    {(isInvalidQty || itemStock === 0) && (
                                                         <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px', fontWeight: '600', display: 'block', textAlign: 'center' }}>
                                                             {itemStock === 0 ? 'Agotado' : `Máx: ${itemStock} u`}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="item-total">
-                                                    ${(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)).toFixed(2)}
+                                                    ${(itemStock === 0 ? 0 : (item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad))).toFixed(2)}
+                                                </div>
+                                                <div className="item-select" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <button 
+                                                        className="select-btn" 
+                                                        style={{ background: 'none', border: 'none', cursor: itemStock > 0 ? 'pointer' : 'not-allowed', fontSize: '24px', color: (itemStock > 0 && selectedItems[item.id_producto]) ? 'var(--primary-yellow)' : '#ccc' }}
+                                                        onClick={() => itemStock > 0 && toggleSelection(item.id_producto)}
+                                                    >
+                                                        {(itemStock > 0 && selectedItems[item.id_producto]) ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                                                    </button>
                                                 </div>
                                             </div>
                                         );
