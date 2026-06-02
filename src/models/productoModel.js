@@ -9,7 +9,13 @@ const Producto = {
                 c.nombre AS categoria_nombre, 
                 i.url AS imagen_url,
                 COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
-                COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion
+                COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion,
+                COALESCE((
+                    SELECT SUM(lc.cantidad) 
+                    FROM linea_compra lc 
+                    JOIN compra com ON lc.id_compra = com.id_compra 
+                    WHERE lc.id_producto = p.id_producto AND com.estado NOT IN ('Esperando Pago', 'Cancelado')
+                ), 0) AS ventas_totales
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
             LEFT JOIN imagen i ON p.id_producto = i.id_producto
