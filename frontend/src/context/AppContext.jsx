@@ -17,6 +17,20 @@ export function AppProvider({ children }) {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+    // Helper privado para persistir sesión (Principios DRY/SOLID)
+    function persistirSesion(nuevoUsuario, nuevoToken) {
+        if (nuevoUsuario) {
+            setUsuario(nuevoUsuario);
+            localStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+            sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+        }
+        if (nuevoToken && nuevoToken !== 'null' && nuevoToken !== 'undefined') {
+            setToken(nuevoToken);
+            localStorage.setItem('token_bloquemundo', nuevoToken);
+            sessionStorage.setItem('token_bloquemundo', nuevoToken);
+        }
+    }
+
     // 5. Cerrar sesión (definida arriba para poder invocarla desde init y otros métodos)
     function logout() {
         setUsuario(null);
@@ -37,7 +51,7 @@ export function AppProvider({ children }) {
             let tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
             const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
             
-            // Sanitización extrema: Si el token guardado es la cadena "null" o "undefined" debido a bugs previos, limpiarlo
+            // Sanitización extrema (Legado): Si existiera el string 'null', lo limpiamos
             if (tokenGuardado === 'null' || tokenGuardado === 'undefined') {
                 tokenGuardado = null;
                 localStorage.removeItem('token_bloquemundo');
@@ -244,19 +258,23 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+                return { success: true };
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida al actualizar carrito. Auto-logout.");
                 logout();
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                return { success: false, requireLogin: true };
             } else {
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                return { success: false, error: 'Error del servidor' };
             }
         } catch (error) {
             console.error(error);
             setCart(oldCart);
             setCartCount(oldCartCount);
+            return { success: false, error: error.message || 'Error de red' };
         }
     }
 
@@ -290,25 +308,29 @@ export function AppProvider({ children }) {
                 const data = await response.json();
                 setCart(data);
                 setCartCount(data.items.reduce((acc, item) => acc + item.cantidad, 0));
+                return { success: true };
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida al remover item. Auto-logout.");
                 logout();
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                return { success: false, requireLogin: true };
             } else {
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                return { success: false, error: 'Error del servidor' };
             }
         } catch (error) {
             console.error(error);
             setCart(oldCart);
             setCartCount(oldCartCount);
+            return { success: false, error: error.message || 'Error de red' };
         }
     }
 
     async function vaciarCarrito() {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
-            return;
+            return { success: false, requireLogin: true };
         }
         try {
             const response = await fetch(`${API_URL}/carrito/clear`, {
@@ -321,12 +343,17 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
                 setCartCount(0);
+                return { success: true };
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida al vaciar carrito. Auto-logout.");
                 logout();
+                return { success: false, requireLogin: true };
+            } else {
+                return { success: false, error: 'Error del servidor al vaciar carrito' };
             }
         } catch (error) {
             console.error(error);
+            return { success: false, error: error.message || 'Error de red' };
         }
     }
 
@@ -415,13 +442,8 @@ export function AppProvider({ children }) {
                 const datos = await respuesta.json();
                 console.log("Respuesta de Bloque Mundo Backend:", datos);
                 
-                // Guardar en estado, localStorage y sessionStorage
-                setUsuario(datos.usuario);
-                setToken(datos.token);
-                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                localStorage.setItem('token_bloquemundo', datos.token);
-                sessionStorage.setItem('token_bloquemundo', datos.token);
+                // Guardar en estado, localStorage y sessionStorage (DRY)
+                persistirSesion(datos.usuario, datos.token);
                 
                 // Cargar carrito y favoritos del usuario usando el token retornado
                 obtenerCarrito(datos.token);
@@ -451,12 +473,7 @@ export function AppProvider({ children }) {
 
             if (respuesta.ok) {
                 console.log("[Login] Inicio de sesión exitoso con email.");
-                setUsuario(datos.usuario);
-                setToken(datos.token);
-                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                localStorage.setItem('token_bloquemundo', datos.token);
-                sessionStorage.setItem('token_bloquemundo', datos.token);
+                persistirSesion(datos.usuario, datos.token);
 
                 await Promise.all([
                     obtenerCarrito(datos.token),
@@ -487,12 +504,7 @@ export function AppProvider({ children }) {
 
             if (respuesta.ok) {
                 console.log("[Register] Cuenta creada exitosamente con email.");
-                setUsuario(datos.usuario);
-                setToken(datos.token);
-                localStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(datos.usuario));
-                localStorage.setItem('token_bloquemundo', datos.token);
-                sessionStorage.setItem('token_bloquemundo', datos.token);
+                persistirSesion(datos.usuario, datos.token);
 
                 await Promise.all([
                     obtenerCarrito(datos.token),
@@ -529,11 +541,9 @@ export function AppProvider({ children }) {
 
             if (respuesta.ok) {
                 console.log("[Avatar] Avatar actualizado con éxito.");
-                // Actualizar en el estado y almacenamiento
+                // Actualizar en el estado y almacenamiento (DRY)
                 const nuevoUsuario = { ...usuario, avatar_url: datos.usuario.avatar_url };
-                setUsuario(nuevoUsuario);
-                localStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
-                sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(nuevoUsuario));
+                persistirSesion(nuevoUsuario, null);
                 return { success: true };
             } else if (respuesta.status === 401 || respuesta.status === 403) {
                 console.warn("Sesión expirada o inválida al actualizar avatar. Auto-logout.");

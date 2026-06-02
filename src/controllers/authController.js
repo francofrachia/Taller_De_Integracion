@@ -130,7 +130,7 @@ const registerUser = async (req, res) => {
         // 1. Sanitización básica
         nombre = nombre ? nombre.trim() : '';
         email = email ? email.trim().toLowerCase() : '';
-        contrasena = contrasena ? contrasena.trim() : '';
+        contrasena = contrasena || '';
 
         // 2. Validación de campos obligatorios
         if (!nombre || !email || !contrasena) {
@@ -200,7 +200,7 @@ const loginUser = async (req, res) => {
 
         // 1. Sanitización básica
         email = email ? email.trim().toLowerCase() : '';
-        contrasena = contrasena ? contrasena.trim() : '';
+        contrasena = contrasena || '';
 
         // 2. Validación de campos obligatorios
         if (!email || !contrasena) {
@@ -289,9 +289,9 @@ const updatePassword = async (req, res) => {
         let { contrasenaActual, contrasenaNueva, confirmarContrasena } = req.body;
 
         // Sanitización básica
-        contrasenaActual = contrasenaActual ? contrasenaActual.trim() : '';
-        contrasenaNueva = contrasenaNueva ? contrasenaNueva.trim() : '';
-        confirmarContrasena = confirmarContrasena ? confirmarContrasena.trim() : '';
+        contrasenaActual = contrasenaActual || '';
+        contrasenaNueva = contrasenaNueva || '';
+        confirmarContrasena = confirmarContrasena || '';
 
         if (!contrasenaActual || !contrasenaNueva || !confirmarContrasena) {
             return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
