@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
@@ -11,7 +11,7 @@ import './Account.css';
 // ───────────────────────────────────────────────
 // Sub-componente: Sección de Direcciones
 // ───────────────────────────────────────────────
-function DireccionesSection({ usuario, API_URL, token }) {
+function DireccionesSection({ API_URL, token }) {
     const [direccion, setDireccion] = useState(null);
     const [localidades, setLocalidades] = useState([]);
     const [loadingDir, setLoadingDir] = useState(true);
@@ -38,6 +38,8 @@ function DireccionesSection({ usuario, API_URL, token }) {
             if (res.ok) {
                 const data = await res.json();
                 setDireccion(data.direccion); // null o objeto
+            } else {
+                console.error('Error al obtener dirección: status', res.status);
             }
         } catch (e) {
             console.error('Error al obtener dirección:', e);
@@ -52,6 +54,8 @@ function DireccionesSection({ usuario, API_URL, token }) {
             if (res.ok) {
                 const data = await res.json();
                 setLocalidades(data);
+            } else {
+                console.error('Error al obtener localidades: status', res.status);
             }
         } catch (e) {
             console.error('Error al obtener localidades:', e);
@@ -468,6 +472,9 @@ export default function Account() {
     const [compras, setCompras] = useState([]);
     const [loadingCompras, setLoadingCompras] = useState(true);
 
+    const comprasPendientes = useMemo(() => compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado'), [compras]);
+    const comprasHistorial = useMemo(() => compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado'), [compras]);
+
     const fetchCompras = useCallback(async () => {
         if (!token) return;
         setLoadingCompras(true);
@@ -480,6 +487,9 @@ export default function Account() {
             if (res.ok) {
                 const data = await res.json();
                 setCompras(data.compras || []);
+            } else {
+                console.error('Error al obtener compras: status', res.status);
+                setCompras([]);
             }
         } catch (e) {
             console.error('Error al obtener compras:', e);
@@ -531,7 +541,7 @@ export default function Account() {
 
     // Verifica la contraseña actual de forma local (el servidor la valida al guardar)
     const handleUnlock = () => {
-        if (!unlockPassValue.trim()) {
+        if (!unlockPassValue) {
             setUnlockError('Ingresá tu contraseña actual para continuar.');
             return;
         }
@@ -554,7 +564,7 @@ export default function Account() {
         telefono: '',
     });
 
-    useEffect(() => {
+    const resetFormData = useCallback(() => {
         if (usuario) {
             setFormData({
                 nombre: usuario.nombre || '',
@@ -564,6 +574,10 @@ export default function Account() {
             });
         }
     }, [usuario]);
+
+    useEffect(() => {
+        resetFormData();
+    }, [resetFormData]);
 
     const isDirty = usuario && (
         formData.nombre !== (usuario.nombre || '') ||
@@ -599,14 +613,8 @@ export default function Account() {
     };
 
     const handleCancel = () => {
-        if (usuario) {
-            setFormData({
-                nombre: usuario.nombre || '',
-                apellido: usuario.apellido || '',
-                correo: usuario.email || usuario.correo || '',
-                telefono: usuario.telefono || '',
-            });
-        }
+        resetFormData();
+        handleLockPass();
         setSaveSuccess(false);
         setSaveError('');
     };
@@ -628,8 +636,8 @@ export default function Account() {
 
         // Validar campos de nueva contraseña si está desbloqueada
         if (passStep === 'unlocked') {
-            const nue = passwordData.nueva.trim();
-            const conf = passwordData.confirmar.trim();
+            const nue = passwordData.nueva;
+            const conf = passwordData.confirmar;
             if (nue || conf) {
                 if (!nue || !conf) {
                     setPassError('Completá ambos campos de contraseña.');
@@ -643,7 +651,7 @@ export default function Account() {
                     setPassError('Las contraseñas no coinciden.');
                     return;
                 }
-                if (nue === unlockPassValue.trim()) {
+                if (nue === unlockPassValue) {
                     setPassError('La nueva contraseña debe ser diferente a la actual.');
                     return;
                 }
@@ -674,14 +682,14 @@ export default function Account() {
             sessionStorage.setItem('usuario_bloquemundo', JSON.stringify(updatedUser));
 
             // 2. Cambiar contraseña si hay datos
-            if (passStep === 'unlocked' && passwordData.nueva.trim()) {
+            if (passStep === 'unlocked' && passwordData.nueva) {
                 const passRes = await fetch(`${API_URL}/auth/password`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({
-                        contrasenaActual: unlockPassValue.trim(),
-                        contrasenaNueva: passwordData.nueva.trim(),
-                        confirmarContrasena: passwordData.confirmar.trim(),
+                        contrasenaActual: unlockPassValue,
+                        contrasenaNueva: passwordData.nueva,
+                        confirmarContrasena: passwordData.confirmar,
                     }),
                 });
                 const passData = await passRes.json();
@@ -1028,7 +1036,7 @@ export default function Account() {
                                                         onChange={e => { setUnlockPassValue(e.target.value); setUnlockError(''); }}
                                                         onKeyDown={e => e.key === 'Enter' && handleUnlock()}
                                                         placeholder="Ingresá tu contraseña actual"
-                                                        autoComplete="new-password"
+                                                        autoComplete="current-password"
                                                         autoFocus
                                                     />
                                                     <button
@@ -1071,6 +1079,7 @@ export default function Account() {
                                                         value={passwordData.nueva}
                                                         onChange={handlePassChange}
                                                         placeholder="Mínimo 6 caracteres"
+                                                        autoComplete="new-password"
                                                     />
                                                     <button type="button" className="eye-toggle" onClick={() => setShowPassNueva(p => !p)} tabIndex={-1}>
                                                         {showPassNueva ? <FiEyeOff /> : <FiEye />}
@@ -1088,6 +1097,7 @@ export default function Account() {
                                                         value={passwordData.confirmar}
                                                         onChange={handlePassChange}
                                                         placeholder="Repetir nueva contraseña"
+                                                        autoComplete="new-password"
                                                     />
                                                     <button type="button" className="eye-toggle" onClick={() => setShowPassConfirmar(p => !p)} tabIndex={-1}>
                                                         {showPassConfirmar ? <FiEyeOff /> : <FiEye />}
@@ -1120,7 +1130,7 @@ export default function Account() {
 
                         {/* ─── Direcciones (funcional) ─── */}
                         {activeSection === 'direcciones' && (
-                            <DireccionesSection usuario={usuario} API_URL={API_URL} token={token} />
+                            <DireccionesSection API_URL={API_URL} token={token} />
                         )}
 
                         {/* ─── Compras Pendientes ─── */}
@@ -1129,7 +1139,7 @@ export default function Account() {
                                 <h2 className="account-section-title">Compras en Curso y Pendientes</h2>
                                 {loadingCompras ? (
                                     <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
-                                ) : compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado').length === 0 ? (
+                                ) : comprasPendientes.length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
@@ -1139,7 +1149,7 @@ export default function Account() {
                                     </div>
                                 ) : (
                                     <div className="purchases-list">
-                                        {compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado').map(compra => (
+                                        {comprasPendientes.map(compra => (
                                             <PurchaseCard key={compra.id_compra} compra={compra} isActive={true} />
                                         ))}
                                     </div>
@@ -1153,7 +1163,7 @@ export default function Account() {
                                 <h2 className="account-section-title">Compras Anteriores y Entregas</h2>
                                 {loadingCompras ? (
                                     <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '10px' }}></div>
-                                ) : compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado').length === 0 ? (
+                                ) : comprasHistorial.length === 0 ? (
                                     <div className="placeholder-empty">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5z" />
@@ -1163,7 +1173,7 @@ export default function Account() {
                                     </div>
                                 ) : (
                                     <div className="purchases-list">
-                                        {compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado').map(compra => (
+                                        {comprasHistorial.map(compra => (
                                             <PurchaseCard key={compra.id_compra} compra={compra} isActive={false} />
                                         ))}
                                     </div>
