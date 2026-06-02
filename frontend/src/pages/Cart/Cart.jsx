@@ -66,7 +66,7 @@ const CartItemComponent = React.memo(({
                     </div>
                 )}
                 {(isInvalidQty || outOfStock) && (
-                    <div className={outOfStock ? "out-of-stock-badge" : "qty-error-msg"} style={!outOfStock ? { color: '#d32f2f', fontSize: '12px', marginTop: '4px', fontWeight: '600', display: 'block', textAlign: 'center' } : {}}>
+                    <div className={outOfStock ? "out-of-stock-badge" : "qty-error-msg"}>
                         {outOfStock ? 'Agotado' : `Máx: ${itemStock} u`}
                     </div>
                 )}

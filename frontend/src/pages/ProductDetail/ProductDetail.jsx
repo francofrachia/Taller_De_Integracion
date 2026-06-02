@@ -470,8 +470,7 @@ const ProductDetail = () => {
                   {isProcessingPayment ? 'Procesando...' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
                 <button
-                  className="btn-outline"
-                  style={{ marginLeft: '10px' }}
+                  className="add-to-cart-btn"
                   onClick={async () => {
                     let qty = parseInt(quantity, 10);
                     if (isNaN(qty) || qty < 1) qty = 1;
@@ -539,7 +538,7 @@ const ProductDetail = () => {
                     </button>
                   )}
 
-                  <div className="review-card animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
+                  <div className="review-card review-card--slider animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
                     <div className="review-header">
                       <div className="review-author">
                         {reviews[currentReviewIndex].anonimo ? 'Usuario Anónimo' : `${reviews[currentReviewIndex].autor_nombre} ${reviews[currentReviewIndex].autor_apellido}`}
@@ -585,13 +584,13 @@ const ProductDetail = () => {
 
           {/* Formulario de Calificación (Solo compradores verificados) - Se muestra SEGUNDO (al final) */}
           {!usuario ? (
-            <div className="login-to-review-prompt glassmorphic">
+            <div className="login-to-review-prompt glassmorphic glass-panel">
               <p>Debes <Link to="/login" state={{ from: `/producto/${id}` }}>iniciar sesión</Link> para calificar y dejar una reseña de este producto.</p>
             </div>
           ) : eligibility === null ? (
             <div className="skeleton" style={{ width: '100%', height: '180px', borderRadius: '16px', marginTop: '40px' }}></div>
           ) : eligibility.puedeResenar ? (
-            <div className="add-review-form glassmorphic animate-fade-in">
+            <div className="add-review-form glassmorphic glass-panel animate-fade-in">
               <h3>Calificar este Producto</h3>
               <p className="add-review-subtitle">
                 Dejanos tu puntaje y un comentario sobre tu experiencia de construcción.
@@ -660,13 +659,13 @@ const ProductDetail = () => {
               </button>
             </div>
           ) : eligibility.comprado ? (
-            <div className="verified-review-limit-msg glassmorphic">
+            <div className="verified-review-limit-msg glassmorphic glass-panel">
               <div className="verified-icon">🏆</div>
               <p><strong>¡Reseñas Completadas!</strong></p>
               <p>Ya has calificado todas tus compras de este producto ({eligibility.totalComprado} {eligibility.totalComprado === 1 ? 'unidad comprada' : 'unidades compradas'} y {eligibility.totalResenas} {eligibility.totalResenas === 1 ? 'reseña publicada' : 'reseñas publicadas'}). ¡Muchísimas gracias por tu valiosa opinión!</p>
             </div>
           ) : (
-            <div className="verified-purchase-lock-msg glassmorphic">
+            <div className="verified-purchase-lock-msg glassmorphic glass-panel">
               <div className="lock-icon">🔒</div>
               <p><strong>Reseña Exclusiva para Compradores Verificados</strong></p>
               <p>En BloqueMundo queremos que todas las opiniones sean auténticas y útiles. Para calificar este set de Lego, primero debés adquirirlo a través de nuestra tienda. ¡Esperamos ver tu opinión de construcción pronto!</p>

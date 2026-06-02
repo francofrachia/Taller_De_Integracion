@@ -109,6 +109,32 @@
   border-color: #d32f2f;
 }
 
+.item-quantity {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-error-msg {
+  position: absolute;
+  top: calc(50% + 18px); /* Centrado respecto al input, desplazado hacia abajo */
+  color: #d32f2f;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.out-of-stock-badge {
+  color: #d32f2f;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .qty-btn {
   background: none;
   border: none;
