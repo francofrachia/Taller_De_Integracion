@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -105,13 +105,13 @@ const Catalog = () => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     if (stripRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = stripRef.current;
       setCanScrollLeft(scrollLeft > 5);
       setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const strip = stripRef.current;
@@ -124,7 +124,7 @@ const Catalog = () => {
       if (strip) strip.removeEventListener('scroll', checkScroll);
       window.removeEventListener('resize', checkScroll);
     };
-  }, [dbCategories, productos]);
+  }, [checkScroll, dbCategories, productos]);
 
   const handleScroll = (direction) => {
     if (stripRef.current) {
@@ -133,11 +133,16 @@ const Catalog = () => {
     }
   };
 
+  const [categoryError, setCategoryError] = useState(false);
+
   useEffect(() => {
     fetch(`${API_URL}/productos/categorias`)
       .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-      .then(data => setDbCategories(data))
-      .catch(err => console.error('Error al obtener categorías:', err));
+      .then(data => { setDbCategories(data); setCategoryError(false); })
+      .catch(err => {
+        console.error('Error al obtener categorías:', err);
+        setCategoryError(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -162,7 +167,7 @@ const Catalog = () => {
             age:         item.edad_recomendada || null,
             stock:       item.stock || 0,
             isExclusive: (item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
-            isComingSoon: item.id_producto % 4 === 0,
+            isComingSoon: !!item.proximo_lanzamiento,
           };
         });
         setProductos(mapped);
@@ -188,23 +193,27 @@ const Catalog = () => {
     if (setBusqueda) setBusqueda('');
   };
 
-  const filteredProducts = productos.filter(p => {
-    if (busqueda && !p.title.toLowerCase().includes(busqueda.toLowerCase())) return false;
-    if (activeCategoryId !== null && p.categoryId !== activeCategoryId) return false;
-    if (activeAge && p.age !== parseInt(activeAge)) return false;
-    if (onlyExclusives && !p.isExclusive) return false;
-    if (onlyComingSoon && !p.isComingSoon) return false;
-    if (p.price > priceRange) return false;
-    return true;
-  });
+  const filteredProducts = useMemo(() => {
+    return productos.filter(p => {
+      if (busqueda && !p.title.toLowerCase().includes(busqueda.toLowerCase())) return false;
+      if (activeCategoryId !== null && p.categoryId !== activeCategoryId) return false;
+      if (activeAge && p.age !== parseInt(activeAge)) return false;
+      if (onlyExclusives && !p.isExclusive) return false;
+      if (onlyComingSoon && !p.isComingSoon) return false;
+      if (p.price > priceRange) return false;
+      return true;
+    });
+  }, [productos, busqueda, activeCategoryId, activeAge, onlyExclusives, onlyComingSoon, priceRange]);
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'price-asc')    return a.price - b.price;
-    if (sortBy === 'price-desc')   return b.price - a.price;
-    if (sortBy === 'rating-desc')  return b.rating - a.rating;
-    if (sortBy === 'title-asc')    return a.title.localeCompare(b.title);
-    return 0;
-  });
+  const sortedProducts = useMemo(() => {
+    return [...filteredProducts].sort((a, b) => {
+      if (sortBy === 'price-asc')    return a.price - b.price;
+      if (sortBy === 'price-desc')   return b.price - a.price;
+      if (sortBy === 'rating-desc')  return b.rating - a.rating;
+      if (sortBy === 'name-asc')     return a.title.localeCompare(b.title);
+      return 0;
+    });
+  }, [filteredProducts, sortBy]);
 
   const hasActiveFilters = activeCategoryId !== null || activeAge || onlyExclusives || onlyComingSoon || priceRange < maxPriceLimit || busqueda;
 
@@ -464,6 +473,11 @@ const Catalog = () => {
               )}
               
               <div className="catalog-collection-strip" ref={stripRef}>
+                {categoryError && (
+                  <span style={{ color: '#ef5350', fontSize: '13px', padding: '10px 15px', fontWeight: 'bold' }}>
+                    ¡Error al cargar categorías!
+                  </span>
+                )}
                 <button
                   className={`col-chip ${activeCategoryId === null ? 'active' : ''}`}
                   style={{ 
