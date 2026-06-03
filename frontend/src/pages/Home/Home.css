@@ -51,40 +51,149 @@
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-.fixed-background::after {
-  content: '';
+/* Fondo fijo removido la opacidad dark-active */
+
+.hero-section-custom {
+  position: relative;
+  width: 100%;
+  min-height: 65vh; /* Más chico que antes para que no ocupe toda la pantalla */
+  display: flex;
+  align-items: center;
+  background: #fdfdfc;
+  padding: 40px 0 60px 0;
+  z-index: 1;
+}
+
+.hero-custom-bg {
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: #1a0505;
-  opacity: 0;
-  transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-position: right center;
+  background-size: cover;
+  background-repeat: no-repeat;
   z-index: -1;
 }
 
-.fixed-background.dark-active::after {
-  opacity: 1;
+.hero-custom-content {
+  position: relative;
+  max-width: 550px;
+  z-index: 2;
+  margin-top: -120px; /* Sube el contenido para no tapar la casa */
+  text-shadow: 0 2px 15px rgba(255, 255, 255, 0.9), 0 0 40px rgba(255, 255, 255, 0.6);
 }
 
-.hero-section-modern {
+.hero-custom-title {
+  font-size: 4.2rem;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -1px;
+  margin-bottom: 15px;
+}
+
+.hero-custom-title .dark-blue {
+  color: #0d1b2a;
+}
+
+.hero-custom-title .colorful-mundo {
+  font-size: 4.5rem;
+}
+
+.hero-custom-subtitle {
+  font-size: 1.15rem;
+  color: #374151;
+  line-height: 1.6;
+  font-weight: 500;
+  margin-bottom: 30px;
+  max-width: 480px;
+}
+
+.btn-hero-yellow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffcf00;
+  color: #111827;
+  padding: 12px 35px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 207, 0, 0.3);
+}
+
+.btn-hero-yellow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 207, 0, 0.4);
+  background: #ffdb33;
+}
+
+/* Barra flotante de beneficios */
+.hero-floating-bar {
+  position: absolute;
+  bottom: 20px; /* Dentro del margen inferior de la imagen */
+  left: 0;
+  right: 0;
+  margin: 0 auto; /* Centrado sin usar transform para evitar conflicto con la animación fadeInUp */
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 20px 35px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 85vh;
-  padding: 0 10%;
-  background: transparent;
-  position: relative;
-  overflow: hidden;
+  width: 90%;
+  max-width: 1000px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15); /* Sombra un poco más fuerte para destacar sobre la imagen */
+  z-index: 10;
 }
 
-/* Fondo decorativo */
-.hero-section-modern::before {
-  content: '';
-  position: absolute;
-  top: -20%; right: -10%;
-  width: 600px; height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
-  z-index: 0;
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.feature-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.feature-separator {
+  width: 1px;
+  height: 40px;
+  background: #e5e7eb;
+}
+
+/* Responsividad */
+@media (max-width: 992px) {
+  .hero-custom-title { font-size: 4rem; }
+  .hero-custom-title .colorful-mundo { font-size: 4.5rem; }
+  .hero-floating-bar {
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 25px;
+    bottom: -80px;
+  }
+  .feature-separator { display: none; }
+  .feature-item { width: 45%; }
+}
+
+@media (max-width: 768px) {
+  .hero-section-custom { min-height: 60vh; padding-top: 40px; padding-bottom: 150px; }
+  .hero-custom-bg { background-position: center; opacity: 0.6; } /* Para que se lea el texto en móvil */
+  .hero-custom-title { font-size: 3rem; }
+  .hero-custom-title .colorful-mundo { font-size: 3.5rem; }
+  .feature-item { width: 100%; }
+  .hero-floating-bar { bottom: 20px; }
 }
 
 .hero-content {
@@ -107,7 +216,7 @@
 }
 
 .hero-title {
-  font-size: 4rem;
+  font-size: 3.2rem;
   font-weight: 900;
   line-height: 1.1;
   color: var(--text-dark);
@@ -115,9 +224,7 @@
 }
 
 .highlight-text {
-  background: linear-gradient(90deg, #ff4d4d, #ffcc00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffcf00; /* Amarillo LEGO */
   text-shadow: none;
 }
 
@@ -132,7 +239,7 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(90deg, #ff4d4d, #cc0000);
+  background: #111827; /* Dark button */
   color: white;
   padding: 16px 36px;
   border-radius: 50px;
@@ -140,14 +247,14 @@
   font-weight: 800;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 20px rgba(255,77,77,0.3);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
   border: none;
 }
 
 .btn-primary-glow:hover {
   transform: translateY(-3px) scale(1.05);
-  background: linear-gradient(90deg, #ff6666, #ff1a1a);
-  box-shadow: 0 15px 30px rgba(255,77,77,0.5);
+  background: #000000;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.25);
 }
 
 .btn-primary-glow .arrow {
@@ -168,7 +275,7 @@
 
 .hero-3d-image {
   width: 100%;
-  max-width: 850px;
+  max-width: 650px;
   height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
@@ -186,7 +293,7 @@
    Collections Nav
    ========================================================================== */
 .collections-nav-section {
-  padding: 40px 0;
+  padding: 50px 0 10px 0; /* Más espacio arriba para que no choque con la barra flotante de arriba */
   background: transparent;
   border-bottom: none; /* Quitamos la línea de corte */
 }
@@ -194,7 +301,7 @@
 .collections-grid {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 25px; /* Más espacio entre los íconos de categorías para que no se choquen */
   flex-wrap: wrap;
 }
 
@@ -202,8 +309,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
-  padding: 25px 35px;
+  gap: 12px;
+  padding: 20px 25px;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -233,17 +340,17 @@
 }
 
 .home-page.dark-theme .collection-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(180, 130, 50, 0.25);
+  color: #3a2a0a;
+  box-shadow: 0 10px 30px rgba(150, 100, 20, 0.15);
 }
 
 .collection-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(135deg, rgba(255,77,77,0.8) 0%, rgba(255,204,0,0.2) 100%);
+  background: rgba(255, 255, 255, 0.4);
   opacity: 0;
   z-index: -1;
   transition: opacity 0.4s ease;
@@ -252,8 +359,8 @@
 .collection-card:hover {
   animation-play-state: paused !important;
   transform: translateY(-15px) scale(1.05) !important;
-  border-color: rgba(255, 77, 77, 0.5);
-  box-shadow: 0 20px 40px rgba(255, 77, 77, 0.3), 0 0 20px rgba(255, 204, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 .collection-card:hover::before {
@@ -277,7 +384,7 @@
 }
 
 .home-page.dark-theme .col-icon-svg {
-  filter: invert(1) opacity(0.8);
+  filter: opacity(0.9);
 }
 
 .col-name {
@@ -287,7 +394,7 @@
 }
 
 .home-page.dark-theme .col-name {
-  color: rgba(255,255,255,0.8);
+  color: #4a3010;
 }
 
 /* Animaciones impresionantes al hacer hover */
@@ -304,8 +411,7 @@
 }
 
 .collection-card:hover .col-name {
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255, 77, 77, 0.8);
+  color: #111;
   transform: translateY(2px);
 }
 
@@ -320,7 +426,7 @@
   background: transparent;
   padding: 0 0 40px 0; /* Padding superior quitado porque el difuminado ya cubre el espacio visual */
   margin: 0;
-  color: white;
+  color: #111827;
   position: relative;
   overflow: hidden;
   z-index: 2;
@@ -328,17 +434,11 @@
 
 .best-sellers-dark-wrapper {
   background: transparent;
-  padding: 20px 0 60px 0;
+  padding: 100px 0 60px 0; /* Mayor espacio superior para separarlo de la sección anterior */
   width: 100%;
 }
 
-.flash-deals-modern::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at top right, rgba(255,51,51,0.15) 0%, transparent 500px);
-  pointer-events: none;
-}
+/* Fondo radial oscuro eliminado para mantener consistencia limpia */
 
 .flash-header {
   display: flex;
@@ -349,12 +449,15 @@
   z-index: 2;
 }
 
-.flash-title-group h2 {
-  font-size: 36px;
-  background: linear-gradient(90deg, #ff4d4d, #ffcc00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.flash-title-group h2,
+.section-title-highlight {
+  font-size: 42px;
+  color: #ff5722; /* Rojo medio naranja */
+  font-weight: 900;
+  text-transform: none; /* Como el hero */
+  letter-spacing: normal;
   margin-bottom: 8px;
+  text-shadow: none;
 }
 
 .neon-timer {
@@ -443,29 +546,32 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
   text-decoration: none;
-  transition: transform 0.3s ease;
-  background-color: #380a0a; /* Rojo oscuro elegante */
-  color: #f5f5f7;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #ffffff; /* Fondo blanco limpio */
+  color: #111827; /* Texto oscuro */
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .apple-card:hover {
-  transform: scale(1.02);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
 }
 
 .apple-card.dark {
-  background-color: #120202; /* Casi negro rojizo */
-  color: #f5f5f7;
+  background-color: #f8f9fa; /* Gris claro en vez de oscuro */
+  color: #111827;
 }
 
 .apple-card.color-accent {
-  background: linear-gradient(135deg, #630c0c 0%, #290303 100%); /* Gradiente Crimson */
-  color: #f5f5f7;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #111827;
 }
 
 .apple-card.dark .apple-card-price {
-  color: #d1d1d6;
+  color: #666666;
 }
 
 .apple-card-content {
@@ -498,7 +604,49 @@
 .apple-card-price {
   font-size: 14px;
   font-weight: 400;
-  color: #d1d1d6;
+  color: #111827;
+}
+
+.apple-card-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px;
+  background: #ffffff;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 10;
+}
+
+.apple-card.dark .apple-card-actions {
+  background: #f8f9fa;
+}
+
+.apple-card:hover .apple-card-actions {
+  transform: translateY(0);
+}
+
+.apple-add-to-cart-btn {
+  width: 100%;
+  background-color: #ffcf00;
+  color: #111;
+  border: none;
+  padding: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.apple-add-to-cart-btn:hover:not(:disabled) {
+  background-color: #e6b800;
+}
+
+.apple-add-to-cart-btn:disabled {
+  background-color: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
 }
 
 .apple-card-image {
@@ -527,13 +675,7 @@
   backdrop-filter: blur(5px);
   transition: all 0.2s;
 }
-.apple-card.dark .apple-card-fav {
-  background: rgba(0,0,0,0.5);
-  color: #a1a1a6;
-}
-
-.apple-card-fav.active,
-.apple-card.dark .apple-card-fav.active {
+.apple-card-fav.active {
   color: #ff3b30;
 }
 .apple-card-fav:hover {
@@ -543,9 +685,9 @@
 .btn-glass-outline {
   display: inline-block;
   padding: 14px 32px;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid #111827;
   border-radius: 30px;
-  color: white;
+  color: #111827;
   text-decoration: none;
   font-weight: 600;
   backdrop-filter: blur(5px);
@@ -553,9 +695,9 @@
 }
 
 .btn-glass-outline:hover {
-  background: white;
-  color: #111827;
-  border-color: white;
+  background: #111827;
+  color: white;
+  border-color: #111827;
 }
 
 /* ==========================================================================
@@ -617,12 +759,12 @@
 
 .coverflow-carousel-container::before {
   left: 0;
-  background: linear-gradient(to right, #1a0505 0%, rgba(26,5,5,0) 100%);
+  background: linear-gradient(to right, #ffffff 0%, rgba(255,255,255,0) 100%);
 }
 
 .coverflow-carousel-container::after {
   right: 0;
-  background: linear-gradient(to left, #1a0505 0%, rgba(26,5,5,0) 100%);
+  background: linear-gradient(to left, #ffffff 0%, rgba(255,255,255,0) 100%);
 }
 
 .bestsellers-swiper {
@@ -807,34 +949,7 @@
   transform: translateY(0);
 }
 
-/* Modo oscuro para las Elite Cards */
-.elite-card.dark-mode-card {
-  background: #240a0a; /* Rojo oscuro sutil para que encaje con el fondo #1a0505 */
-  border-color: rgba(255,255,255,0.03);
-  color: #f1f5f9;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-}
-
-.elite-card.dark-mode-card:hover {
-  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-  border-color: rgba(255, 204, 0, 0.2);
-}
-
-.elite-card.dark-mode-card .elite-rank {
-  color: rgba(255,255,255,0.03);
-}
-
-.elite-card.dark-mode-card:hover .elite-rank {
-  color: rgba(255, 204, 0, 0.1);
-}
-
-.elite-card.dark-mode-card .elite-price {
-  color: #f1f5f9;
-}
-
-.elite-card.dark-mode-card .elite-category {
-  color: #94a3b8;
-}
+/* Modo oscuro removido para mantener la consistencia blanca */
 
 /* ==========================================================================
    Parallax Banner (Star Wars)
@@ -862,124 +977,18 @@
   width: 100%;
 }
 
-/* Difuminado dentro del banner para fundirse con la transición oscura */
-.parallax-container.cinematic-theme.large-banner::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100px;
-  background: linear-gradient(to bottom, rgba(15,0,0,0) 0%, rgba(15,0,0,1) 100%);
-  z-index: 2;
-  pointer-events: none;
-}
 
-/* Continuación del difuminado: del negro-rojo hacia el fondo oscuro, hacia ABAJO */
-.marvel-fade-out {
-  width: 100%;
-  height: 300px;
-  background: linear-gradient(to bottom, rgba(15,0,0,1) 0%, #111111 100%);
-  position: relative;
-  z-index: 1;
-}
+
 
 .dark-marvel-bg {
-  background-color: #111111;
+  background: transparent;
   width: 100%;
   padding-bottom: 80px;
-  margin-bottom: -50px; /* Anula el margin-top del footer para unir los fondos oscuros */
 }
-
-
-
-/* Transición entre universos */
-.universe-transition {
-  background: #0a0a0a;
-  color: #ddd;
-  padding: 25px 20px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  position: relative;
-  z-index: 10;
-  box-shadow: inset 0 0 30px rgba(0,0,0,1);
-}
-
-.transition-text-1 {
-  opacity: 0;
-  transform: translateX(-30px);
-  transition: all 0.6s ease-out;
-}
-
-.transition-text-1.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.transition-text-2 {
-  opacity: 0;
-  transform: translateX(30px);
-  transition: all 0.6s ease-out;
-}
-
-.transition-text-2.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.universe-transition .separator-dot {
-  color: #ffcc00;
-  font-size: 24px;
-  opacity: 0;
-  transform: scale(0);
-  transition: all 0.4s ease-out;
-  transition-delay: 0.2s; /* Un ligero retraso para que aparezca después del texto */
-}
-
-.universe-transition .separator-dot.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.universe-transition::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-}
-
-.universe-transition::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,50,50,0.6), transparent);
-}
-
-@media (max-width: 768px) {
-  .universe-transition {
-    flex-direction: column;
-    gap: 10px;
-    font-size: 12px;
-    letter-spacing: 2px;
-  }
-  .universe-transition .separator-dot {
-    display: none;
-  }
-}
-
 .parallax-container.star-wars-theme,
 .parallax-container.cinematic-theme {
   position: relative;
-  height: 650px;
+  height: 750px;
   border-radius: 0;
   overflow: hidden;
   display: flex;
@@ -988,16 +997,7 @@
   text-align: left;
 }
 
-/* Transición difuminada desde el bloque oscuro hacia la imagen de Star Wars */
-.parallax-container.star-wars-theme::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 200px;
-  background: linear-gradient(to bottom, #1a0505 0%, rgba(26,5,5,0) 100%);
-  z-index: 3;
-  pointer-events: none;
-}
+/* Los fades viejos se borraron, se usan divs internos */
 
 
 
@@ -1048,10 +1048,10 @@
   justify-content: flex-end;
 }
 
-.parallax-container.cinematic-theme.marvel-style::before {
-  left: auto;
-  right: 0;
-  background: linear-gradient(to left, rgba(100, 0, 0, 0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+/* Cinematic Marvel Banner (fondo adaptado) */
+
+.parallax-container.cinematic-theme.marvel-style .parallax-bg {
+  background-position: center 20%;
 }
 
 .star-wars-title {
@@ -1101,10 +1101,10 @@
 }
 
 .marvel-title {
-  background: linear-gradient(to bottom, #ffffff 0%, #ff4d4d 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, #b3b3b3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 20px rgba(255,0,0,0.4);
+  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 
 .btn-marvel {
@@ -1122,7 +1122,7 @@
    New Arrivals (Masonry Grid)
    ========================================================================== */
 .new-arrivals-modern {
-  margin-top: -150px; /* Sube la sección para que el título aproveche el difuminado */
+  padding-top: 60px; /* Padding en vez de margin para no colapsar con el wrapper */
   margin-bottom: 0;
   position: relative;
   z-index: 5;
@@ -1141,13 +1141,13 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: #ffffff;
+  color: #2a1a05;
   margin-bottom: 15px;
 }
 
 .section-header-modern p {
   font-size: 18px;
-  color: #aaaaaa;
+  color: #6b4c1a;
   line-height: 1.6;
 }
 

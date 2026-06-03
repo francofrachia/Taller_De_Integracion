@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FiGift, FiShield, FiTruck, FiStar } from 'react-icons/fi';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -10,10 +11,11 @@ import './Home.css';
 
 // Import local placeholder images for banners
 import heroBanner from '../../assets/hero_banner.png';
-import secondaryBanner from '../../assets/secondary_banner.png';
 import starWarsBanner from '../../assets/starWars.jpg';
-import hulkBanner from '../../assets/hulk.jpg';
+import newHeroBanner from '../../assets/imagen_home_arriba.png';
+import hulkBanner from '../../assets/Home.superheroe.jpg';
 import placeholderProduct from '../../assets/imagen no existente BM.png';
+import logoBm from '../../assets/BM logo recortado.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -41,7 +43,7 @@ const Home = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
-  const { favoritos, toggleFavorito, promociones } = useContext(AppContext);
+  const { favoritos, toggleFavorito, promociones, agregarAlCarrito } = useContext(AppContext);
   
   const flashCarouselRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -205,23 +207,49 @@ const Home = () => {
       
       <main className="home-main">
         {/* Nuevo Hero Section Moderno */}
-        <section className="hero-section-modern">
-          <div className="hero-content">
-            <span className="hero-badge animate-fade-in-up">🌟 Novedad Exclusiva</span>
-            <h1 className="hero-title animate-fade-in-up delay-1">
-              Construye tu imaginación <span className="highlight-text">bloque a bloque</span>
-            </h1>
-            <p className="hero-subtitle animate-fade-in-up delay-2">
-              Descubre las colecciones más increíbles y sumérgete en un mundo de posibilidades infinitas con Bloque Mundo.
-            </p>
-            <div className="hero-actions animate-fade-in-up delay-3">
-              <Link to="/productos" className="btn-primary-glow">
-                Explorar Catálogo <span className="arrow">→</span>
-              </Link>
+        <section className="hero-section-custom">
+          {/* Fondo usando la imagen original sin el gradiente blanco */}
+          <div className="hero-custom-bg" style={{ backgroundImage: `url(${newHeroBanner})` }}></div>
+          
+          <div className="container">
+            <div className="hero-custom-content">
+              {/* Title */}
+              <h1 className="hero-custom-title animate-fade-in-up delay-2">
+                <span className="dark-blue">Construye tu</span><br/>
+                <span className="colorful-mundo" style={{color: '#ffcf00'}}>
+                  mundo
+                </span>
+              </h1>
+              
+              <div className="animate-fade-in-up delay-3" style={{ marginTop: '20px' }}>
+                <Link to="/productos" className="btn-hero-yellow">
+                  Ver productos <span style={{marginLeft: '10px'}}>→</span>
+                </Link>
+              </div>
             </div>
           </div>
-          <div className="hero-image-wrapper animate-float">
-            <img src={heroBanner} alt="Lego Colección" className="hero-3d-image" />
+
+          {/* Floating Bar */}
+          <div className="hero-floating-bar animate-fade-in-up delay-5">
+            <div className="feature-item">
+               <FiGift className="feature-icon" color="#e3000f" />
+               <span className="feature-text">Sets para todas<br/>las edades</span>
+            </div>
+            <div className="feature-separator"></div>
+            <div className="feature-item">
+               <FiShield className="feature-icon" color="#006cb7" />
+               <span className="feature-text">Productos originales<br/>y de calidad</span>
+            </div>
+            <div className="feature-separator"></div>
+            <div className="feature-item">
+               <FiTruck className="feature-icon" color="#22c55e" />
+               <span className="feature-text">Envíos rápidos<br/>a todo el país</span>
+            </div>
+            <div className="feature-separator"></div>
+            <div className="feature-item">
+               <FiStar className="feature-icon" color="#ffcf00" />
+               <span className="feature-text">Diversión que<br/>construye recuerdos</span>
+            </div>
           </div>
         </section>
 
@@ -229,13 +257,13 @@ const Home = () => {
         <section className="collections-nav-section">
           <div className="container">
             <div className="collections-grid">
-              {['Star Wars', 'Marvel', 'Harry Potter', 'City', 'Technic', 'Cartoon Network', 'Clásicos'].map((col, index) => {
+              {['Star Wars', 'Marvel', 'Harry Potter', 'Construcciones', 'Vehículos', 'Cartoon Network', 'Clásicos'].map((col, index) => {
                 const collectionVisuals = {
                   'Star Wars': { icon: '/imagenes icons/star wars.svg', emoji: '🚀' },
                   'Marvel': { icon: '/imagenes icons/marvel.svg', emoji: '🦸‍♂️' },
                   'Harry Potter': { icon: '/imagenes icons/harry potter.svg', emoji: '🧙‍♂️' },
-                  'City': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
-                  'Technic': { icon: null, emoji: '⚙️' },
+                  'Construcciones': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
+                  'Vehículos': { icon: null, emoji: '⚙️' },
                   'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg', emoji: '🎬' },
                   'Clásicos': { icon: '/imagenes icons/icons.svg', emoji: '🧱' }
                 };
@@ -274,22 +302,17 @@ const Home = () => {
           </div>
         ) : (
           <>
-            <div style={{ height: '150px' }}></div> {/* Espaciador en lugar del gradiente duro */}
+            <div style={{ height: '40px' }}></div> {/* Espaciador reducido */}
 
             {/* Ofertas Relámpago con Glassmorphism */}
             <section className="flash-deals-modern" ref={darkSectionRef}>
               <div className="container">
                 <div className="flash-header">
                   <div className="flash-title-group">
-                    <h2>⚡ Ofertas Relámpago</h2>
-                    <p>¡Apresúrate antes de que se agoten!</p>
+                    <h2>Ofertas</h2>
+                    <p>Los mejores precios para expandir tu colección.</p>
                   </div>
-                  <div className="neon-timer">
-                    <span className="time-block">03<small>d</small></span>:
-                    <span className="time-block">23<small>h</small></span>:
-                    <span className="time-block">19<small>m</small></span>:
-                    <span className="time-block">56<small>s</small></span>
-                  </div>
+
                 </div>
               </div>
                 
@@ -352,6 +375,19 @@ const Home = () => {
                                 className="apple-card-image"
                                 onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
                               />
+                              <div className="apple-card-actions">
+                                <button 
+                                  className="apple-add-to-cart-btn"
+                                  disabled={product.stock <= 0}
+                                  onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                  }}
+                                >
+                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                </button>
+                              </div>
                             </Link>
                           );
                         });
@@ -373,15 +409,24 @@ const Home = () => {
               </div>
             </section>
 
-            {/* Transición suave hacia Los Más Vendidos */}
-            <div className="flash-to-white-transition"></div>
+            {/* Banner Parallax Secundario (Star Wars) */}
+            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom">
+              <div className="parallax-container star-wars-theme">
+                <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
+                <div className="parallax-content left-aligned">
+                  <h2 className="star-wars-title">Colecciones<br/>Especiales</h2>
+                  <p className="star-wars-subtitle">Descubre el lado oscuro de la fuerza.</p>
+                  <Link to="/productos" state={{ theme: 'star wars' }} className="btn-star-wars">Únete al Imperio</Link>
+                </div>
+              </div>
+            </section>
 
             {/* Productos Más Vendidos */}
             <div className="best-sellers-dark-wrapper" ref={bestSellersRef}>
               <section className="best-sellers-section">
                 <div className="container">
                   <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
-                    <h2 style={{ color: 'white' }}>👑 Los Más Vendidos</h2>
+                    <h2 className="section-title-highlight">Los Más Vendidos</h2>
                     <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
                   </div>
                 </div>
@@ -431,7 +476,6 @@ const Home = () => {
                                   {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
                                 </div>
                               </div>
-
                               <img 
                                 src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
                                 alt={product.title} 
@@ -441,6 +485,19 @@ const Home = () => {
                                   e.target.src = placeholderProduct;
                                 }}
                               />
+                              <div className="apple-card-actions">
+                                <button 
+                                  className="apple-add-to-cart-btn"
+                                  disabled={product.stock <= 0}
+                                  onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                  }}
+                                >
+                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                </button>
+                              </div>
                             </Link>
                           );
                         })
@@ -456,30 +513,7 @@ const Home = () => {
               </section>
             </div>
 
-            {/* Banner Parallax Secundario (Star Wars) */}
-            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom">
-              <div className="parallax-container star-wars-theme">
-                <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
-                <div className="parallax-content left-aligned">
-                  <h2 className="star-wars-title">Colecciones<br/>Especiales</h2>
-                  <p className="star-wars-subtitle">Descubre el lado oscuro de la fuerza.</p>
-                  <Link to="/productos" state={{ theme: 'star wars' }} className="btn-star-wars">Únete al Imperio</Link>
-                </div>
-              </div>
-            </section>
-
-            {/* Transición entre universos animada al hacer scroll */}
-            <div className="universe-transition" ref={transitionRef}>
-              <span className={`transition-text-1 ${transitionState >= 1 ? 'visible' : ''}`}>
-                De una galaxia muy lejana...
-              </span>
-              <span className={`separator-dot ${transitionState >= 2 ? 'visible' : ''}`}>•</span>
-              <span className={`transition-text-2 ${transitionState >= 2 ? 'visible' : ''}`}>
-                A los héroes más poderosos
-              </span>
-            </div>
-
-            {/* Banner Parallax (Marvel - Hulk) como puente hacia los productos */}
+            {/* Banner Parallax (Marvel - Superhéroe) */}
             <section className="parallax-banner-section full-width no-margin-top no-margin-bottom cinematic-marvel-banner" ref={hulkRef}>
               <div className="parallax-container cinematic-theme marvel-style large-banner">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${hulkBanner})` }}></div>
@@ -489,7 +523,7 @@ const Home = () => {
                   <button 
                     onClick={() => {
                       if (newArrivalsRef.current) {
-                        const offset = 80; // Compensar posible navbar
+                        const offset = 80;
                         const elementPosition = newArrivalsRef.current.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.scrollY - offset;
                         window.scrollTo({
@@ -506,9 +540,6 @@ const Home = () => {
                 </div>
               </div>
             </section>
-
-            {/* Difuminado hacia abajo (negro-rojo a fondo oscuro) */}
-            <div className="marvel-fade-out"></div>
 
             <div className="dark-marvel-bg">
               {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}

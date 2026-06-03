@@ -9,6 +9,15 @@ import './Catalog.css';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ── Helper para emojis y colores de categorías dinámicas ──────────────────
+const displayCategoryName = (name) => {
+  if (!name) return '';
+  const lower = name.toLowerCase();
+  if (lower.includes('icon') || lower.includes('creator')) return 'Clásicos';
+  if (lower.includes('city')) return 'Construcciones';
+  if (lower.includes('technic') || lower.includes('speed')) return 'Vehículos';
+  return name;
+};
+
 const getCategoryVisuals = (name) => {
   if (!name) return { emoji: '🧱', color: '#FFD700', icon: null, textColor: '#1a1a1a' };
   const lower = name.toLowerCase().trim();
@@ -30,11 +39,11 @@ const getCategoryVisuals = (name) => {
     color = '#7E57C2';
     iconPath = '/imagenes icons/harry potter.svg';
     textColor = '#ffffff';
-  } else if (lower.includes('city')) {
+  } else if (lower.includes('city') || lower.includes('construcciones')) {
     color = '#4FC3F7';
     iconPath = '/imagenes icons/city.svg';
     textColor = '#1a1a1a';
-  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture')) {
+  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture') || lower.includes('vehiculos') || lower.includes('vehículos')) {
     emoji = '⚙️';
     color = '#455A64';
     textColor = '#ffffff';
@@ -42,7 +51,7 @@ const getCategoryVisuals = (name) => {
     color = '#4CAF50';
     iconPath = '/imagenes icons/minecraft.svg';
     textColor = '#ffffff';
-  } else if (lower.includes('icon') || lower.includes('creator')) {
+  } else if (lower.includes('icon') || lower.includes('creator') || lower.includes('clasico') || lower.includes('clásico')) {
     color = '#FFB300';
     iconPath = '/imagenes icons/icons.svg';
     textColor = '#1a1a1a';
@@ -86,7 +95,19 @@ const Catalog = () => {
   useEffect(() => {
     if (location.state?.theme && dbCategories.length > 0) {
       const redirectedTheme = location.state.theme.toLowerCase().trim();
-      const matchedCat = dbCategories.find(c => c.nombre.toLowerCase().includes(redirectedTheme));
+      const matchedCat = dbCategories.find(c => {
+        const dbName = c.nombre.toLowerCase();
+        if (redirectedTheme === 'clásicos' || redirectedTheme === 'clasicos') {
+          return dbName.includes('icon') || dbName.includes('creator') || dbName.includes('clásico');
+        }
+        if (redirectedTheme === 'construcciones') {
+          return dbName.includes('city') || dbName.includes('construcciones');
+        }
+        if (redirectedTheme === 'vehículos' || redirectedTheme === 'vehiculos') {
+          return dbName.includes('technic') || dbName.includes('speed') || dbName.includes('vehículo');
+        }
+        return dbName.includes(redirectedTheme);
+      });
       if (matchedCat) {
         setActiveCategoryId(matchedCat.id_categoria);
       }
@@ -229,7 +250,8 @@ const Catalog = () => {
           </span>
         )}
         {activeCategoryId !== null && (() => {
-          const catName = dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre || 'Categoría';
+          const rawName = dbCategories.find(c => c.id_categoria === activeCategoryId)?.nombre || 'Categoría';
+          const catName = displayCategoryName(rawName);
           const visuals = getCategoryVisuals(catName);
           return (
             <span className="active-filter-badge">
@@ -306,7 +328,7 @@ const Catalog = () => {
                       className={`filter-pill ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
                       onClick={() => setActiveCategoryId(activeCategoryId === cat.id_categoria ? null : cat.id_categoria)}
                     >
-                      {cat.nombre}
+                      {displayCategoryName(cat.nombre)}
                     </button>
                   ))}
                 </div>
@@ -507,7 +529,7 @@ const Catalog = () => {
                       ) : (
                         <span className="col-chip-emoji">{visuals.emoji}</span>
                       )}
-                      <span className="col-chip-label">{cat.nombre}</span>
+                      <span className="col-chip-label">{displayCategoryName(cat.nombre)}</span>
                       {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}
                     </button>
                   );
