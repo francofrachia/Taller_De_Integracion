@@ -1212,7 +1212,7 @@ export default function Account() {
                                                     rating: item.calificacion || 5,
                                                     reviews: item.reseñas || 0,
                                                     image: item.imagen_url,
-                                                    collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+                                                    collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
                                                     age: item.edad_recomendada || null,
                                                     stock: item.stock || 0
                                                 };

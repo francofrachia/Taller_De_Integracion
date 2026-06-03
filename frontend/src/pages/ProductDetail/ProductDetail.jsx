@@ -210,10 +210,10 @@ const ProductDetail = () => {
               rating: parseFloat(item.calificacion) || 5,
               reviews: parseInt(item.resenas || item.reseñas) || 0,
               image: item.imagen_url,
-              collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+              collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
               age: item.edad_recomendada || null,
               stock: item.stock !== undefined ? parseInt(item.stock, 10) : 0,
-              isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
+              isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || price > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
               isComingSoon: item.id_producto % 4 === 0
             };
           });

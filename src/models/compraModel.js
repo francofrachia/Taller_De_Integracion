@@ -77,6 +77,68 @@ const Compra = {
             });
         }
         return compras;
+    },
+
+    // --- Admin Methods ---
+    getAll: async () => {
+        const queryCompras = `
+            SELECT c.*, u.email as usuario_email, u.nombre as usuario_nombre, u.apellido as usuario_apellido
+            FROM compra c
+            JOIN usuario u ON c.id_usuario = u.id_usuario
+            ORDER BY c.fecha DESC
+        `;
+        const resCompras = await pool.query(queryCompras);
+        
+        const compras = [];
+        for (const compra of resCompras.rows) {
+            const queryLineas = `
+                SELECT lc.*, p.nombre
+                FROM linea_compra lc
+                JOIN producto p ON lc.id_producto = p.id_producto
+                WHERE lc.id_compra = $1
+            `;
+            const resLineas = await pool.query(queryLineas, [compra.id_compra]);
+            compras.push({
+                ...compra,
+                lineas: resLineas.rows
+            });
+        }
+        return compras;
+    },
+
+    updateEstado: async (id_compra, estado) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // Si el estado es Cancelado, deberíamos restaurar el stock
+            if (estado === 'Cancelado') {
+                const checkEstado = await client.query('SELECT estado FROM compra WHERE id_compra = $1', [id_compra]);
+                if (checkEstado.rows.length > 0 && checkEstado.rows[0].estado !== 'Cancelado') {
+                    // Restaurar stock
+                    const lineas = await client.query('SELECT id_producto, cantidad FROM linea_compra WHERE id_compra = $1', [id_compra]);
+                    for (const linea of lineas.rows) {
+                        await client.query('UPDATE producto SET stock = stock + $1 WHERE id_producto = $2', [linea.cantidad, linea.id_producto]);
+                    }
+                }
+            }
+
+            const query = `
+                UPDATE compra
+                SET estado = $1
+                WHERE id_compra = $2
+                RETURNING *
+            `;
+            const res = await client.query(query, [estado, id_compra]);
+            
+            await client.query('COMMIT');
+            return res.rows[0];
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 };
 

@@ -88,4 +88,118 @@ const getPromociones = async (req, res) => {
     }
 };
 
-module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto, checkReviewEligibility, getPromociones };
+const createProducto = async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data.nombre || !data.precio || !data.id_categoria) {
+            return res.status(400).json({ error: 'Nombre, precio y categoría son obligatorios.' });
+        }
+        if (data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
+        if (data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
+
+        const nuevoProducto = await Producto.create(data);
+        res.status(201).json({ mensaje: 'Producto creado', producto: nuevoProducto });
+    } catch (error) {
+        console.error('Error en createProducto:', error);
+        res.status(500).json({ error: 'Error al crear el producto' });
+    }
+};
+
+const updateProducto = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const data = req.body;
+        
+        if (data.precio !== undefined && data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
+        if (data.stock !== undefined && data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
+
+        const productoActualizado = await Producto.update(id, data);
+        if (!productoActualizado) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        res.json({ mensaje: 'Producto actualizado', producto: productoActualizado });
+    } catch (error) {
+        console.error('Error en updateProducto:', error);
+        res.status(500).json({ error: 'Error al actualizar el producto' });
+    }
+};
+
+const deleteProducto = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const result = await Producto.delete(id);
+        if (!result) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        res.json({ mensaje: 'Producto eliminado correctamente' });
+    } catch (error) {
+        console.error('Error en deleteProducto:', error);
+        // Podría fallar por FK constraints (ej. líneas de compra asociadas).
+        res.status(500).json({ error: 'Error al eliminar el producto. Asegúrese de que no tenga compras asociadas.' });
+    }
+};
+
+const createCategoria = async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data.nombre) return res.status(400).json({ error: 'El nombre es obligatorio.' });
+        const nuevaCategoria = await Producto.createCategoria(data);
+        res.status(201).json({ mensaje: 'Categoría creada', categoria: nuevaCategoria });
+    } catch (error) {
+        console.error('Error en createCategoria:', error);
+        res.status(500).json({ error: 'Error al crear la categoría' });
+    }
+};
+
+const getAllCategoriasAdmin = async (req, res) => {
+    try {
+        const categorias = await Producto.getAllCategoriasAdmin();
+        res.json(categorias);
+    } catch (error) {
+        console.error('Error en getAllCategoriasAdmin:', error);
+        res.status(500).json({ error: 'Error al obtener categorías completas' });
+    }
+};
+
+const updateCategoria = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const data = req.body;
+        if (!data.nombre) return res.status(400).json({ error: 'El nombre es obligatorio.' });
+        const catActualizada = await Producto.updateCategoria(id, data);
+        if (!catActualizada) return res.status(404).json({ error: 'Categoría no encontrada' });
+        res.json({ mensaje: 'Categoría actualizada', categoria: catActualizada });
+    } catch (error) {
+        console.error('Error en updateCategoria:', error);
+        res.status(500).json({ error: 'Error al actualizar la categoría' });
+    }
+};
+
+const deleteCategoria = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const result = await Producto.deleteCategoria(id);
+        if (!result) return res.status(404).json({ error: 'Categoría no encontrada' });
+        res.json({ mensaje: 'Categoría eliminada correctamente' });
+    } catch (error) {
+        console.error('Error en deleteCategoria:', error);
+        res.status(500).json({ error: 'Error al eliminar categoría. Asegúrese de que no tenga productos o promociones asignadas.' });
+    }
+};
+
+module.exports = { 
+    getProductos, 
+    getProductoById, 
+    getResenasByProductoId, 
+    getCategorias, 
+    calificarProducto, 
+    checkReviewEligibility, 
+    getPromociones,
+    createProducto,
+    updateProducto,
+    deleteProducto,
+    createCategoria,
+    updateCategoria,
+    deleteCategoria,
+    getAllCategoriasAdmin
+};
