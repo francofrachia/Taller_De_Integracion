@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import Navbar from '../../components/Navbar/Navbar';
@@ -6,12 +6,6 @@ import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import { AppContext } from '../../context/AppContext';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { EffectCoverflow, Autoplay, Navigation } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/effect-coverflow';
-import 'swiper/css/autoplay';
-import 'swiper/css/navigation';
 import './Home.css';
 
 // Import local placeholder images for banners
@@ -47,16 +41,19 @@ const Home = () => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
-  const [activeFlashIndex, setActiveFlashIndex] = useState(2);
   const { favoritos, toggleFavorito, promociones } = useContext(AppContext);
-  const flashCarouselRef = useRef(null);
   
+  const flashCarouselRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  
+  const bestSellersCarouselRef = useRef(null);
+  const [canScrollBsLeft, setCanScrollBsLeft] = useState(false);
+  const [canScrollBsRight, setCanScrollBsRight] = useState(true);
+
   const hulkRef = useRef(null);
   const newArrivalsRef = useRef(null);
   const bestSellersRef = useRef(null);
-  const swiperRef = useRef(null);
   const transitionRef = useRef(null);
   const darkSectionRef = useRef(null);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
@@ -121,13 +118,18 @@ const Home = () => {
     };
   }, []);
 
-  const checkScrollState = () => {
+  const checkScrollState = useCallback(() => {
     if (flashCarouselRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = flashCarouselRef.current;
       setCanScrollLeft(scrollLeft > 5);
       setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 5);
     }
-  };
+    if (bestSellersCarouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = bestSellersCarouselRef.current;
+      setCanScrollBsLeft(scrollLeft > 5);
+      setCanScrollBsRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 5);
+    }
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -138,68 +140,16 @@ const Home = () => {
       clearTimeout(timeout);
       window.removeEventListener('resize', checkScrollState);
     };
-  }, [productos]);
+  }, [productos, checkScrollState]);
 
-  const scrollFlashCarousel = (direction) => {
-    if (flashCarouselRef.current) {
+  const scrollCarousel = (ref, direction) => {
+    if (ref.current) {
       const scrollAmount = 340; // width of card (320) + gap (20)
-      flashCarouselRef.current.scrollBy({
+      ref.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
     }
-  };
-
-  const freezeSwiper = (swiper) => {
-    if (swiper && swiper.autoplay && swiper.autoplay.running) {
-      const wrapper = swiper.wrapperEl;
-      if (!wrapper) return;
-      const transform = window.getComputedStyle(wrapper).getPropertyValue('transform');
-      if (transform && transform !== 'none') {
-        const matrix = new DOMMatrix(transform);
-        if (!isNaN(matrix.m41)) {
-          swiper.setTranslate(matrix.m41);
-        }
-      }
-      wrapper.style.transitionDuration = '0ms';
-      swiper.autoplay.stop();
-    }
-  };
-
-  const resumeSwiperLinear = (swiper) => {
-    if (!swiper || !swiper.autoplay || swiper.autoplay.running) return;
-    if (!swiper.snapGrid || swiper.snapGrid.length === 0) {
-      swiper.autoplay.start();
-      return;
-    }
-    
-    swiper.animating = false;
-    const currentTranslate = swiper.translate;
-    let targetIndex = swiper.activeIndex || 0;
-    
-    for (let i = 0; i < swiper.snapGrid.length; i++) {
-      if (swiper.snapGrid[i] < currentTranslate - 1) {
-        targetIndex = i;
-        break;
-      }
-    }
-    
-    const startTranslate = swiper.snapGrid[targetIndex - 1] !== undefined ? swiper.snapGrid[targetIndex - 1] : (swiper.snapGrid[targetIndex] || 0) + 300;
-    const targetTranslate = swiper.snapGrid[targetIndex] || 0;
-    const totalDist = Math.abs(startTranslate - targetTranslate);
-    const remainingDist = Math.abs((currentTranslate || 0) - targetTranslate);
-    
-    const proportionalSpeed = totalDist > 0 ? Math.max(10, (remainingDist / totalDist) * 5000) : 5000;
-    
-    swiper.params.speed = proportionalSpeed;
-    swiper.autoplay.start();
-    swiper.slideTo(targetIndex, proportionalSpeed);
-    
-    setTimeout(() => {
-      if (swiper && swiper.params) {
-        swiper.params.speed = 5000;
-      }
-    }, proportionalSpeed);
   };
 
   useEffect(() => {
@@ -229,8 +179,10 @@ const Home = () => {
             stock: item.stock || 0,
             // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
             isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
-            // Próximamente: Demo interactivo si el id es divisible por 4
-            isComingSoon: item.id_producto % 4 === 0
+            // Próximamente: Lógica escalable desde BDD
+            isComingSoon: !!item.proximo_lanzamiento,
+            // Ventas reales desde BDD
+            ventasTotales: parseInt(item.ventas_totales) || 0
           };
         });
         
@@ -343,7 +295,7 @@ const Home = () => {
                 
               <div className="flash-carousel-container" style={{ position: 'relative' }}>
                 {canScrollLeft && (
-                  <button className="flash-carousel-btn left" onClick={() => scrollFlashCarousel('left')}>
+                  <button className="flash-carousel-btn left" onClick={() => scrollCarousel(flashCarouselRef, 'left')}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
                   </button>
                 )}
@@ -408,7 +360,7 @@ const Home = () => {
                   </div>
                 
                 {canScrollRight && (
-                  <button className="flash-carousel-btn right" onClick={() => scrollFlashCarousel('right')}>
+                  <button className="flash-carousel-btn right" onClick={() => scrollCarousel(flashCarouselRef, 'right')}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
                   </button>
                 )}
@@ -426,107 +378,79 @@ const Home = () => {
 
             {/* Productos Más Vendidos */}
             <div className="best-sellers-dark-wrapper" ref={bestSellersRef}>
-              <section className="best-sellers-section container">
-                <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
-                  <h2 style={{ color: 'white' }}>👑 Los Más Vendidos</h2>
-                  <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+              <section className="best-sellers-section">
+                <div className="container">
+                  <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
+                    <h2 style={{ color: 'white' }}>👑 Los Más Vendidos</h2>
+                    <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+                  </div>
                 </div>
-                <div className="coverflow-carousel-container">
-                  {loading ? (
-                    <div className="coverflow-item active" style={{ transform: 'translateX(0) scale(1)', margin: '0 auto' }}>
-                      <ProductCardSkeleton />
-                    </div>
-                  ) : (
-                    <Swiper
-                      onSwiper={(swiper) => swiperRef.current = swiper}
-                      onSlideChange={(swiper) => {
-                        if (!swiper || !swiper.slides) return;
-                        const activeSlide = swiper.slides[swiper.activeIndex];
-                        if (activeSlide && activeSlide.matches && activeSlide.matches(':hover')) {
-                          freezeSwiper(swiper);
-                        }
-                      }}
-                      onClick={(swiper) => {
-                        if (swiper.clickedIndex !== undefined) {
-                          swiper.autoplay.start();
-                          swiper.slideTo(swiper.clickedIndex, 600);
-                        }
-                      }}
-                      effect={'coverflow'}
-                      grabCursor={false}
-                      centeredSlides={true}
-                      slidesPerView={'auto'}
-                      loop={true}
-                      speed={5000} // Transición hiper lenta y constante
-                      navigation={true}
-                      autoplay={{
-                        delay: 0, // Movimiento continuo sin esperas
-                        disableOnInteraction: false,
-                        pauseOnMouseEnter: false, // Manejado manualmente
-                      }}
-                      coverflowEffect={{
-                        rotate: 15,
-                        stretch: 0,
-                        depth: 250,
-                        modifier: 1,
-                        slideShadows: false,
-                      }}
-                      modules={[EffectCoverflow, Autoplay, Navigation]}
-                      className="bestsellers-swiper"
-                    >
-                      {[...productos.slice(4, 9), ...productos.slice(4, 9), ...productos.slice(4, 9)].map((product, i) => {
-                        const baseProductsCount = productos.slice(4, 9).length;
-                        return (
-                          <SwiperSlide 
-                            key={`best-${product.id}-${i}`} 
-                            className="bestseller-slide"
-                            onMouseEnter={(e) => {
-                              if (e.currentTarget && e.currentTarget.classList && e.currentTarget.classList.contains('swiper-slide-active')) {
-                                freezeSwiper(swiperRef.current);
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              resumeSwiperLinear(swiperRef.current);
-                            }}
-                          >
-                            {({ isActive }) => (
-                              <Link 
-                                to={`/producto/${product.id}`} 
-                                className="elite-card dark-mode-card"
+                <div className="flash-carousel-container" style={{ position: 'relative' }}>
+                  {canScrollBsLeft && (
+                    <button className="flash-carousel-btn left" onClick={() => scrollCarousel(bestSellersCarouselRef, 'left')}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                    </button>
+                  )}
+                  
+                  <div className="apple-carousel-container" ref={bestSellersCarouselRef} onScroll={checkScrollState}>
+                      {loading ? (
+                        <div className="apple-card" style={{ padding: '0', display: 'block' }}>
+                          <ProductCardSkeleton />
+                        </div>
+                      ) : (
+                        [...productos].sort((a, b) => b.ventasTotales - a.ventasTotales).slice(0, 8).map((product, i) => {
+                          const isFav = favoritos && favoritos.includes(product.id);
+                          const isDark = i % 3 === 0;
+                          const isAccent = i % 3 === 1;
+
+                          return (
+                            <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
+                              <button 
+                                className={`apple-card-fav ${isFav ? 'active' : ''}`}
                                 onClick={(e) => {
-                                  if (!isActive) {
-                                    e.preventDefault();
-                                  }
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleFavorito(product.id);
                                 }}
+                                title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
                               >
-                                {/* Rango (el ranking real es sobre los baseProducts) */}
-                                <span className="elite-rank">0{(i % baseProductsCount) + 1}</span>
-                                <div className="elite-image-wrapper">
-                                  <img 
-                                    src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
-                                    alt={product.title} 
-                                    className="elite-image"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = placeholderProduct;
-                                    }}
-                                  />
+                                {isFav ? <FaHeart /> : <FaRegHeart />}
+                              </button>
+
+                              <div className="apple-card-content">
+                                {product.stock <= 0 ? (
+                                  <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                                ) : (
+                                  <div className="apple-card-tag">Los Más Vendidos</div>
+                                )}
+                                <h3 className="apple-card-title">{product.title}</h3>
+                                <p className="apple-card-subtitle">
+                                  {product.category_name || "Construye tu imaginación."}
+                                </p>
+                                <div className="apple-card-price">
+                                  {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
                                 </div>
-                                <div className="elite-content">
-                                  <h3 className="elite-title">{product.title}</h3>
-                                  <div className="elite-bottom">
-                                    <div className="elite-price-wrapper">
-                                      <span className="elite-currency">$</span>
-                                      <span className="elite-price">{parseFloat(product.price || product.precio).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </Link>
-                            )}
-                          </SwiperSlide>
-                        );
-                      })}
-                    </Swiper>
+                              </div>
+
+                              <img 
+                                src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
+                                alt={product.title} 
+                                className="apple-card-image"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = placeholderProduct;
+                                }}
+                              />
+                            </Link>
+                          );
+                        })
+                      )}
+                    </div>
+                  
+                  {canScrollBsRight && (
+                    <button className="flash-carousel-btn right" onClick={() => scrollCarousel(bestSellersCarouselRef, 'right')}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                    </button>
                   )}
                 </div>
               </section>
@@ -605,78 +529,37 @@ const Home = () => {
                   </>
                 ) : (
                   <>
-                    {productos[8] && (
-                      <div className={`masonry-item large-span ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[8].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.1s' }}>
-                        <button
-                          className="masonry-fav-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleFavorito(productos[8].id);
-                          }}
-                        >
-                          {favoritos.includes(productos[8].id) ? <FaHeart color="red" size={24} /> : <FaRegHeart color="#999" size={24} />}
-                        </button>
-                        <img src={productos[8].image || placeholderProduct} alt={productos[8].title} />
-                        <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[8].title} {productos[8].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                          <Link to={`/producto/${productos[8].id}`}>{productos[8].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
+                    {productos.filter(p => p.isComingSoon || p.isExclusive).slice(0, 4).map((product, index) => {
+                      const spans = ['large-span', '', 'tall-span', ''];
+                      const sizes = [24, 20, 22, 20];
+                      const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];
+                      
+                      return (
+                        <div key={product.id} className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: delays[index] }}>
+                          <button
+                            className="masonry-fav-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              toggleFavorito(product.id);
+                            }}
+                          >
+                            {favoritos.includes(product.id) ? <FaHeart color="red" size={sizes[index]} /> : <FaRegHeart color="#999" size={sizes[index]} />}
+                          </button>
+                          <img 
+                            src={product.image || placeholderProduct} 
+                            alt={product.title}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = placeholderProduct;
+                            }}
+                          />
+                          <div className="masonry-overlay">
+                            <h3 style={{ fontSize: '18px' }}>{product.title} {product.stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                            <Link to={`/producto/${product.id}`}>{product.stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {productos[9] && (
-                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[9].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.3s' }}>
-                        <button
-                          className="masonry-fav-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleFavorito(productos[9].id);
-                          }}
-                        >
-                          {favoritos.includes(productos[9].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
-                        </button>
-                        <img src={productos[9].image || placeholderProduct} alt={productos[9].title} />
-                        <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[9].title} {productos[9].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                          <Link to={`/producto/${productos[9].id}`}>{productos[9].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
-                        </div>
-                      </div>
-                    )}
-                    {productos[10] && (
-                      <div className={`masonry-item tall-span ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[10].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.5s' }}>
-                        <button
-                          className="masonry-fav-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleFavorito(productos[10].id);
-                          }}
-                        >
-                          {favoritos.includes(productos[10].id) ? <FaHeart color="red" size={22} /> : <FaRegHeart color="#999" size={22} />}
-                        </button>
-                        <img src={productos[10].image || placeholderProduct} alt={productos[10].title} />
-                        <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[10].title} {productos[10].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                          <Link to={`/producto/${productos[10].id}`}>{productos[10].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
-                        </div>
-                      </div>
-                    )}
-                    {productos[11] && (
-                      <div className={`masonry-item ${showGridItems ? 'animate-item' : 'hidden-item'} ${productos[11].stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: '0.7s' }}>
-                        <button
-                          className="masonry-fav-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleFavorito(productos[11].id);
-                          }}
-                        >
-                          {favoritos.includes(productos[11].id) ? <FaHeart color="red" size={20} /> : <FaRegHeart color="#999" size={20} />}
-                        </button>
-                        <img src={productos[11].image || placeholderProduct} alt={productos[11].title} />
-                        <div className="masonry-overlay">
-                          <h3 style={{ fontSize: '18px' }}>{productos[11].title} {productos[11].stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                          <Link to={`/producto/${productos[11].id}`}>{productos[11].stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })}
                   </>
                 )}
               </div>

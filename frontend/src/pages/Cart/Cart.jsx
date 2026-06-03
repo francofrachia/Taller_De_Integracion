@@ -1,68 +1,287 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
+import { MdCheckBox, MdCheckBoxOutlineBlank, MdDeleteOutline } from 'react-icons/md';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Cart.css';
 
-export default function Cart() {
-    const { cart, actualizarCantidadCarrito, removerDelCarrito, vaciarCarrito, API_URL, usuario, productos, isInitialized } = useContext(AppContext);
-    const navigate = useNavigate();
-    const [localQuantities, setLocalQuantities] = useState({});
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(price);
+};
 
-    const handleQuantityChange = (id_producto, currentQty, change, stock) => {
-        const baseQty = localQuantities[id_producto] !== undefined 
-            ? (parseInt(localQuantities[id_producto], 10) || 1) 
+// Helper puro (DRY) para obtener el stock real, centralizando la lógica
+const getRealStock = (item, productos) => {
+    const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
+    return productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+};
+
+// Componente extraído para adherirse a Single Responsibility Principle
+const CartItemComponent = React.memo(({ 
+    item, 
+    productos,
+    selected, 
+    qty, 
+    localQtyStr, 
+    onToggleSelection, 
+    onRemove, 
+    onQuantityChange, 
+    onLocalQtyChange, 
+    onQuantityBlur 
+}) => {
+    const itemStock = getRealStock(item, productos);
+    const outOfStock = itemStock === 0;
+    const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
+
+    return (
+        <div className={`cart-item ${outOfStock ? 'cart-item--out-of-stock' : (isInvalidQty ? 'cart-item--stock-issue' : '')}`}>
+            <div className="item-product">
+                <button className="remove-btn" onClick={() => onRemove(item.id_producto)} title="Eliminar"><MdDeleteOutline /></button>
+                <Link to={`/producto/${item.id_producto}`} style={{ display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit' }}>
+                    {item.imagenes && item.imagenes[0] ? (
+                        <img src={item.imagenes[0]} alt={item.nombre} />
+                    ) : (
+                        <div className="img-placeholder"></div>
+                    )}
+                    <span className="item-name">{item.nombre}</span>
+                </Link>
+            </div>
+            <div className="item-price">{formatPrice(item.precio)}</div>
+            <div className="item-quantity">
+                {!outOfStock && (
+                    <div className={`quantity-controls-inline ${isInvalidQty ? 'qty-controls-error' : ''}`}>
+                        <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>-</button>
+                        <input
+                            type="number"
+                            value={localQtyStr !== undefined ? localQtyStr : qty}
+                            onChange={(e) => onLocalQtyChange(item.id_producto, e.target.value)}
+                            onBlur={(e) => onQuantityBlur(item.id_producto, item.cantidad, itemStock, e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') e.target.blur();
+                            }}
+                            min="1"
+                            max={itemStock || undefined}
+                        />
+                        <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>+</button>
+                    </div>
+                )}
+                {(isInvalidQty || outOfStock) && (
+                    <div className={outOfStock ? "out-of-stock-badge" : "qty-error-msg"}>
+                        {outOfStock ? 'Agotado' : `Máx: ${itemStock} u`}
+                    </div>
+                )}
+            </div>
+            <div className="item-total">
+                {formatPrice(outOfStock ? 0 : (item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)))}
+            </div>
+            <div className="item-select" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <button 
+                    className="select-btn" 
+                    style={{ background: 'none', border: 'none', cursor: itemStock > 0 ? 'pointer' : 'not-allowed', fontSize: '24px', color: (itemStock > 0 && selected) ? 'var(--primary-yellow)' : '#ccc' }}
+                    onClick={() => itemStock > 0 && onToggleSelection(item.id_producto)}
+                >
+                    {(itemStock > 0 && selected) ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                </button>
+            </div>
+        </div>
+    );
+});
+
+export default function Cart() {
+    const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized } = useContext(AppContext);
+    const navigate = useNavigate();
+    
+    // UI Local State
+    const [localQuantities, setLocalQuantities] = useState({});
+    const [selectedItems, setSelectedItems] = useState({});
+
+    // Sincronizar items seleccionados por defecto (si hay stock)
+    useEffect(() => {
+        if (cart && cart.items && productos) {
+            setSelectedItems(prev => {
+                const newSel = { ...prev };
+                let hasChanges = false;
+                cart.items.forEach(item => {
+                    const itemStock = getRealStock(item, productos);
+                    
+                    if (newSel[item.id_producto] === undefined) {
+                        newSel[item.id_producto] = itemStock > 0;
+                        hasChanges = true;
+                    } else if (itemStock === 0 && newSel[item.id_producto] === true) {
+                        newSel[item.id_producto] = false;
+                        hasChanges = true;
+                    }
+                });
+                return hasChanges ? newSel : prev;
+            });
+        }
+    }, [cart, productos]);
+
+    const toggleSelection = (id_producto) => {
+        setSelectedItems(prev => ({
+            ...prev,
+            [id_producto]: !prev[id_producto]
+        }));
+    };
+
+    // Memoizaciones (Rendimiento)
+    const itemsConStock = useMemo(() => {
+        if (!cart?.items || !productos) return [];
+        return cart.items.filter(item => getRealStock(item, productos) > 0);
+    }, [cart, productos]);
+    
+    const allSelected = useMemo(() => {
+        return itemsConStock.length > 0 && itemsConStock.every(item => selectedItems[item.id_producto]);
+    }, [itemsConStock, selectedItems]);
+
+    const handleSelectAll = () => {
+        setSelectedItems(prev => {
+            const newSel = { ...prev };
+            itemsConStock.forEach(item => {
+                newSel[item.id_producto] = !allSelected;
+            });
+            return newSel;
+        });
+    };
+
+    // Manejo seguro de errores en operaciones asíncronas
+    const handleQuantityChange = async (id_producto, currentQty, change, stock) => {
+        const baseQty = localQuantities[id_producto] !== undefined
+            ? (parseInt(localQuantities[id_producto], 10) || 1)
             : currentQty;
         const newQty = baseQty + change;
+        
         if (newQty > 0) {
             setLocalQuantities(prev => ({ ...prev, [id_producto]: newQty }));
             if (!stock || newQty <= stock) {
-                actualizarCantidadCarrito(id_producto, newQty);
+                try {
+                    await actualizarCantidadCarrito(id_producto, newQty);
+                } catch (error) {
+                    console.error("Error updating quantity:", error);
+                    alert("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
+                    setLocalQuantities(prev => ({ ...prev, [id_producto]: baseQty })); // Rollback UX
+                }
             }
         }
     };
 
-    const handleRemove = (id_producto) => {
-        removerDelCarrito(id_producto);
+    const handleLocalQtyChange = (id_producto, val) => {
+        if (val === '') {
+            setLocalQuantities(prev => ({ ...prev, [id_producto]: '' }));
+            return;
+        }
+        const num = parseInt(val, 10);
+        if (!isNaN(num)) {
+            setLocalQuantities(prev => ({ ...prev, [id_producto]: num }));
+        }
     };
 
-    const hasAnyQtyError = cart && cart.items && productos ? cart.items.some(item => {
-        const qty = localQuantities[item.id_producto] !== undefined 
-            ? localQuantities[item.id_producto] 
-            : item.cantidad;
-        if (qty === '' || isNaN(parseInt(qty, 10)) || parseInt(qty, 10) < 1) {
-            return true;
+    const handleQuantityBlur = async (id_producto, currentQty, stock, inputVal) => {
+        let val = parseInt(inputVal, 10);
+        
+        if (isNaN(val) || val < 1) {
+            setLocalQuantities(prev => ({ ...prev, [id_producto]: 1 }));
+            if (currentQty !== 1) {
+                try {
+                    await actualizarCantidadCarrito(id_producto, 1);
+                } catch (error) {
+                    alert("No se pudo restaurar la cantidad.");
+                }
+            }
+            return;
         }
-        const productData = productos.find(p => p.id_producto === item.id_producto);
-        const itemStock = productData ? productData.stock : (item.stock || 0);
-        return itemStock && parseInt(qty, 10) > itemStock;
-    }) : false;
+
+        setLocalQuantities(prev => ({ ...prev, [id_producto]: val }));
+        
+        if (!stock || val <= stock) {
+            if (val !== currentQty) {
+                try {
+                    await actualizarCantidadCarrito(id_producto, val);
+                } catch (error) {
+                    console.error("Error updating quantity on blur:", error);
+                    alert("No se pudo actualizar la cantidad.");
+                    setLocalQuantities(prev => ({ ...prev, [id_producto]: currentQty })); // Rollback UX
+                }
+            }
+        }
+    };
+
+    const handleRemove = async (id_producto) => {
+        try {
+            await removerDelCarrito(id_producto);
+        } catch (error) {
+            console.error("Error removing item:", error);
+            alert("No se pudo eliminar el producto del carrito. Intenta de nuevo.");
+        }
+    };
+
+    const hasAnyQtyError = useMemo(() => {
+        if (!cart?.items || !productos) return false;
+        return cart.items.some(item => {
+            if (!selectedItems[item.id_producto]) return false;
+            const qty = localQuantities[item.id_producto] !== undefined
+                ? localQuantities[item.id_producto]
+                : item.cantidad;
+            if (qty === '' || isNaN(parseInt(qty, 10)) || parseInt(qty, 10) < 1) {
+                return true;
+            }
+            const itemStock = getRealStock(item, productos);
+            return itemStock !== undefined && parseInt(qty, 10) > itemStock;
+        });
+    }, [cart, productos, selectedItems, localQuantities]);
+
+    const itemsConProblemasStock = useMemo(() => {
+        if (!cart?.items || !productos) return [];
+        return cart.items.filter(item => {
+            if (!selectedItems[item.id_producto]) return false;
+            const itemStock = getRealStock(item, productos);
+            return itemStock !== undefined && item.cantidad > itemStock;
+        });
+    }, [cart, productos, selectedItems]);
 
     const handleCheckout = () => {
-        if (!cart || !cart.items || cart.items.length === 0 || hasAnyQtyError) return;
-        navigate('/checkout');
+        const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+        
+        if (selectedIds.length === 0) {
+            alert('Debes seleccionar al menos un producto para proceder con la compra.');
+            return;
+        }
+        
+        if (hasAnyQtyError) {
+            alert('Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.');
+            return;
+        }
+        
+        if (!cart?.items || cart.items.length === 0) return;
+        navigate('/checkout', { state: { selectedItems: selectedIds } });
     };
 
-    const subtotal = cart && cart.items ? cart.items.reduce((sum, item) => {
-        const qty = localQuantities[item.id_producto] !== undefined 
-            ? (parseInt(localQuantities[item.id_producto], 10) || 0) 
-            : item.cantidad;
-        return sum + (parseFloat(item.precio) * qty);
-    }, 0) : 0;
+    const subtotal = useMemo(() => {
+        if (!cart?.items || !productos) return 0;
+        return cart.items.reduce((sum, item) => {
+            if (!selectedItems[item.id_producto]) return sum;
+            const itemStock = getRealStock(item, productos);
+            if (itemStock === 0) return sum;
+
+            const qty = localQuantities[item.id_producto] !== undefined
+                ? (parseInt(localQuantities[item.id_producto], 10) || 0)
+                : item.cantidad;
+            return sum + (parseFloat(item.precio) * qty);
+        }, 0);
+    }, [cart, productos, selectedItems, localQuantities]);
+
     const shipping = 0; // Envío gratis
     const total = subtotal + shipping;
 
     return (
         <div className="cart-page">
             <Navbar />
-            
+
             <main className="cart-main container">
                 <div className="breadcrumb">
                     <Link to="/">Inicio</Link> / <span className="current">Carrito</span>
                 </div>
 
-                {/* Skeleton mientras el contexto no esta inicializado */}
                 {!isInitialized ? (
                     <div className="cart-layout">
                         <div className="cart-items-section">
@@ -96,149 +315,105 @@ export default function Cart() {
                             </div>
                         </div>
                     </div>
-                ) : !usuario || !usuario.id_usuario ? (
+                ) : !usuario?.id_usuario ? (
                     <div className="empty-cart">
                         <h2>Iniciá sesión para ver tu carrito</h2>
-                        <Link to="/login" className="primary-btn-outline" style={{marginTop: '20px', display: 'inline-block'}}>
+                        <Link to="/login" className="primary-btn-outline" style={{ marginTop: '20px', display: 'inline-block' }}>
                             Ir a Iniciar Sesión
                         </Link>
                     </div>
-                ) : !cart || !cart.items || cart.items.length === 0 ? (
+                ) : !cart?.items || cart.items.length === 0 ? (
                     <div className="empty-cart">
                         <h2>Tu carrito está vacío</h2>
-                        <Link to="/" className="primary-btn-outline" style={{marginTop: '20px', display: 'inline-block'}}>
+                        <Link to="/" className="primary-btn-outline" style={{ marginTop: '20px', display: 'inline-block' }}>
                             Volver a la tienda
                         </Link>
                     </div>
                 ) : (
-                    <div className="cart-layout">
-                        <div className="cart-items-section">
-                            <div className="cart-table-header">
-                                <span>Producto</span>
-                                <span>Precio</span>
-                                <span>Cantidad</span>
-                                <span>Total</span>
+                    <>
+                        <div className="cart-layout">
+                            <div className="cart-items-section">
+                                <div className="cart-table-header">
+                                    <span>Producto</span>
+                                    <span>Precio</span>
+                                    <span>Cantidad</span>
+                                    <span>Total</span>
+                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button 
+                                            className="select-btn" 
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: allSelected ? 'var(--primary-yellow)' : '#ccc' }}
+                                            onClick={handleSelectAll}
+                                        >
+                                            {allSelected ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="cart-items-list">
+                                    {cart.items.map(item => (
+                                        <CartItemComponent
+                                            key={item.id_producto}
+                                            item={item}
+                                            productos={productos}
+                                            selected={selectedItems[item.id_producto]}
+                                            qty={localQuantities[item.id_producto] !== undefined ? localQuantities[item.id_producto] : item.cantidad}
+                                            localQtyStr={localQuantities[item.id_producto]}
+                                            onToggleSelection={toggleSelection}
+                                            onRemove={handleRemove}
+                                            onQuantityChange={handleQuantityChange}
+                                            onLocalQtyChange={handleLocalQtyChange}
+                                            onQuantityBlur={handleQuantityBlur}
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className="cart-actions">
+                                    <Link to="/" className="btn-outline">← Volver a la tienda</Link>
+                                </div>
                             </div>
 
-                            <div className="cart-items-list">
-                                {cart.items.map(item => {
-                                    const qty = localQuantities[item.id_producto] !== undefined 
-                                        ? localQuantities[item.id_producto] 
-                                        : item.cantidad;
-                                    const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
-                                    const itemStock = productData ? productData.stock : (item.stock || 0);
-                                    const isInvalidQty = qty !== '' && itemStock && parseInt(qty, 10) > itemStock;
-
-                                    return (
-                                        <div className="cart-item" key={item.id_producto}>
-                                            <div className="item-product">
-                                                <button className="remove-btn" onClick={() => handleRemove(item.id_producto)}>×</button>
-                                                {/* Si hay imagen, la mostramos. Asumiendo que item.imagenes es un array */}
-                                                {item.imagenes && item.imagenes[0] ? (
-                                                    <img src={item.imagenes[0]} alt={item.nombre} />
-                                                ) : (
-                                                    <div className="img-placeholder"></div>
-                                                )}
-                                                <span className="item-name">{item.nombre}</span>
-                                            </div>
-                                            <div className="item-price">${item.precio}</div>
-                                            <div className="item-quantity">
-                                                <div className={`quantity-controls ${isInvalidQty ? 'qty-controls-error' : ''}`}>
-                                                    <input 
-                                                        type="number" 
-                                                        value={qty}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            if (val === '') {
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: '' }));
-                                                                return;
-                                                            }
-                                                            const num = parseInt(val, 10);
-                                                            if (!isNaN(num)) {
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: num }));
-                                                            }
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            let val = parseInt(e.target.value, 10);
-                                                            if (isNaN(val) || val < 1) {
-                                                                val = 1;
-                                                                setLocalQuantities(prev => ({ ...prev, [item.id_producto]: 1 }));
-                                                                if (item.cantidad !== 1) {
-                                                                    actualizarCantidadCarrito(item.id_producto, 1);
-                                                                }
-                                                                return;
-                                                            }
-                                                            setLocalQuantities(prev => ({ ...prev, [item.id_producto]: val }));
-                                                            if (!itemStock || val <= itemStock) {
-                                                                if (val !== item.cantidad) {
-                                                                    actualizarCantidadCarrito(item.id_producto, val);
-                                                                }
-                                                            }
-                                                        }}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                e.target.blur();
-                                                            }
-                                                        }}
-                                                        min="1"
-                                                        max={itemStock || undefined}
-                                                    />
-                                                    <div className="qty-arrows">
-                                                        <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>▲</button>
-                                                        <button onClick={() => handleQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>▼</button>
-                                                    </div>
-                                                </div>
-                                                {isInvalidQty && (
-                                                    <div className="qty-error-msg" style={{ color: '#d32f2f', fontSize: '11px', marginTop: '4px', fontWeight: '500', display: 'block', textAlign: 'center' }}>
-                                                        Máx: {itemStock} u
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="item-total">
-                                                ${(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)).toFixed(2)}
-                                            </div>
+                            <div className="cart-summary-section">
+                                <div className="summary-box">
+                                    <h3>Total Carrito</h3>
+                                    <div className="summary-row">
+                                        <span>Subtotal:</span>
+                                        <span>{formatPrice(subtotal)}</span>
+                                    </div>
+                                    <hr />
+                                    <div className="summary-row">
+                                        <span>Envío:</span>
+                                        <span>Gratis</span>
+                                    </div>
+                                    <hr />
+                                    <div className="summary-row total-row">
+                                        <span>Total:</span>
+                                        <span>{formatPrice(total)}</span>
+                                    </div>
+                                    {/* Aviso simple de stock entre Total y Comprar */}
+                                    {itemsConProblemasStock.length > 0 && (
+                                        <div className="cart-stock-warning-simple">
+                                            {itemsConProblemasStock.map(item => {
+                                                const itemStock = getRealStock(item, productos);
+                                                return (
+                                                    <p className="stock-warning-item" key={item.id_producto}>
+                                                        <strong>{item.nombre}</strong> {itemStock === 0 ? 'está agotado' : `supera el stock disponible (máx: ${itemStock} u.)`}
+                                                    </p>
+                                                );
+                                            })}
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    )}
 
-                            <div className="cart-actions">
-                                <Link to="/" className="btn-outline">Volver al Inicio</Link>
+                                    <button
+                                        className="btn-yellow full-width"
+                                        onClick={handleCheckout}
+                                        disabled={hasAnyQtyError}
+                                    >
+                                        Comprar
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-                        <div className="cart-summary-section">
-                            <div className="summary-box">
-                                <h3>Total Carrito</h3>
-                                <div className="summary-row">
-                                    <span>Subtotal:</span>
-                                    <span>${subtotal.toFixed(2)}</span>
-                                </div>
-                                <hr />
-                                <div className="summary-row">
-                                    <span>Envío:</span>
-                                    <span>Free</span>
-                                </div>
-                                <hr />
-                                <div className="summary-row total-row">
-                                    <span>Total:</span>
-                                    <span>${total.toFixed(2)}</span>
-                                </div>
-                                <button 
-                                    className="btn-yellow full-width" 
-                                    onClick={handleCheckout}
-                                    disabled={hasAnyQtyError}
-                                >
-                                    Comprar
-                                </button>
-                                {hasAnyQtyError && (
-                                    <p className="cart-checkout-warning" style={{ color: '#d32f2f', fontSize: '13px', marginTop: '10px', textAlign: 'center', fontWeight: '500' }}>
-                                        ⚠️ Revisá las cantidades antes de comprar.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    </>
                 )}
             </main>
 

@@ -102,17 +102,66 @@
   transform: scale(1.1);
 }
 
-@media (max-width: 768px) {
+.mobile-menu-btn {
+  display: none;
+}
+
+@media (max-width: 900px) {
   .navbar-container {
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 8px;
+    position: relative;
+    justify-content: space-between;
+  }
+  .navbar-logo {
+    order: 2;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+  .navbar-logo h1 {
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .navbar-icons {
+    order: 3;
+    margin-left: 0;
+    gap: 10px;
+  }
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    order: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dark);
+    padding: 2px;
+    margin-left: 0;
   }
   .navbar-search {
-    order: 3;
+    order: 4;
     width: 100%;
+    margin-top: 5px;
   }
   .navbar-links {
-    display: none; /* In a real app, we'd add a hamburger menu */
+    display: none;
+    order: 5;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background-color: var(--primary-yellow);
+    padding: 15px 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 100;
+  }
+  .navbar-links.active {
+    display: flex;
   }
 }
 

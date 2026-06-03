@@ -726,7 +726,7 @@ input:checked + .switch-slider:before {
   }
   .filter-dropdown-menu.glassmorphic {
     width: calc(100vw - 40px);
-    right: -10px;
+    right: 0;
   }
   .active-filters-bar {
     padding: 10px 14px;
@@ -1320,7 +1320,8 @@ input:checked + .switch-slider:before {
   }
   .filter-dropdown-menu.glassmorphic {
     width: calc(100vw - 40px);
-    right: -10px;
+    left: 0;
+    right: auto;
   }
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

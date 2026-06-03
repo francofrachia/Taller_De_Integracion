@@ -20,7 +20,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const navigate = useNavigate();
-  
+
   // Ref para el carrusel de relacionados
   const carouselRef = React.useRef(null);
 
@@ -71,7 +71,7 @@ const ProductDetail = () => {
     }
 
     if (!product || product.stock <= 0) return;
-    
+
     setIsProcessingPayment(true);
     setPaymentError(null);
 
@@ -129,7 +129,7 @@ const ProductDetail = () => {
         setReviewText('');
         setUserRating(0);
         fetchEligibility();
-        
+
         // Volver a cargar las reseñas en el frontend de forma reactiva e inmediata
         fetch(`${API_URL}/productos/${id}/resenas`)
           .then(r => r.json())
@@ -173,7 +173,7 @@ const ProductDetail = () => {
           rating: parseFloat(data.calificacion) || 5,
           reviews: parseInt(data.resenas || data.reseñas) || 0
         });
-        
+
         // Ahora que tenemos la categoría, buscamos los relacionados y las reseñas en paralelo
         return Promise.all([
           fetch(`${API_URL}/productos`).then(r => r.json()),
@@ -182,42 +182,42 @@ const ProductDetail = () => {
             return r.json();
           }).catch(() => []) // También atrapamos errores de red o parseo
         ]).then(([allProducts, resenasData]) => {
-            let filteredData = allProducts.filter(item => 
-              item.id_producto.toString() !== id.toString() && 
-              item.id_categoria === data.id_categoria
-            );
+          let filteredData = allProducts.filter(item =>
+            item.id_producto.toString() !== id.toString() &&
+            item.id_categoria === data.id_categoria
+          );
 
-            // Fallback: si no hay productos de la misma categoría, mostrar otros del catálogo
-            if (filteredData.length === 0) {
-              filteredData = allProducts.filter(item => 
-                item.id_producto.toString() !== id.toString()
-              );
-            }
-            
-            const mapped = filteredData.map(item => {
-              const price = parseFloat(item.precio) || 0;
-              return {
-                id: item.id_producto,
-                title: item.nombre || item.titulo || 'Producto sin nombre',
-                description: item.descripcion || '',
-                categoryName: item.categoria_nombre || '',
-                categoryId: item.id_categoria,
-                price,
-                oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-                discount: item.discount || item.descuento || null,
-                rating: parseFloat(item.calificacion) || 5,
-                reviews: parseInt(item.resenas || item.reseñas) || 0,
-                image: item.imagen_url,
-                collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
-                age: item.edad_recomendada || null,
-                stock: item.stock !== undefined ? parseInt(item.stock, 10) : 0,
-                isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
-                isComingSoon: item.id_producto % 4 === 0
-              };
-            });
-            setRelatedProducts(mapped);
-            setReviews(resenasData || []);
+          // Fallback: si no hay productos de la misma categoría, mostrar otros del catálogo
+          if (filteredData.length === 0) {
+            filteredData = allProducts.filter(item =>
+              item.id_producto.toString() !== id.toString()
+            );
+          }
+
+          const mapped = filteredData.map(item => {
+            const price = parseFloat(item.precio) || 0;
+            return {
+              id: item.id_producto,
+              title: item.nombre || item.titulo || 'Producto sin nombre',
+              description: item.descripcion || '',
+              categoryName: item.categoria_nombre || '',
+              categoryId: item.id_categoria,
+              price,
+              oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
+              discount: item.discount || item.descuento || null,
+              rating: parseFloat(item.calificacion) || 5,
+              reviews: parseInt(item.resenas || item.reseñas) || 0,
+              image: item.imagen_url,
+              collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+              age: item.edad_recomendada || null,
+              stock: item.stock !== undefined ? parseInt(item.stock, 10) : 0,
+              isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
+              isComingSoon: item.id_producto % 4 === 0
+            };
           });
+          setRelatedProducts(mapped);
+          setReviews(resenasData || []);
+        });
       })
       .then(() => setLoading(false))
       .catch(err => {
@@ -309,7 +309,7 @@ const ProductDetail = () => {
             {/* Información del producto Skeleton */}
             <div className="product-info" style={{ gap: '15px' }}>
               <div className="skeleton" style={{ width: '70%', height: '36px', marginBottom: '10px' }}></div>
-              
+
               <div className="product-meta" style={{ margin: '0', display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <div className="skeleton" style={{ width: '100px', height: '16px' }}></div>
                 <span className="meta-divider">|</span>
@@ -342,13 +342,13 @@ const ProductDetail = () => {
     );
   }
 
-  if (error) return <div><Navbar /><div className="container" style={{padding: '100px 0'}}>Error: {error}</div><Footer /></div>;
+  if (error) return <div><Navbar /><div className="container" style={{ padding: '100px 0' }}>Error: {error}</div><Footer /></div>;
   if (!product) return null;
 
   return (
     <div className="product-detail-page">
       <Navbar />
-      
+
       <main className="container">
         {/* Breadcrumb */}
         <div className="breadcrumb">
@@ -360,14 +360,14 @@ const ProductDetail = () => {
           <div className="product-gallery">
             <div className="thumbnails-column">
               {product.images.map((img, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`thumbnail-container ${index === mainImageIndex ? 'active' : ''}`}
                   onClick={() => setMainImageIndex(index)}
                 >
-                  <img 
-                    src={(!img || img.includes('legostore.com')) ? placeholderProduct : img} 
-                    alt={`Miniatura ${index + 1}`} 
+                  <img
+                    src={(!img || img.includes('legostore.com')) ? placeholderProduct : img}
+                    alt={`Miniatura ${index + 1}`}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = placeholderProduct;
@@ -377,7 +377,7 @@ const ProductDetail = () => {
               ))}
             </div>
             <div className="main-image-container" style={{ position: 'relative' }}>
-              <button 
+              <button
                 className={`product-image-fav-btn ${favoritos && favoritos.includes(product.id) ? 'active' : ''}`}
                 onClick={(e) => {
                   e.preventDefault();
@@ -388,14 +388,14 @@ const ProductDetail = () => {
               >
                 {favoritos && favoritos.includes(product.id) ? <FaHeart /> : <FaRegHeart />}
               </button>
-              
+
               {product.images.length > 1 && (
                 <button className="gallery-arrow prev" onClick={prevImage}>&lt;</button>
               )}
-              <img 
-                src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]} 
-                alt={product.title} 
-                className="main-image" 
+              <img
+                src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]}
+                alt={product.title}
+                className="main-image"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = placeholderProduct;
@@ -413,7 +413,7 @@ const ProductDetail = () => {
               <span className="product-detail-category-badge">{product.categoryName}</span>
             )}
             <h1 className="product-detail-title">{product.title}</h1>
-            
+
             <div className="product-meta">
               {reviews.length > 0 ? (
                 <>
@@ -450,28 +450,27 @@ const ProductDetail = () => {
               <div className="action-row" style={{ flexWrap: 'wrap' }}>
                 <div className={`quantity-selector ${quantity > product.stock ? "qty-selector-error" : ""}`}>
                   <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment}>-</button>
-                  <input 
-                    type="number" 
-                    value={quantity} 
+                  <input
+                    type="number"
+                    value={quantity}
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
                     min="1"
                     max={product?.stock || 1}
-                    disabled={isProcessingPayment} 
+                    disabled={isProcessingPayment}
                   />
                   <button className="plus-btn" onClick={() => handleQuantityChange(1)} disabled={isProcessingPayment}>+</button>
                 </div>
-                
-                <button 
-                  className="buy-now-btn" 
-                  onClick={handleBuyNow} 
+
+                <button
+                  className="buy-now-btn"
+                  onClick={handleBuyNow}
                   disabled={isProcessingPayment || product.stock <= 0 || quantity > product.stock}
                 >
                   {isProcessingPayment ? 'Procesando...' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
-                <button 
-                  className="btn-outline" 
-                  style={{marginLeft: '10px'}}
+                <button
+                  className="add-to-cart-btn"
                   onClick={async () => {
                     let qty = parseInt(quantity, 10);
                     if (isNaN(qty) || qty < 1) qty = 1;
@@ -480,7 +479,7 @@ const ProductDetail = () => {
                     if (res && res.requireLogin) {
                       navigate('/login');
                     }
-                  }} 
+                  }}
                   disabled={product.stock <= 0 || quantity > product.stock}
                 >
                   Agregar al Carrito
@@ -519,7 +518,7 @@ const ProductDetail = () => {
         {/* Reseñas del Producto */}
         <section className="product-reviews-section">
           <SectionHeader title="Reseñas de Usuarios" />
-          
+
           {/* Listado de comentarios/reseñas existentes - Se muestra PRIMERO */}
           <div className="reviews-container" style={{ marginBottom: '20px' }}>
             {reviews.length === 0 ? (
@@ -530,8 +529,8 @@ const ProductDetail = () => {
               <>
                 <div className="reviews-slider-wrapper">
                   {reviews.length > 1 && (
-                    <button 
-                      className="reviews-slider-btn left" 
+                    <button
+                      className="reviews-slider-btn left"
                       onClick={() => setCurrentReviewIndex((prev) => (prev - 1 + reviews.length) % reviews.length)}
                       title="Reseña anterior"
                     >
@@ -539,7 +538,7 @@ const ProductDetail = () => {
                     </button>
                   )}
 
-                  <div className="review-card animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
+                  <div className="review-card review-card--slider animate-fade-slide" key={reviews[currentReviewIndex].id_comentario}>
                     <div className="review-header">
                       <div className="review-author">
                         {reviews[currentReviewIndex].anonimo ? 'Usuario Anónimo' : `${reviews[currentReviewIndex].autor_nombre} ${reviews[currentReviewIndex].autor_apellido}`}
@@ -557,8 +556,8 @@ const ProductDetail = () => {
                   </div>
 
                   {reviews.length > 1 && (
-                    <button 
-                      className="reviews-slider-btn right" 
+                    <button
+                      className="reviews-slider-btn right"
                       onClick={() => setCurrentReviewIndex((prev) => (prev + 1) % reviews.length)}
                       title="Siguiente reseña"
                     >
@@ -585,23 +584,23 @@ const ProductDetail = () => {
 
           {/* Formulario de Calificación (Solo compradores verificados) - Se muestra SEGUNDO (al final) */}
           {!usuario ? (
-            <div className="login-to-review-prompt glassmorphic">
+            <div className="login-to-review-prompt glassmorphic glass-panel">
               <p>Debes <Link to="/login" state={{ from: `/producto/${id}` }}>iniciar sesión</Link> para calificar y dejar una reseña de este producto.</p>
             </div>
           ) : eligibility === null ? (
             <div className="skeleton" style={{ width: '100%', height: '180px', borderRadius: '16px', marginTop: '40px' }}></div>
           ) : eligibility.puedeResenar ? (
-            <div className="add-review-form glassmorphic animate-fade-in">
+            <div className="add-review-form glassmorphic glass-panel animate-fade-in">
               <h3>Calificar este Producto</h3>
               <p className="add-review-subtitle">
-                Dejanos tu puntaje y un comentario sobre tu experiencia de construcción. 
+                Dejanos tu puntaje y un comentario sobre tu experiencia de construcción.
                 {eligibility.totalComprado > 0 && (
                   <span style={{ display: 'block', fontSize: '12px', color: '#4caf50', marginTop: '6px', fontWeight: '600' }}>
                     ✔ Compra verificada: Has adquirido este set {eligibility.totalComprado} {eligibility.totalComprado === 1 ? 'vez' : 'veces'} y publicado {eligibility.totalResenas} {eligibility.totalResenas === 1 ? 'reseña' : 'reseñas'}.
                   </span>
                 )}
               </p>
-              
+
               <div className="rating-select-group">
                 <span className="rating-select-label">Tu Calificación:</span>
                 <div className="stars-selector">
@@ -660,13 +659,13 @@ const ProductDetail = () => {
               </button>
             </div>
           ) : eligibility.comprado ? (
-            <div className="verified-review-limit-msg glassmorphic">
+            <div className="verified-review-limit-msg glassmorphic glass-panel">
               <div className="verified-icon">🏆</div>
               <p><strong>¡Reseñas Completadas!</strong></p>
               <p>Ya has calificado todas tus compras de este producto ({eligibility.totalComprado} {eligibility.totalComprado === 1 ? 'unidad comprada' : 'unidades compradas'} y {eligibility.totalResenas} {eligibility.totalResenas === 1 ? 'reseña publicada' : 'reseñas publicadas'}). ¡Muchísimas gracias por tu valiosa opinión!</p>
             </div>
           ) : (
-            <div className="verified-purchase-lock-msg glassmorphic">
+            <div className="verified-purchase-lock-msg glassmorphic glass-panel">
               <div className="lock-icon">🔒</div>
               <p><strong>Reseña Exclusiva para Compradores Verificados</strong></p>
               <p>En BloqueMundo queremos que todas las opiniones sean auténticas y útiles. Para calificar este set de Lego, primero debés adquirirlo a través de nuestra tienda. ¡Esperamos ver tu opinión de construcción pronto!</p>
