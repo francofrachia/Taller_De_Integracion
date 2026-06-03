@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
-import placeholderImg from '../../assets/imagen no existente BM.png';
+import placeholderImg from '../../assets/imagen no existente BM.webp';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {

@@ -6,7 +6,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
-import placeholderProduct from '../../assets/imagen no existente BM.png';
+import placeholderProduct from "../../assets/imagen no existente BM.webp";
 import './ProductDetail.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';

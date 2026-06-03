@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './About.css';
-import aboutImage from '../../assets/about_us_image.png';
+import aboutImage from '../../assets/about_us_image.webp';
 
 const About = () => {
   useEffect(() => {
