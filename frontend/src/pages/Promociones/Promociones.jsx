@@ -1,45 +1,17 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
-import { FaHeart, FaRegHeart, FaShoppingCart, FaClock } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaShoppingCart } from 'react-icons/fa';
 import './Promociones.css';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import placeholderProduct from '../../assets/imagen no existente BM.png';
 
 const Promociones = () => {
   const { productos, promociones, favoritos, toggleFavorito, agregarAlCarrito } = useContext(AppContext);
-  const [timeLeft, setTimeLeft] = useState({ hours: 3, minutes: 45, seconds: 12 });
 
   useEffect(() => {
     window.scrollTo(0, 0);
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        let { hours, minutes, seconds } = prev;
-        if (seconds > 0) {
-          seconds--;
-        } else {
-          if (minutes > 0) {
-            minutes--;
-            seconds = 59;
-          } else {
-            if (hours > 0) {
-              hours--;
-              minutes = 59;
-              seconds = 59;
-            } else {
-              // Reset timer when it reaches 0 for dramatic effect
-              hours = 24;
-              minutes = 0;
-              seconds = 0;
-            }
-          }
-        }
-        return { hours, minutes, seconds };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, []);
 
   // Cruzar promociones de la base de datos con los productos
@@ -60,44 +32,20 @@ const Promociones = () => {
     };
   }).filter(Boolean);
 
-  const formatTime = (value) => value.toString().padStart(2, '0');
-
   return (
-    <div className="promo-page dark-theme">
+    <div className="promo-page">
       <Navbar />
       
       {/* Hero Section */}
       <section className="promo-hero">
-        <div className="promo-hero-bg">
-          <div className="neon-grid"></div>
-        </div>
+        <div className="promo-hero-bg"></div>
         
         <div className="promo-hero-content container">
-          <div className="promo-badge">ACCESO CLASIFICADO</div>
           <h1 className="promo-title">
-            OFERTAS <span className="neon-text-red">RELÁMPAGO</span>
+            OFERTAS <span className="text-highlight-red">LIMITADAS</span>
           </h1>
-          <p className="promo-subtitle">
-            Unidades limitadas. Descuentos extremos. El tiempo se agota.
-          </p>
           
-          <div className="countdown-container">
-            <FaClock className="clock-icon" />
-            <div className="countdown-box">
-              <span className="time-val">{formatTime(timeLeft.hours)}</span>
-              <span className="time-label">HS</span>
-            </div>
-            <span className="time-sep">:</span>
-            <div className="countdown-box">
-              <span className="time-val">{formatTime(timeLeft.minutes)}</span>
-              <span className="time-label">MIN</span>
-            </div>
-            <span className="time-sep">:</span>
-            <div className="countdown-box">
-              <span className="time-val neon-pulse-fast">{formatTime(timeLeft.seconds)}</span>
-              <span className="time-label">SEG</span>
-            </div>
-          </div>
+          <h2 className="promo-catchphrase">¡No te podés perder estas ofertas!</h2>
         </div>
       </section>
 
@@ -117,11 +65,16 @@ const Promociones = () => {
                   toggleFavorito(product.id_producto);
                 }}
               >
-                {favoritos.includes(product.id_producto) ? <FaHeart color="#ff4d4d" size={24} /> : <FaRegHeart color="rgba(255,255,255,0.6)" size={24} />}
+                {favoritos.includes(product.id_producto) ? <FaHeart color="#ff4d4d" size={24} /> : <FaRegHeart color="#999" size={24} />}
               </button>
 
               <Link to={`/producto/${product.id_producto}`} className="promo-img-wrapper">
-                <img src={product.imagen_url || product.imagenes?.[0] || "/images/placeholder.png"} alt={product.nombre} className="promo-img" />
+                <img 
+                  src={(!product.imagen_url || product.imagen_url.includes('legostore.com')) ? placeholderProduct : (product.imagen_url || product.imagenes?.[0])} 
+                  alt={product.nombre} 
+                  className="promo-img" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
+                />
                 {product.stock <= 0 && (
                   <div className="out-of-stock-overlay">AGOTADO</div>
                 )}
