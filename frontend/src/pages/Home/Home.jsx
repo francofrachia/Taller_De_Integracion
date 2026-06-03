@@ -10,7 +10,6 @@ import { AppContext } from '../../context/AppContext';
 import './Home.css';
 
 // Import local placeholder images for banners
-import heroBanner from '../../assets/hero_banner.png';
 import starWarsBanner from '../../assets/starWars.jpg';
 import newHeroBanner from '../../assets/imagen_home_arriba.png';
 import hulkBanner from '../../assets/Home.superheroe.jpg';
