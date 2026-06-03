@@ -10,10 +10,10 @@ import { AppContext } from '../../context/AppContext';
 import './Home.css';
 
 // Import local placeholder images for banners
-import starWarsBanner from '../../assets/starWars.jpg';
-import newHeroBanner from '../../assets/imagen_home_arriba.png';
-import hulkBanner from '../../assets/Home.superheroe.jpg';
-import placeholderProduct from '../../assets/imagen no existente BM.png';
+import starWarsBanner from '../../assets/starWars.webp';
+import newHeroBanner from '../../assets/imagen_home_arriba.webp';
+import hulkBanner from '../../assets/Home.superheroe.webp';
+import placeholderProduct from '../../assets/imagen no existente BM.webp';
 import logoBm from '../../assets/BM logo recortado.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';

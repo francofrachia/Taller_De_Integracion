@@ -5,7 +5,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import placeholderImg from '../../assets/imagen no existente BM.png';
+import placeholderImg from '../../assets/imagen no existente BM.webp';
 import './Account.css';
 
 // ───────────────────────────────────────────────

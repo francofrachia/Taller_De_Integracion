@@ -5,7 +5,7 @@ import { FaHeart, FaRegHeart, FaShoppingCart } from 'react-icons/fa';
 import './Promociones.css';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
-import placeholderProduct from '../../assets/imagen no existente BM.png';
+import placeholderProduct from '../../assets/imagen no existente BM.webp';
 
 const Promociones = () => {
   const { productos, promociones, favoritos, toggleFavorito, agregarAlCarrito } = useContext(AppContext);
