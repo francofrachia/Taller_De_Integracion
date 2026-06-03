@@ -13,6 +13,8 @@ import PaymentStatus from './pages/PaymentStatus/PaymentStatus';
 import Account from './pages/Account/Account';
 import About from './pages/About/About';
 import NotFound from './pages/NotFound/NotFound';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminRoute from './components/AdminRoute/AdminRoute';
 
 function App() {
   return (
@@ -32,6 +34,14 @@ function App() {
         <Route path="/payment-success" element={<PaymentStatus type="success" />} />
         <Route path="/payment-failure" element={<PaymentStatus type="failure" />} />
         <Route path="/payment-pending" element={<PaymentStatus type="pending" />} />
+        
+        {/* Rutas de Administrador */}
+        <Route path="/admin/*" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

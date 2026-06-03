@@ -175,6 +175,80 @@ const Producto = {
         `;
         const { rows } = await pool.query(query);
         return rows;
+    },
+
+    // --- Admin Methods ---
+    create: async (data) => {
+        const query = `
+            INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria, edad_recomendada)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        const { rows } = await pool.query(query, [
+            data.nombre,
+            data.descripcion || '',
+            data.precio,
+            data.stock || 0,
+            data.id_categoria,
+            data.edad_recomendada || null
+        ]);
+        return rows[0];
+    },
+
+    update: async (id, data) => {
+        const query = `
+            UPDATE producto
+            SET nombre = COALESCE($1, nombre),
+                descripcion = COALESCE($2, descripcion),
+                precio = COALESCE($3, precio),
+                stock = COALESCE($4, stock),
+                id_categoria = COALESCE($5, id_categoria),
+                edad_recomendada = COALESCE($6, edad_recomendada)
+            WHERE id_producto = $7
+            RETURNING *
+        `;
+        const { rows } = await pool.query(query, [
+            data.nombre,
+            data.descripcion,
+            data.precio,
+            data.stock,
+            data.id_categoria,
+            data.edad_recomendada,
+            id
+        ]);
+        return rows[0];
+    },
+
+    delete: async (id) => {
+        // En lugar de borrar físicamente (que rompería FKs), podemos marcarlo sin stock o un borrado lógico
+        // O si preferimos hard-delete:
+        const query = `DELETE FROM producto WHERE id_producto = $1 RETURNING id_producto`;
+        const { rows } = await pool.query(query, [id]);
+        return rows[0];
+    },
+
+    createCategoria: async (data) => {
+        const query = `INSERT INTO categoria (nombre) VALUES ($1) RETURNING *`;
+        const { rows } = await pool.query(query, [data.nombre]);
+        return rows[0];
+    },
+
+    updateCategoria: async (id, data) => {
+        const query = `UPDATE categoria SET nombre = $1 WHERE id_categoria = $2 RETURNING *`;
+        const { rows } = await pool.query(query, [data.nombre, id]);
+        return rows[0];
+    },
+
+    deleteCategoria: async (id) => {
+        const query = `DELETE FROM categoria WHERE id_categoria = $1 RETURNING id_categoria`;
+        const { rows } = await pool.query(query, [id]);
+        return rows[0];
+    },
+
+    getAllCategoriasAdmin: async () => {
+        const query = `SELECT * FROM categoria ORDER BY id_categoria ASC`;
+        const { rows } = await pool.query(query);
+        return rows;
     }
 };
 

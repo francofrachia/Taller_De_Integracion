@@ -10,6 +10,7 @@ const carritoRoutes = require('./routes/carritoRoutes');
 const direccionRoutes = require('./routes/direccionRoutes');
 const favoritoRoutes = require('./routes/favoritoRoutes');
 const compraRoutes = require('./routes/compraRoutes');
+const promocionRoutes = require('./routes/promocionRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,6 +62,7 @@ app.use('/api/carrito', carritoRoutes);
 app.use('/api/direccion', direccionRoutes);
 app.use('/api/favoritos', favoritoRoutes);
 app.use('/api/compras', compraRoutes);
+app.use('/api/promociones', promocionRoutes);
 
 // Ruta de prueba para verificar que el servidor se lanzo
 app.get('/', (req, res) => {

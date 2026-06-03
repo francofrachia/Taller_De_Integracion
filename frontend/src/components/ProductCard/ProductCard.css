@@ -145,7 +145,7 @@
   font-size: 12px;
 }
 
-.add-to-cart-btn {
+.product-card .add-to-cart-btn {
   width: 100%;
   background-color: var(--primary-yellow);
   color: var(--text-dark);
@@ -158,7 +158,7 @@
   margin-top: auto;
 }
 
-.add-to-cart-btn:hover {
+.product-card .add-to-cart-btn:hover {
   background-color: var(--primary-yellow-hover);
 }
 
@@ -226,7 +226,7 @@
   text-transform: uppercase;
 }
 
-.add-to-cart-btn:disabled {
+.product-card .add-to-cart-btn:disabled {
   background-color: #e0e0e0 !important;
   color: #888888 !important;
   cursor: not-allowed !important;

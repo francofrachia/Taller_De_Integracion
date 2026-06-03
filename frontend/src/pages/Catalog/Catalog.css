@@ -1120,6 +1120,7 @@ input:checked + .switch-slider:before {
 .catalog-brick-5 { animation: floatBrick 3.8s ease-in-out infinite 0.6s; }
 .catalog-brick-6 { animation: floatBrick 3.0s ease-in-out infinite 1.0s; }
 .catalog-brick-7 { animation: floatBrick 3.3s ease-in-out infinite 0.5s; }
+.catalog-brick-8 { animation: floatBrick 3.6s ease-in-out infinite 0.3s; }
 
 @keyframes floatBrick {
   0%, 100% { transform: translateY(0) rotate(-4deg); }

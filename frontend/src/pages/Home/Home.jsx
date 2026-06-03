@@ -175,11 +175,11 @@ const Home = () => {
             rating: parseFloat(item.calificacion) || 5,
             reviews: parseInt(item.resenas || item.reseñas) || 0,
             image: item.imagen_url, // URL que viene del JOIN de la BD
-            collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+            collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
             age: item.edad_recomendada || null,
             stock: item.stock || 0,
             // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
-            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
+            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
             // Próximamente: Lógica escalable desde BDD
             isComingSoon: !!item.proximo_lanzamiento,
             // Ventas reales desde BDD
@@ -258,13 +258,13 @@ const Home = () => {
             <div className="collections-grid">
               {['Star Wars', 'Marvel', 'Harry Potter', 'Construcciones', 'Vehículos', 'Cartoon Network', 'Clásicos'].map((col, index) => {
                 const collectionVisuals = {
-                  'Star Wars': { icon: '/imagenes icons/star wars.svg', emoji: '🚀' },
-                  'Marvel': { icon: '/imagenes icons/marvel.svg', emoji: '🦸‍♂️' },
-                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg', emoji: '🧙‍♂️' },
-                  'Construcciones': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
-                  'Vehículos': { icon: null, emoji: '⚙️' },
-                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg', emoji: '🎬' },
-                  'Clásicos': { icon: '/imagenes icons/icons.svg', emoji: '🧱' }
+                  'Star Wars': { icon: '/imagenes icons/star wars.svg' },
+                  'Marvel': { icon: '/imagenes icons/marvel.svg' },
+                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg' },
+                  'Construcciones': { icon: '/imagenes icons/city.svg' },
+                  'Vehículos': { icon: '/imagenes icons/vehiculos.svg' },
+                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg' },
+                  'Clásicos': { icon: '/imagenes icons/icons.svg' }
                 };
                 const visuals = collectionVisuals[col] || { icon: null, emoji: '🧱' };
                 return (
