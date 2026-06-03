@@ -15,6 +15,10 @@ const AdminProducts = () => {
         id_categoria: '',
         edad_recomendada: ''
     });
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [previewUrls, setPreviewUrls] = useState([]);
+    const [existingImages, setExistingImages] = useState([]);
+    const [imagenes_a_borrar, setImagenesABorrar] = useState([]);
 
     useEffect(() => {
         setLocalProducts(productos);
@@ -48,6 +52,8 @@ const AdminProducts = () => {
                 id_categoria: prod.id_categoria,
                 edad_recomendada: prod.edad_recomendada || ''
             });
+            // Asumiendo que el endpoint de obtener todos o ID devuelve el array de 'imagenes'
+            setExistingImages(prod.imagenes || (prod.imagen_url ? [prod.imagen_url] : []));
         } else {
             setEditingProduct(null);
             setFormData({
@@ -58,7 +64,11 @@ const AdminProducts = () => {
                 id_categoria: categorias.length > 0 ? categorias[0].id_categoria : '',
                 edad_recomendada: ''
             });
+            setExistingImages([]);
         }
+        setSelectedFiles([]);
+        setPreviewUrls([]);
+        setImagenesABorrar([]);
         setIsModalOpen(true);
     };
 
@@ -67,19 +77,53 @@ const AdminProducts = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setSelectedFiles(prev => [...prev, ...files]);
+        
+        // Crear object URLs para previsualización
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setPreviewUrls(prev => [...prev, ...newPreviews]);
+    };
+
+    const handleRemoveExistingImage = (url) => {
+        setImagenesABorrar(prev => [...prev, url]);
+        setExistingImages(prev => prev.filter(img => img !== url));
+    };
+
+    const handleRemoveNewFile = (index) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        // Revocar la URL de objeto para evitar fugas de memoria
+        URL.revokeObjectURL(previewUrls[index]);
+        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const url = editingProduct ? `${API_URL}/productos/${editingProduct.id_producto}` : `${API_URL}/productos`;
         const method = editingProduct ? 'PUT' : 'POST';
 
+        const submitData = new FormData();
+        Object.keys(formData).forEach(key => {
+            submitData.append(key, formData[key]);
+        });
+
+        if (imagenes_a_borrar.length > 0) {
+            submitData.append('imagenes_a_borrar', JSON.stringify(imagenes_a_borrar));
+        }
+
+        selectedFiles.forEach(file => {
+            submitData.append('imagenes', file);
+        });
+
         try {
             const res = await fetch(url, {
                 method,
                 headers: {
-                    'Content-Type': 'application/json',
+                    // NO incluimos Content-Type aquí para que el navegador genere correctamente el boundary de multipart/form-data
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: submitData
             });
 
             if (res.ok) {
@@ -160,6 +204,49 @@ const AdminProducts = () => {
                                         <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
                                     ))}
                                 </select>
+                            </div>
+                            
+                            <div className="admin-form-group">
+                                <label>Imágenes del Producto</label>
+                                <input type="file" name="imagenes" accept="image/*" multiple onChange={handleFileChange} />
+                                
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                                    {/* Imágenes existentes (al editar) */}
+                                    {existingImages.map((url, index) => (
+                                        <div key={`exist-${index}`} style={{ position: 'relative' }}>
+                                            <img 
+                                                src={url.startsWith('http') || url.startsWith('/') ? (url.startsWith('http') ? url : `${API_URL}${url}`) : `${API_URL}/uploads/${url}`} 
+                                                alt={`existente-${index}`} 
+                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} 
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleRemoveExistingImage(url)}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                                            >
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {/* Previsualización de nuevos archivos seleccionados */}
+                                    {previewUrls.map((url, index) => (
+                                        <div key={`prev-${index}`} style={{ position: 'relative' }}>
+                                            <img 
+                                                src={url} 
+                                                alt={`preview-${index}`} 
+                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #4CAF50' }} 
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleRemoveNewFile(index)}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                                            >
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                             <div className="admin-modal-actions">
                                 <button type="button" className="admin-btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>

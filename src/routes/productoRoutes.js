@@ -3,6 +3,10 @@ const router = express.Router();
 const productoController = require('../controllers/productoController');
 const verificarToken = require('../middlewares/authMiddleware');
 const verificarAdmin = require('../middlewares/adminMiddleware');
+const multer = require('multer');
+
+// Configuración de multer en memoria (los archivos se pasan como buffers a sharp)
+const upload = multer({ storage: multer.memoryStorage() });
 
 // La ruta será: http://localhost:3000/api/productos
 router.get('/', productoController.getProductos);
@@ -18,8 +22,8 @@ router.post('/:id/calificar', verificarToken, productoController.calificarProduc
 router.get('/:id/elegibilidad-resena', verificarToken, productoController.checkReviewEligibility);
 
 // --- Rutas de Administrador ---
-router.post('/', verificarToken, verificarAdmin, productoController.createProducto);
-router.put('/:id', verificarToken, verificarAdmin, productoController.updateProducto);
+router.post('/', verificarToken, verificarAdmin, upload.array('imagenes', 5), productoController.createProducto);
+router.put('/:id', verificarToken, verificarAdmin, upload.array('imagenes', 5), productoController.updateProducto);
 router.delete('/:id', verificarToken, verificarAdmin, productoController.deleteProducto);
 
 router.get('/categorias/admin', verificarToken, verificarAdmin, productoController.getAllCategoriasAdmin);

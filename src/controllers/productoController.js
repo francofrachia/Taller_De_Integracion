@@ -1,4 +1,8 @@
 const Producto = require('../models/productoModel');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const getProductos = async (req, res) => {
     try {
@@ -97,7 +101,22 @@ const createProducto = async (req, res) => {
         if (data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
         if (data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
 
-        const nuevoProducto = await Producto.create(data);
+        const urlsImagenes = [];
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                const nombreArchivo = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}.webp`;
+                const rutaDestino = path.join(__dirname, '../public/uploads', nombreArchivo);
+                
+                await sharp(file.buffer)
+                    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toFile(rutaDestino);
+                
+                urlsImagenes.push(`/uploads/${nombreArchivo}`);
+            }
+        }
+
+        const nuevoProducto = await Producto.create(data, urlsImagenes);
         res.status(201).json({ mensaje: 'Producto creado', producto: nuevoProducto });
     } catch (error) {
         console.error('Error en createProducto:', error);
@@ -113,7 +132,31 @@ const updateProducto = async (req, res) => {
         if (data.precio !== undefined && data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
         if (data.stock !== undefined && data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
 
-        const productoActualizado = await Producto.update(id, data);
+        let imagenes_a_borrar = [];
+        if (data.imagenes_a_borrar) {
+            try {
+                imagenes_a_borrar = JSON.parse(data.imagenes_a_borrar);
+            } catch (e) {
+                console.error("Error parseando imagenes_a_borrar", e);
+            }
+        }
+
+        const urlsImagenes = [];
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                const nombreArchivo = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}.webp`;
+                const rutaDestino = path.join(__dirname, '../public/uploads', nombreArchivo);
+                
+                await sharp(file.buffer)
+                    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toFile(rutaDestino);
+                
+                urlsImagenes.push(`/uploads/${nombreArchivo}`);
+            }
+        }
+
+        const productoActualizado = await Producto.update(id, data, urlsImagenes, imagenes_a_borrar);
         if (!productoActualizado) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }

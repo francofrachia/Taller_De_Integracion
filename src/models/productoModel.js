@@ -178,45 +178,94 @@ const Producto = {
     },
 
     // --- Admin Methods ---
-    create: async (data) => {
-        const query = `
-            INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria, edad_recomendada)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *
-        `;
-        const { rows } = await pool.query(query, [
-            data.nombre,
-            data.descripcion || '',
-            data.precio,
-            data.stock || 0,
-            data.id_categoria,
-            data.edad_recomendada || null
-        ]);
-        return rows[0];
+    create: async (data, urlsImagenes = []) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const query = `
+                INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria, edad_recomendada)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
+            `;
+            const { rows } = await client.query(query, [
+                data.nombre,
+                data.descripcion || '',
+                data.precio,
+                data.stock || 0,
+                data.id_categoria,
+                data.edad_recomendada || null
+            ]);
+            
+            const producto = rows[0];
+
+            // Insertar imágenes
+            if (urlsImagenes.length > 0) {
+                const imgQuery = `INSERT INTO imagen (id_producto, url) VALUES ($1, $2)`;
+                for (const url of urlsImagenes) {
+                    await client.query(imgQuery, [producto.id_producto, url]);
+                }
+            }
+
+            await client.query('COMMIT');
+            return producto;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     },
 
-    update: async (id, data) => {
-        const query = `
-            UPDATE producto
-            SET nombre = COALESCE($1, nombre),
-                descripcion = COALESCE($2, descripcion),
-                precio = COALESCE($3, precio),
-                stock = COALESCE($4, stock),
-                id_categoria = COALESCE($5, id_categoria),
-                edad_recomendada = COALESCE($6, edad_recomendada)
-            WHERE id_producto = $7
-            RETURNING *
-        `;
-        const { rows } = await pool.query(query, [
-            data.nombre,
-            data.descripcion,
-            data.precio,
-            data.stock,
-            data.id_categoria,
-            data.edad_recomendada,
-            id
-        ]);
-        return rows[0];
+    update: async (id, data, urlsImagenes = [], imagenes_a_borrar = []) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const query = `
+                UPDATE producto
+                SET nombre = COALESCE($1, nombre),
+                    descripcion = COALESCE($2, descripcion),
+                    precio = COALESCE($3, precio),
+                    stock = COALESCE($4, stock),
+                    id_categoria = COALESCE($5, id_categoria),
+                    edad_recomendada = COALESCE($6, edad_recomendada)
+                WHERE id_producto = $7
+                RETURNING *
+            `;
+            const { rows } = await client.query(query, [
+                data.nombre,
+                data.descripcion,
+                data.precio,
+                data.stock,
+                data.id_categoria,
+                data.edad_recomendada,
+                id
+            ]);
+
+            const producto = rows[0];
+
+            // Borrar imágenes marcadas
+            if (imagenes_a_borrar.length > 0) {
+                // Borramos de DB pero no estamos borrando físicamente el archivo del disco por ahora
+                const deleteQuery = `DELETE FROM imagen WHERE url = ANY($1) AND id_producto = $2`;
+                await client.query(deleteQuery, [imagenes_a_borrar, id]);
+            }
+
+            // Insertar nuevas imágenes
+            if (urlsImagenes.length > 0) {
+                const imgQuery = `INSERT INTO imagen (id_producto, url) VALUES ($1, $2)`;
+                for (const url of urlsImagenes) {
+                    await client.query(imgQuery, [id, url]);
+                }
+            }
+
+            await client.query('COMMIT');
+            return producto;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     },
 
     delete: async (id) => {
