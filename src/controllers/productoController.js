@@ -78,4 +78,14 @@ const checkReviewEligibility = async (req, res) => {
     }
 };
 
-module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto, checkReviewEligibility };
+const getPromociones = async (req, res) => {
+    try {
+        const promociones = await Producto.getPromocionesVigentes();
+        res.json(promociones);
+    } catch (error) {
+        console.error('Error en getPromociones:', error);
+        res.status(500).json({ error: 'Error al obtener promociones de Supabase' });
+    }
+};
+
+module.exports = { getProductos, getProductoById, getResenasByProductoId, getCategorias, calificarProducto, checkReviewEligibility, getPromociones };

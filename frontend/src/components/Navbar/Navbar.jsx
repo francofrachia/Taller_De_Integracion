@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
 
@@ -23,9 +23,10 @@ const Navbar = () => {
         </div>
         
         <ul className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
-          <li><Link to="/" onClick={() => setIsMenuOpen(false)}>Inicio</Link></li>
-          <li><Link to="/productos" onClick={() => setIsMenuOpen(false)}>Nuestros Productos</Link></li>
-          <li><Link to="/nosotros" onClick={() => setIsMenuOpen(false)}>Sobre la APP</Link></li>
+          <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Inicio</NavLink></li>
+          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Nuestros Productos</NavLink></li>
+          <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Sobre la APP</NavLink></li>
+          <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Ofertas</NavLink></li>
         </ul>
 
         <div className="navbar-search">

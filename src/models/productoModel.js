@@ -164,6 +164,17 @@ const Producto = {
         } finally {
             client.release();
         }
+    },
+
+    // Obtener las promociones vigentes
+    getPromocionesVigentes: async () => {
+        const query = `
+            SELECT id_promo, id_producto, porcentaje, fecha_inicio, fecha_fin, descripcion
+            FROM promocion
+            WHERE fecha_inicio <= NOW() AND fecha_fin >= NOW()
+        `;
+        const { rows } = await pool.query(query);
+        return rows;
     }
 };
 
