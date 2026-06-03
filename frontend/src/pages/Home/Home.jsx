@@ -368,7 +368,7 @@ const Home = () => {
 
               <div className="container">
                 <div className="center-btn-container" style={{ marginTop: '40px' }}>
-                  <Link to="/productos" className="btn-glass-outline">Ver Todas las Promociones</Link>
+                  <Link to="/promociones" className="btn-glass-outline">Ver Todas las Promociones</Link>
                 </div>
               </div>
             </section>
