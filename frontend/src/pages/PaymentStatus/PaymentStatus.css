@@ -1,8 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap');
+
 .payment-status-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f7f9fc;
+  background-color: #f5f5f5; /* Fondo gris muy claro */
+  font-family: 'Nunito', sans-serif;
 }
 
 .status-container {
@@ -10,33 +13,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 20px;
+  padding: 60px 20px;
 }
 
 .status-card {
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  padding: 40px 30px;
   max-width: 500px;
   width: 100%;
   text-align: center;
-  border-top: 6px solid #ccc;
+  position: relative;
+  overflow: hidden;
   animation: slideUp 0.5s ease-out;
 }
 
+/* Patrón de studs sutil en el fondo de la card */
+.status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  background-image: radial-gradient(circle at 12px 12px, rgba(0,0,0,0.025) 4px, transparent 5px);
+  background-size: 24px 24px;
+  z-index: 0;
+}
+
+.status-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .status-card.success {
-  border-top-color: #2e7d32;
+  border-left: 8px solid #FFD700; /* Acento amarillo LEGO */
 }
 
 .status-card.failure {
-  border-top-color: #d32f2f;
+  border-left: 8px solid #D01012;
 }
 
 .status-card.pending {
-  border-top-color: #f57c00;
+  border-left: 8px solid #f57c00;
 }
 
+/* --- ÍCONO LEGO STUD --- */
 .status-icon {
   width: 80px;
   height: 80px;
@@ -47,60 +70,91 @@
   font-size: 36px;
   font-weight: bold;
   margin: 0 auto 24px;
+  position: relative;
 }
 
-.success .status-icon {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+.lego-stud {
+  background-color: #D01012; /* Rojo LEGO */
+  box-shadow: 0 6px 0 #9e0b0d, 0 10px 15px rgba(0,0,0,0.15);
+  color: transparent;
 }
 
+.lego-stud::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  background-color: #D01012;
+  border-radius: 50%;
+  box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 3px 0 rgba(0,0,0,0.2);
+}
+
+/* Estado de Error y Pendiente */
 .failure .status-icon {
   background-color: #ffebee;
-  color: #d32f2f;
+  color: #D01012;
 }
-
 .pending .status-icon {
   background-color: #fff3e0;
   color: #f57c00;
 }
 
+/* --- TIPOGRAFÍA Y TEXTOS --- */
 .status-card h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 12px;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.status-card.success h1 {
+  color: #006DB7; /* Azul LEGO */
+}
+
+.status-card.failure h1 {
+  color: #D01012;
+}
+
+.status-card.pending h1 {
+  color: #f57c00;
 }
 
 .status-message {
-  font-size: 16px;
+  font-size: 17px;
   color: #4a5568;
   line-height: 1.6;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  font-weight: 600;
 }
 
 .status-details {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
+  background-color: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
   margin-bottom: 24px;
   text-align: left;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 
 .status-details p {
-  margin: 6px 0;
-  font-size: 14px;
+  margin: 8px 0;
+  font-size: 15px;
   color: #4a5568;
 }
 
 .status-details strong {
   color: #1a202c;
+  font-weight: 700;
 }
 
 .status-subtext {
-  font-size: 13px;
+  font-size: 14px;
   color: #718096;
-  margin-bottom: 30px;
+  margin-bottom: 36px;
 }
 
 .status-actions {
@@ -108,35 +162,65 @@
   justify-content: center;
 }
 
+/* --- BOTONES --- */
 .primary-btn {
   display: inline-block;
-  background-color: #0080ff;
+  background-color: #006DB7;
   color: #ffffff;
-  font-weight: 600;
-  padding: 12px 30px;
-  border-radius: 8px;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 14px 36px;
+  border-radius: 30px; /* Bordes pill redondeados */
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
 }
 
 .primary-btn:hover {
-  background-color: #0066cc;
+  background-color: #00558f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 109, 183, 0.3);
+}
+
+.status-card.success .primary-btn {
+  background-color: #D01012; /* Rojo LEGO */
+}
+
+.status-card.success .primary-btn:hover {
+  background-color: #a80b0e;
+  box-shadow: 0 6px 16px rgba(208, 16, 18, 0.3);
 }
 
 .primary-btn-outline {
   display: inline-block;
-  border: 2px solid #d32f2f;
-  color: #d32f2f;
-  font-weight: 600;
-  padding: 10px 28px;
-  border-radius: 8px;
+  border: 2px solid #D01012;
+  color: #D01012;
+  font-weight: 700;
+  padding: 12px 32px;
+  border-radius: 30px;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .primary-btn-outline:hover {
-  background-color: #d32f2f;
+  background-color: #D01012;
   color: #ffffff;
+}
+
+/* Mobile responsivo */
+@media (max-width: 600px) {
+  .status-container {
+    padding: 30px 15px;
+  }
+  .status-card {
+    padding: 30px 20px;
+  }
+  .status-card h1 {
+    font-size: 26px;
+  }
+  .status-message {
+    font-size: 15px;
+  }
 }
 
 @keyframes slideUp {

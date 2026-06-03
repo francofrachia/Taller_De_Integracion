@@ -14,7 +14,10 @@ export default function Checkout() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const selectedItemIds = location.state?.selectedItems || null;
-    const checkoutItems = cart && cart.items ? (selectedItemIds ? cart.items.filter(i => selectedItemIds.includes(String(i.id_producto))) : cart.items) : [];
+    const directPurchase = location.state?.directPurchase || null;
+    const checkoutItems = directPurchase 
+        ? [directPurchase]
+        : (cart && cart.items ? (selectedItemIds ? cart.items.filter(i => selectedItemIds.includes(String(i.id_producto))) : cart.items) : []);
 
     const [formData, setFormData] = useState(() => {
         const savedData = sessionStorage.getItem('checkout_form_data');
@@ -61,11 +64,11 @@ export default function Checkout() {
         if (!storedUser && !usuario) {
             console.log("[Checkout] No stored user found and no usuario context, redirecting to /login.");
             navigate('/login', { state: { from: '/checkout' }, replace: true });
-        } else if (cart !== null && (!cart.items || cart.items.length === 0)) {
+        } else if (!directPurchase && cart !== null && (!cart.items || cart.items.length === 0)) {
             console.log("[Checkout] Cart is empty, redirecting to /carrito.");
             navigate('/carrito', { replace: true });
         }
-    }, [usuario, cart, navigate, loading, isInitialized]);
+    }, [usuario, cart, navigate, loading, isInitialized, directPurchase]);
 
     // Pre-llenar datos del usuario (sólo si no están llenos ya en formData)
     useEffect(() => {
@@ -79,7 +82,7 @@ export default function Checkout() {
     }, [usuario]);
 
     // Mostrar skeleton si el contexto aun no termino de inicializarse completamente
-    if (!isInitialized || !usuario || !usuario.id_usuario || cart === null) {
+    if (!isInitialized || !usuario || !usuario.id_usuario || (!directPurchase && cart === null)) {
         return (
             <div className="checkout-page">
                 <Navbar />
@@ -309,7 +312,8 @@ export default function Checkout() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    cartItems
+                    cartItems,
+                    isDirectPurchase: !!directPurchase
                 })
             });
 

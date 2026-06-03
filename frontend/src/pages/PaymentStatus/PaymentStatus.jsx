@@ -25,20 +25,25 @@ const PaymentStatus = ({ type }) => {
     if (type === 'success') {
       sessionStorage.removeItem('checkout_form_data');
       if (usuario && usuario.id_usuario) {
-        console.log("[PaymentStatus] User session loaded. Clearing cart for user:", usuario.id_usuario);
-        vaciarCarrito();
+        const isDirectPurchase = searchParams.get('direct_purchase') === 'true';
+        if (!isDirectPurchase) {
+          console.log("[PaymentStatus] User session loaded. Clearing cart for user:", usuario.id_usuario);
+          vaciarCarrito();
+        } else {
+          console.log("[PaymentStatus] User session loaded. Direct purchase detected, not clearing cart.");
+        }
       } else {
         console.warn("[PaymentStatus] Payment success page reached but no logged-in user found.");
       }
     }
-  }, [type, loading, usuario, vaciarCarrito]);
+  }, [type, loading, usuario, vaciarCarrito, searchParams]);
 
   const renderContent = () => {
     switch (type) {
       case 'success':
         return (
           <div className="status-card success">
-            <div className="status-icon">✓</div>
+            <div className="status-icon lego-stud"></div>
             <h1>¡Gracias por tu compra!</h1>
             <p className="status-message">Tu pago ha sido aprobado de manera exitosa y hemos registrado tu orden.</p>
             {paymentId && (

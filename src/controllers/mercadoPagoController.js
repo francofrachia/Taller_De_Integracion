@@ -9,7 +9,7 @@ const client = new MercadoPagoConfig({
 const createPreference = async (req, res) => {
     try {
         const id_usuario = req.usuario.id_usuario;
-        const { cartItems } = req.body;
+        const { cartItems, isDirectPurchase } = req.body;
 
         if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
             return res.status(400).json({ error: 'Faltan datos obligatorios (cartItems vacío)' });
@@ -79,6 +79,10 @@ const createPreference = async (req, res) => {
             failureUrl = `${baseUrl}/payment-failure`;
             pendingUrl = `${baseUrl}/payment-pending`;
         }
+        
+        if (isDirectPurchase) {
+            successUrl += successUrl.includes('?') ? '&direct_purchase=true' : '?direct_purchase=true';
+        }
 
         const preferenceData = {
             body: {
@@ -91,7 +95,8 @@ const createPreference = async (req, res) => {
                 metadata: {
                     // MP metadata string limit is 500 chars, JSON stringify for multiple items
                     cart: JSON.stringify(metadataItems),
-                    id_usuario: id_usuario
+                    id_usuario: id_usuario,
+                    is_direct_purchase: !!isDirectPurchase
                 }
             }
         };
@@ -138,9 +143,10 @@ const receiveWebhook = async (req, res) => {
             if (paymentData.status === 'approved') {
                 const cartMetadataStr = paymentData.metadata.cart;
                 const idUsuario = paymentData.metadata.id_usuario;
+                const isDirectPurchase = paymentData.metadata.is_direct_purchase === 'true' || paymentData.metadata.is_direct_purchase === true;
 
-                // 1. Vaciar el carrito en la base de datos
-                if (idUsuario) {
+                // 1. Vaciar el carrito en la base de datos solo si no es compra directa
+                if (idUsuario && !isDirectPurchase) {
                     try {
                         const Carrito = require('../models/carritoModel');
                         const carrito = await Carrito.getOrCreateByUserId(idUsuario);
@@ -149,6 +155,8 @@ const receiveWebhook = async (req, res) => {
                     } catch (err) {
                         console.error('Error al vaciar el carrito en el webhook:', err);
                     }
+                } else if (isDirectPurchase) {
+                    console.log(`Pago aprobado: Compra directa para el usuario ${idUsuario}, el carrito no se vaciará.`);
                 }
 
                 // 2. Actualizar stock y registrar la compra en la base de datos
@@ -168,7 +176,8 @@ const receiveWebhook = async (req, res) => {
                                 itemsConPrecio.push({
                                     id_producto: item.product_id,
                                     cantidad: item.quantity,
-                                    precio: precioNum
+                                    precio: precioNum,
+                                    nombre: producto.nombre
                                 });
                                 subtotal += precioNum * item.quantity;
                             }
@@ -185,6 +194,25 @@ const receiveWebhook = async (req, res) => {
                             const total = subtotal; // total es el subtotal si no hay descuentos en metadata
                             const resultCompra = await Compra.create(idUsuario, itemsConPrecio, subtotal, 0, total, 'mercado_pago', 'Pago confirmado');
                             console.log(`Compra registrada con éxito para el usuario ${idUsuario}: ID ${resultCompra.id_compra}`);
+
+                            // Enviar comprobante por email
+                            try {
+                                console.log(`[Email Debug] Buscando usuario ${idUsuario} en BD...`);
+                                const pool = require('../config/db');
+                                const userRes = await pool.query('SELECT nombre, email FROM usuario WHERE id_usuario = $1', [idUsuario]);
+                                
+                                if (userRes.rows.length > 0) {
+                                    const { nombre, email } = userRes.rows[0];
+                                    console.log(`[Email Debug] Usuario encontrado: ${nombre} (${email})`);
+                                    const { enviarComprobante } = require('../utils/emailService');
+                                    await enviarComprobante(email, nombre, itemsConPrecio, total, resultCompra.id_compra);
+                                    console.log(`[Email Debug] Proceso de envío finalizado.`);
+                                } else {
+                                    console.log(`[Email Debug] No se encontró el usuario ${idUsuario} en la base de datos.`);
+                                }
+                            } catch (mailErr) {
+                                console.error('[Email Debug] Error crítico enviando email:', mailErr);
+                            }
                         } else {
                             console.log('No se pudieron recuperar los precios de los productos para registrar la compra.');
                         }

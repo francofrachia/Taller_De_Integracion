@@ -80,16 +80,18 @@ const ProductDetail = () => {
     if (product && qty > product.stock) qty = product.stock;
 
     try {
-      // Agregar al carrito optimista/backend
-      const res = await agregarAlCarrito(product.id, qty);
-      if (res && res.success) {
-        // Redirigir a facturación para completar datos antes de pagar
-        navigate('/checkout');
-      } else if (res && res.requireLogin) {
-        navigate('/login', { state: { from: `/producto/${id}` } });
-      } else {
-        throw new Error(res?.error || 'Error al agregar el producto al carrito');
-      }
+      // Navegar a checkout indicando que es una compra directa
+      navigate('/checkout', { 
+        state: { 
+          directPurchase: {
+            id_producto: product.id,
+            nombre: product.title,
+            precio: product.price,
+            cantidad: qty,
+            stock: product.stock
+          } 
+        } 
+      });
     } catch (err) {
       console.error('Error al iniciar compra:', err);
       setPaymentError(err.message);
