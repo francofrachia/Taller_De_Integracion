@@ -25,8 +25,7 @@ const AdminOrders = () => {
         }
     };
 
-    const handleStatusChange = async (id_compra, currentStatus) => {
-        const newStatus = prompt('Ingrese el nuevo estado (ej. "Enviado", "Cancelado"):', currentStatus);
+    const handleStatusChange = async (id_compra, newStatus, currentStatus) => {
         if (!newStatus || newStatus === currentStatus) return;
 
         if (newStatus === 'Cancelado') {
@@ -91,7 +90,25 @@ const AdminOrders = () => {
                                     </span>
                                 </td>
                                 <td>
-                                    <button className="admin-btn edit" onClick={() => handleStatusChange(o.id_compra, o.estado)}>Cambiar Estado</button>
+                                    <select 
+                                        value={o.estado}
+                                        onChange={(e) => handleStatusChange(o.id_compra, e.target.value, o.estado)}
+                                        style={{
+                                            padding: '0.5rem',
+                                            borderRadius: '8px',
+                                            border: '1px solid #d1d5db',
+                                            fontFamily: 'inherit',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            backgroundColor: '#f9fafb'
+                                        }}
+                                    >
+                                        <option value="Esperando Pago">Esperando Pago</option>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="En manos del correo">En manos del correo</option>
+                                        <option value="Finalizado">Finalizado</option>
+                                        <option value="Cancelado">Cancelado</option>
+                                    </select>
                                 </td>
                             </tr>
                         ))}
