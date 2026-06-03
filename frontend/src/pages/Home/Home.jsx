@@ -259,13 +259,13 @@ const Home = () => {
             <div className="collections-grid">
               {['Star Wars', 'Marvel', 'Harry Potter', 'Construcciones', 'Vehículos', 'Cartoon Network', 'Clásicos'].map((col, index) => {
                 const collectionVisuals = {
-                  'Star Wars': { icon: '/imagenes icons/star wars.svg', emoji: '🚀' },
-                  'Marvel': { icon: '/imagenes icons/marvel.svg', emoji: '🦸‍♂️' },
-                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg', emoji: '🧙‍♂️' },
-                  'Construcciones': { icon: '/imagenes icons/city.svg', emoji: '🏙️' },
-                  'Vehículos': { icon: null, emoji: '⚙️' },
-                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg', emoji: '🎬' },
-                  'Clásicos': { icon: '/imagenes icons/icons.svg', emoji: '🧱' }
+                  'Star Wars': { icon: '/imagenes icons/star wars.svg' },
+                  'Marvel': { icon: '/imagenes icons/marvel.svg' },
+                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg' },
+                  'Construcciones': { icon: '/imagenes icons/city.svg' },
+                  'Vehículos': { icon: '/imagenes icons/vehiculos.svg' },
+                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg' },
+                  'Clásicos': { icon: '/imagenes icons/icons.svg' }
                 };
                 const visuals = collectionVisuals[col] || { icon: null, emoji: '🧱' };
                 return (

@@ -21,12 +21,12 @@ const displayCategoryName = (name) => {
 const getCategoryVisuals = (name) => {
   if (!name) return { emoji: '🧱', color: '#FFD700', icon: null, textColor: '#1a1a1a' };
   const lower = name.toLowerCase().trim();
-  
+
   let emoji = '🧱';
   let color = '#FFD700';
   let iconPath = null;
   let textColor = '#1a1a1a';
-  
+
   if (lower.includes('star wars')) {
     color = '#263238';
     iconPath = '/imagenes icons/star wars.svg';
@@ -44,8 +44,8 @@ const getCategoryVisuals = (name) => {
     iconPath = '/imagenes icons/city.svg';
     textColor = '#1a1a1a';
   } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture') || lower.includes('vehiculos') || lower.includes('vehículos')) {
-    emoji = '⚙️';
     color = '#455A64';
+    iconPath = '/imagenes icons/vehiculos.svg';
     textColor = '#ffffff';
   } else if (lower.includes('minecraft')) {
     color = '#4CAF50';
@@ -60,37 +60,37 @@ const getCategoryVisuals = (name) => {
     iconPath = '/imagenes icons/cartoonNetwork.svg';
     textColor = '#ffffff';
   }
-  
+
   return { emoji, color, icon: iconPath, textColor };
 };
 
 // ── Skeleton card ─────────────────────────────────────────────────────────
 const ProductCardSkeleton = () => (
   <div className="product-card">
-    <div className="product-card-image-container" style={{ display:'block', padding:0 }}>
-      <div className="skeleton" style={{ width:'100%', aspectRatio:'1', borderRadius:0 }} />
+    <div className="product-card-image-container" style={{ display: 'block', padding: 0 }}>
+      <div className="skeleton" style={{ width: '100%', aspectRatio: '1', borderRadius: 0 }} />
     </div>
-    <div className="product-card-content" style={{ display:'flex', flexDirection:'column', gap:'10px', flex:1 }}>
-      <div className="skeleton" style={{ width:'85%', height:'16px' }} />
-      <div className="skeleton" style={{ width:'60%', height:'14px' }} />
-      <div className="skeleton" style={{ width:'40%', height:'18px', marginTop:'5px' }} />
+    <div className="product-card-content" style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+      <div className="skeleton" style={{ width: '85%', height: '16px' }} />
+      <div className="skeleton" style={{ width: '60%', height: '14px' }} />
+      <div className="skeleton" style={{ width: '40%', height: '18px', marginTop: '5px' }} />
     </div>
     <div className="product-card-actions">
-      <div className="skeleton" style={{ width:'100%', height:'40px', borderRadius:'4px' }} />
+      <div className="skeleton" style={{ width: '100%', height: '40px', borderRadius: '4px' }} />
     </div>
   </div>
 );
 
 // ── Componente principal ──────────────────────────────────────────────────
 const Catalog = () => {
-  const [productos, setProductos]       = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const { busqueda, setBusqueda }       = useContext(AppContext);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { busqueda, setBusqueda } = useContext(AppContext);
 
   const location = useLocation();
-  const [filterMenuOpen, setFilterMenuOpen]   = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
-  const [dbCategories, setDbCategories]       = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
 
   useEffect(() => {
     if (location.state?.theme && dbCategories.length > 0) {
@@ -113,14 +113,14 @@ const Catalog = () => {
       }
     }
   }, [location.state, dbCategories]);
-  const [activeAge, setActiveAge]             = useState(null);
-  const [onlyExclusives, setOnlyExclusives]   = useState(false);
-  const [onlyComingSoon, setOnlyComingSoon]   = useState(false);
-  const [priceRange, setPriceRange]           = useState(100000);
-  const [maxPriceLimit, setMaxPriceLimit]     = useState(100000);
-  const [sortBy, setSortBy]                   = useState('default');
-  const [sortMenuOpen, setSortMenuOpen]       = useState(false);
-  const [serverError, setServerError]         = useState(false);
+  const [activeAge, setActiveAge] = useState(null);
+  const [onlyExclusives, setOnlyExclusives] = useState(false);
+  const [onlyComingSoon, setOnlyComingSoon] = useState(false);
+  const [priceRange, setPriceRange] = useState(100000);
+  const [maxPriceLimit, setMaxPriceLimit] = useState(100000);
+  const [sortBy, setSortBy] = useState('default');
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [serverError, setServerError] = useState(false);
 
   const stripRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -179,14 +179,14 @@ const Catalog = () => {
             categoryName: item.categoria_nombre || '',
             categoryId: item.id_categoria,
             price,
-            oldPrice:    item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-            discount:    item.descuento || null,
-            rating:      parseFloat(item.calificacion) || 5,
-            reviews:     parseInt(item.resenas || item.reseñas) || 0,
-            image:       item.imagen_url,
-            collection:  item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
-            age:         item.edad_recomendada || null,
-            stock:       item.stock || 0,
+            oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
+            discount: item.descuento || null,
+            rating: parseFloat(item.calificacion) || 5,
+            reviews: parseInt(item.resenas || item.reseñas) || 0,
+            image: item.imagen_url,
+            collection: item.tipo_coleccion ? item.tipo_coleccion.toLowerCase().trim() : 'otros',
+            age: item.edad_recomendada || null,
+            stock: item.stock || 0,
             isExclusive: (item.edad_recomendada >= 16) || price > 35000 || (item.tipo_coleccion && item.tipo_coleccion.toLowerCase().includes('star wars')),
             isComingSoon: !!item.proximo_lanzamiento,
           };
@@ -228,10 +228,10 @@ const Catalog = () => {
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
-      if (sortBy === 'price-asc')    return a.price - b.price;
-      if (sortBy === 'price-desc')   return b.price - a.price;
-      if (sortBy === 'rating-desc')  return b.rating - a.rating;
-      if (sortBy === 'name-asc')     return a.title.localeCompare(b.title);
+      if (sortBy === 'price-asc') return a.price - b.price;
+      if (sortBy === 'price-desc') return b.price - a.price;
+      if (sortBy === 'rating-desc') return b.rating - a.rating;
+      if (sortBy === 'name-asc') return a.title.localeCompare(b.title);
       return 0;
     });
   }, [filteredProducts, sortBy]);
@@ -302,7 +302,7 @@ const Catalog = () => {
         onClick={() => setFilterMenuOpen(!filterMenuOpen)}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+          <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
         </svg>
         <span>Filtros</span>
         {hasActiveFilters && <span className="filter-badge-dot" />}
@@ -342,9 +342,9 @@ const Catalog = () => {
                 </div>
                 <input
                   type="range" min="0" max="7"
-                  value={activeAge ? ['3','6','8','9','12','16','18','Todos'].indexOf(activeAge) : 7}
+                  value={activeAge ? ['3', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7}
                   onChange={e => {
-                    const ages = ['3','6','8','9','12','16','18','Todos'];
+                    const ages = ['3', '6', '8', '9', '12', '16', '18', 'Todos'];
                     const val = parseInt(e.target.value);
                     setActiveAge(ages[val] === 'Todos' ? null : ages[val]);
                   }}
@@ -392,14 +392,14 @@ const Catalog = () => {
                 <div className={`custom-sort-dropdown ${sortMenuOpen ? 'open' : ''}`}>
                   <div className="custom-sort-selected" onClick={() => setSortMenuOpen(!sortMenuOpen)}>
                     <span>
-                      {sortBy === 'default'      ? 'Por defecto' :
-                       sortBy === 'price-asc'    ? 'Precio: menor a mayor' :
-                       sortBy === 'price-desc'   ? 'Precio: mayor a menor' :
-                       sortBy === 'rating-desc'  ? 'Calificación más alta' :
-                                                    'Nombre: A - Z'}
+                      {sortBy === 'default' ? 'Por defecto' :
+                        sortBy === 'price-asc' ? 'Precio: menor a mayor' :
+                          sortBy === 'price-desc' ? 'Precio: mayor a menor' :
+                            sortBy === 'rating-desc' ? 'Calificación más alta' :
+                              'Nombre: A - Z'}
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" className="custom-sort-arrow">
-                      <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                      <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
                     </svg>
                   </div>
                   {sortMenuOpen && (
@@ -407,11 +407,11 @@ const Catalog = () => {
                       <div className="custom-sort-overlay" onClick={() => setSortMenuOpen(false)} />
                       <ul className="custom-sort-options">
                         {[
-                          { v:'default',    l:'Por defecto' },
-                          { v:'price-asc',  l:'Precio: menor a mayor' },
-                          { v:'price-desc', l:'Precio: mayor a menor' },
-                          { v:'rating-desc',l:'Calificación más alta' },
-                          { v:'name-asc',   l:'Nombre: A - Z' },
+                          { v: 'default', l: 'Por defecto' },
+                          { v: 'price-asc', l: 'Precio: menor a mayor' },
+                          { v: 'price-desc', l: 'Precio: mayor a menor' },
+                          { v: 'rating-desc', l: 'Calificación más alta' },
+                          { v: 'name-asc', l: 'Nombre: A - Z' },
                         ].map(({ v, l }) => (
                           <li key={v} className={sortBy === v ? 'active' : ''} onClick={() => { setSortBy(v); setSortMenuOpen(false); }}>
                             {l}
@@ -468,13 +468,14 @@ const Catalog = () => {
                   '/imagenes icons/city.svg',
                   '/imagenes icons/icons.svg',
                   '/imagenes icons/minecraft.svg',
-                  '/imagenes icons/cartoonNetwork.svg'
+                  '/imagenes icons/cartoonNetwork.svg',
+                  '/imagenes icons/vehiculos.svg'
                 ].map((iconPath, i) => (
-                  <img 
-                    key={i} 
-                    src={iconPath} 
-                    alt="" 
-                    className={`catalog-brick catalog-brick-${i + 1}`} 
+                  <img
+                    key={i}
+                    src={iconPath}
+                    alt=""
+                    className={`catalog-brick catalog-brick-${i + 1}`}
                   />
                 ))}
               </div>
@@ -483,9 +484,9 @@ const Catalog = () => {
             {/* ── Categoría chips horizontales ── */}
             <div className="catalog-collection-wrapper">
               {canScrollLeft && (
-                <button 
-                  className="scroll-arrow scroll-arrow-left" 
-                  onClick={() => handleScroll('left')} 
+                <button
+                  className="scroll-arrow scroll-arrow-left"
+                  onClick={() => handleScroll('left')}
                   aria-label="Desplazar izquierda"
                 >
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -493,7 +494,7 @@ const Catalog = () => {
                   </svg>
                 </button>
               )}
-              
+
               <div className="catalog-collection-strip" ref={stripRef}>
                 {categoryError && (
                   <span style={{ color: '#ef5350', fontSize: '13px', padding: '10px 15px', fontWeight: 'bold' }}>
@@ -502,7 +503,7 @@ const Catalog = () => {
                 )}
                 <button
                   className={`col-chip ${activeCategoryId === null ? 'active' : ''}`}
-                  style={{ 
+                  style={{
                     '--chip-accent': '#FFD700',
                     '--chip-text': '#1a1a1a'
                   }}
@@ -518,7 +519,7 @@ const Catalog = () => {
                     <button
                       key={cat.id_categoria}
                       className={`col-chip ${activeCategoryId === cat.id_categoria ? 'active' : ''}`}
-                      style={{ 
+                      style={{
                         '--chip-accent': visuals.color,
                         '--chip-text': visuals.textColor || '#1a1a1a'
                       }}
@@ -537,9 +538,9 @@ const Catalog = () => {
               </div>
 
               {canScrollRight && (
-                <button 
-                  className="scroll-arrow scroll-arrow-right" 
-                  onClick={() => handleScroll('right')} 
+                <button
+                  className="scroll-arrow scroll-arrow-right"
+                  onClick={() => handleScroll('right')}
                   aria-label="Desplazar derecha"
                 >
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -576,7 +577,7 @@ const Catalog = () => {
             <section className="catalog-grid-section" id="productos">
               <div className="products-grid">
                 {loading ? (
-                  [1,2,3,4,5,6,7,8].map(n => <ProductCardSkeleton key={n} />)
+                  [1, 2, 3, 4, 5, 6, 7, 8].map(n => <ProductCardSkeleton key={n} />)
                 ) : sortedProducts.length > 0 ? (
                   sortedProducts.map((product, index) => (
                     <div key={product.id} className={`stagger-anim delay-${(index % 8) + 1}`}>
