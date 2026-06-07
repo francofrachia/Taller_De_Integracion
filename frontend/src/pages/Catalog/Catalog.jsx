@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -88,6 +88,7 @@ const Catalog = () => {
   const { busqueda, setBusqueda } = useContext(AppContext);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [dbCategories, setDbCategories] = useState([]);
@@ -205,7 +206,18 @@ const Catalog = () => {
   useEffect(() => {
     // Cuando el usuario entra al catálogo, o si cambia el location state (viene de otro link), escrolear arriba
     window.scrollTo(0, 0);
-  }, [location]);
+    
+    if (location.state?.clearFilters) {
+      setActiveCategoryId(null);
+      setActiveAge(null);
+      setOnlyExclusives(false);
+      setOnlyComingSoon(false);
+      if (maxPriceLimit > 0) setPriceRange(maxPriceLimit);
+      setSortBy('default');
+      // Limpiar state para que no se re-ejecute
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, maxPriceLimit, navigate]);
 
   const resetFilters = () => {
     setActiveCategoryId(null); setActiveAge(null);
@@ -216,12 +228,12 @@ const Catalog = () => {
 
   const filteredProducts = useMemo(() => {
     return productos.filter(p => {
-      if (busqueda && !p.title.toLowerCase().includes(busqueda.toLowerCase())) return false;
-      if (activeCategoryId !== null && p.categoryId !== activeCategoryId) return false;
-      if (activeAge && p.age !== parseInt(activeAge)) return false;
-      if (onlyExclusives && !p.isExclusive) return false;
-      if (onlyComingSoon && !p.isComingSoon) return false;
-      if (p.price > priceRange) return false;
+      if (busqueda && !(p?.title || p?.nombre || '').toLowerCase().includes(busqueda.toLowerCase())) return false;
+      if (activeCategoryId !== null && p?.categoryId !== activeCategoryId) return false;
+      if (activeAge && p?.age !== parseInt(activeAge)) return false;
+      if (onlyExclusives && !p?.isExclusive) return false;
+      if (onlyComingSoon && !p?.isComingSoon) return false;
+      if (p?.price > priceRange) return false;
       return true;
     });
   }, [productos, busqueda, activeCategoryId, activeAge, onlyExclusives, onlyComingSoon, priceRange]);
@@ -245,7 +257,7 @@ const Catalog = () => {
       <div className="active-filters-list">
         {busqueda && (
           <span className="active-filter-badge">
-            Buscar: &ldquo;{busqueda}&rdquo;
+            Búsqueda: &ldquo;{busqueda}&rdquo;
             <button className="remove-badge-btn" onClick={() => setBusqueda('')} title="Quitar búsqueda">✖</button>
           </span>
         )}

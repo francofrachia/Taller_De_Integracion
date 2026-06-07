@@ -25,10 +25,6 @@ const createPromocion = async (req, res) => {
             return res.status(400).json({ error: 'Faltan campos obligatorios (porcentaje, fechas).' });
         }
 
-        if (!id_producto && !id_categoria) {
-            return res.status(400).json({ error: 'Debe especificar un producto o una categoría para la promoción.' });
-        }
-
         const query = `
             INSERT INTO promocion (fecha_inicio, fecha_fin, porcentaje, id_producto, id_categoria, descripcion)
             VALUES ($1, $2, $3, $4, $5, $6)
@@ -39,6 +35,9 @@ const createPromocion = async (req, res) => {
         res.status(201).json({ mensaje: 'Promoción creada exitosamente', promocion: rows[0] });
     } catch (error) {
         console.error('Error al crear promoción:', error);
+        if (error.code === '23503') {
+            return res.status(400).json({ error: 'El ID ingresado no corresponde a un producto o categoría existente.' });
+        }
         res.status(500).json({ error: 'Error interno del servidor al crear la promoción.' });
     }
 };
@@ -68,6 +67,9 @@ const updatePromocion = async (req, res) => {
         res.json({ mensaje: 'Promoción actualizada', promocion: rows[0] });
     } catch (error) {
         console.error('Error al actualizar promoción:', error);
+        if (error.code === '23503') {
+            return res.status(400).json({ error: 'El ID ingresado no corresponde a un producto o categoría existente.' });
+        }
         res.status(500).json({ error: 'Error interno del servidor al actualizar la promoción.' });
     }
 };

@@ -314,24 +314,41 @@ function PurchaseCard({ compra, isActive }) {
     let progressWidth = '0%';
     let currentStepIndex = 0; // 0: Pago, 1: Prep, 2: Camino, 3: Entregado
 
-    if (compra.estado === 'Esperando Pago') {
-        progressWidth = '0%';
-        currentStepIndex = 0;
-    } else if (compra.estado === 'Pago confirmado') {
-        progressWidth = '33%';
-        currentStepIndex = 1;
-    } else if (compra.estado === 'Preparando Pedido') {
-        progressWidth = '50%';
-        currentStepIndex = 1;
-    } else if (compra.estado === 'Pedido Despachado') {
-        progressWidth = '66%';
-        currentStepIndex = 2;
-    } else if (compra.estado === 'En Camino') {
-        progressWidth = '83%';
-        currentStepIndex = 2;
-    } else if (compra.estado === 'Entregado') {
-        progressWidth = '100%';
-        currentStepIndex = 3;
+    const normalizedState = compra.estado ? compra.estado.trim() : '';
+
+    switch (normalizedState) {
+        case 'Esperando Pago':
+            progressWidth = '0%';
+            currentStepIndex = 0;
+            break;
+        case 'Pago confirmado':
+            progressWidth = '33%';
+            currentStepIndex = 1;
+            break;
+        case 'Preparando Pedido':
+        case 'Pendiente':
+            progressWidth = '50%';
+            currentStepIndex = 1;
+            break;
+        case 'En Camino':
+        case 'Pedido Despachado':
+        case 'En manos del correo':
+            progressWidth = '83%';
+            currentStepIndex = 2;
+            break;
+        case 'Entregado':
+        case 'Finalizado':
+            progressWidth = '100%';
+            currentStepIndex = 3;
+            break;
+        case 'Cancelado':
+            progressWidth = '0%';
+            currentStepIndex = -1; // -1 oculta el flujo positivo
+            break;
+        default:
+            progressWidth = '0%';
+            currentStepIndex = 0;
+            break;
     }
 
     return (
@@ -384,16 +401,18 @@ function PurchaseCard({ compra, isActive }) {
 
                         {/* Pasos de la Línea de Tiempo */}
                         {[
-                            { label: 'Pago', key: 'pago', emoji: '💰', desc: compra.estado === 'Esperando Pago' ? 'Esperando Pago' : 'Aprobado' },
-                            { label: 'Preparación', key: 'prep', emoji: '📦', desc: compra.estado === 'Preparando Pedido' ? 'Armando paquete' : (compra.estado === 'Pago confirmado' ? 'En espera' : (currentStepIndex > 1 ? 'Completado' : 'Pendiente')) },
-                            { label: 'En Camino', key: 'camino', emoji: '🚚', desc: compra.estado === 'En Camino' ? 'En tránsito' : (compra.estado === 'Pedido Despachado' ? 'Despachado' : (currentStepIndex > 2 ? 'Completado' : 'Pendiente')) },
-                            { label: 'Entregado', key: 'entregado', emoji: '🏠', desc: compra.estado === 'Entregado' ? '¡Entregado!' : 'Pendiente' }
+                            { label: 'Pago', key: 'pago', emoji: '💰', desc: currentStepIndex >= 1 ? 'Aprobado' : 'Pendiente' },
+                            { label: 'Preparación', key: 'prep', emoji: '📦', desc: currentStepIndex > 1 ? 'Completado' : (currentStepIndex === 1 ? 'En proceso' : 'En espera') },
+                            { label: 'En Camino', key: 'camino', emoji: '🚚', desc: currentStepIndex > 2 ? 'Entregado' : (currentStepIndex === 2 ? 'Despachado' : 'Pendiente') },
+                            { label: 'Finalizado', key: 'entregado', emoji: '🏠', desc: currentStepIndex === 3 ? '¡Listo!' : 'Pendiente' }
                         ].map((step, index) => {
                             let stepClass = 'pending';
-                            if (index < currentStepIndex || (index === 0 && compra.estado !== 'Esperando Pago')) {
+                            if (currentStepIndex === -1) {
+                                stepClass = 'cancelled';
+                            } else if (index < currentStepIndex) {
                                 stepClass = 'completed';
                             } else if (index === currentStepIndex) {
-                                stepClass = compra.estado === 'Esperando Pago' ? 'active-warning' : 'active';
+                                stepClass = currentStepIndex === 0 ? 'active-warning' : 'active';
                             }
 
                             return (
@@ -472,8 +491,8 @@ export default function Account() {
     const [compras, setCompras] = useState([]);
     const [loadingCompras, setLoadingCompras] = useState(true);
 
-    const comprasPendientes = useMemo(() => compras.filter(c => c.estado !== 'Entregado' && c.estado !== 'Cancelado'), [compras]);
-    const comprasHistorial = useMemo(() => compras.filter(c => c.estado === 'Entregado' || c.estado === 'Cancelado'), [compras]);
+    const comprasPendientes = useMemo(() => compras.filter(c => c.estado !== 'Finalizado' && c.estado !== 'Entregado' && c.estado !== 'Cancelado'), [compras]);
+    const comprasHistorial = useMemo(() => compras.filter(c => c.estado === 'Finalizado' || c.estado === 'Entregado' || c.estado === 'Cancelado'), [compras]);
 
     const fetchCompras = useCallback(async () => {
         if (!token) return;

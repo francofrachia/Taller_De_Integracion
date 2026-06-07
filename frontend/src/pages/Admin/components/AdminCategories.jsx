@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const AdminCategories = () => {
     const { token, API_URL } = useContext(AppContext);
@@ -119,9 +120,25 @@ const AdminCategories = () => {
                             <tr key={c.id_categoria}>
                                 <td>{c.id_categoria}</td>
                                 <td>{c.nombre}</td>
-                                <td>
-                                    <button className="admin-btn edit" onClick={() => handleOpenModal(c)} style={{marginRight: '0.5rem'}}>Editar</button>
-                                    <button className="admin-btn danger" onClick={() => handleDelete(c.id_categoria)}>Eliminar</button>
+                                <td style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }}>
+                                    <button 
+                                        onClick={() => handleOpenModal(c)} 
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                        title="Editar"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <FiEdit2 size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(c.id_categoria)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                        title="Eliminar"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <FiTrash2 size={18} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}

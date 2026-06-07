@@ -1,12 +1,37 @@
 import React, { useContext, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { busqueda, setBusqueda, cartCount, favoritos, usuario, logout, loginTooltipVisible, setLoginTooltipVisible } = useContext(AppContext);
+  const { busqueda, setBusqueda, productos, cartCount, favoritos, usuario, logout, loginTooltipVisible, setLoginTooltipVisible } = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [localSearch, setLocalSearch] = useState('');
+
+  const filteredProducts = (localSearch && localSearch.trim().length > 0 && Array.isArray(productos)) 
+    ? productos.filter(p => {
+        const productName = p?.nombre || p?.title || '';
+        return productName.toLowerCase().includes(localSearch.toLowerCase());
+      }).slice(0, 5)
+    : [];
+
+  const handleProductSelect = (id) => {
+    setLocalSearch('');
+    setBusqueda('');
+    setIsSearchFocused(false);
+    navigate(`/producto/${id}`);
+  };
+
+  const submitSearch = () => {
+    if (localSearch.trim().length > 0) {
+      setBusqueda(localSearch);
+      setIsSearchFocused(false);
+      navigate('/productos', { state: { clearFilters: true } });
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -24,23 +49,65 @@ const Navbar = () => {
         
         <ul className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
           <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Inicio</NavLink></li>
-          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Nuestros Productos</NavLink></li>
+          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Productos</NavLink></li>
           <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Sobre la APP</NavLink></li>
           <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Ofertas</NavLink></li>
         </ul>
 
-        <div className="navbar-search">
+        <div className="navbar-search" style={{ position: 'relative' }}>
           <input 
             type="text" 
             placeholder="Buscar productos..." 
-            value={busqueda || ''}
-            onChange={(e) => setBusqueda(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitSearch();
+            }}
           />
-          <button className="search-btn">
+          <button className="search-btn" onClick={submitSearch}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
             </svg>
           </button>
+          
+          {isSearchFocused && localSearch.trim().length > 0 && (
+            <div className="navbar-search-dropdown">
+              {filteredProducts.length > 0 ? (
+                <>
+                  {filteredProducts.map(prod => {
+                    const prodId = prod.id_producto || prod.id;
+                    const prodName = prod.nombre || prod.title || 'Sin título';
+                    const prodPrice = prod.precio || prod.price || 0;
+                    const prodImg = prod.imagen_url || prod.image || '/images/placeholder.png';
+
+                    return (
+                      <div 
+                        key={prodId} 
+                        className="search-dropdown-item"
+                        onMouseDown={() => handleProductSelect(prodId)}
+                      >
+                        <img src={prodImg} alt={prodName} />
+                        <div className="search-dropdown-item-info">
+                          <span className="search-dropdown-item-title">{prodName}</span>
+                          <span className="search-dropdown-item-price">${prodPrice}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div 
+                    className="search-dropdown-view-all"
+                    onMouseDown={submitSearch}
+                  >
+                    Ver todos los resultados
+                  </div>
+                </>
+              ) : (
+                <div className="search-dropdown-empty">No hay coincidencias</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="navbar-icons">

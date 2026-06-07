@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AppContext } from '../../../context/AppContext';
+import { FiEdit2, FiUploadCloud, FiX } from 'react-icons/fi';
 
 const AdminProducts = () => {
     const { token, API_URL, productos } = useContext(AppContext);
@@ -164,10 +165,18 @@ const AdminProducts = () => {
                             <tr key={p.id_producto}>
                                 <td>{p.id_producto}</td>
                                 <td>{p.nombre}</td>
-                                <td>${p.precio}</td>
+                                <td>${parseFloat(p.precio).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                                 <td>{p.stock}</td>
-                                <td>
-                                    <button className="admin-btn edit" onClick={() => handleOpenModal(p)}>Editar</button>
+                                <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }}>
+                                    <button 
+                                        onClick={() => handleOpenModal(p)} 
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                        title="Editar"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <FiEdit2 size={18} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -186,7 +195,12 @@ const AdminProducts = () => {
                             </div>
                             <div className="admin-form-group">
                                 <label>Descripción</label>
-                                <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} />
+                                <textarea 
+                                    name="descripcion" 
+                                    value={formData.descripcion} 
+                                    onChange={handleChange} 
+                                    style={{ resize: 'vertical', minHeight: '100px', maxHeight: '300px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                />
                             </div>
                             <div className="admin-form-group">
                                 <label>Precio</label>
@@ -208,41 +222,76 @@ const AdminProducts = () => {
                             
                             <div className="admin-form-group">
                                 <label>Imágenes del Producto</label>
-                                <input type="file" name="imagenes" accept="image/*" multiple onChange={handleFileChange} />
                                 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1.5rem',
+                                        backgroundColor: '#f3f4f6',
+                                        color: '#374151',
+                                        borderRadius: '8px',
+                                        border: '1px dashed #9ca3af',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e5e7eb'; e.currentTarget.style.borderColor = '#6b7280'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; e.currentTarget.style.borderColor = '#9ca3af'; }}
+                                    >
+                                        <FiUploadCloud size={20} />
+                                        Subir Imágenes
+                                        <input 
+                                            type="file" 
+                                            name="imagenes" 
+                                            accept="image/*" 
+                                            multiple 
+                                            onChange={handleFileChange} 
+                                            style={{ display: 'none' }}
+                                        />
+                                    </label>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                     {/* Imágenes existentes (al editar) */}
                                     {existingImages.map((url, index) => (
-                                        <div key={`exist-${index}`} style={{ position: 'relative' }}>
+                                        <div key={`exist-${index}`} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                                             <img 
                                                 src={url.startsWith('http') || url.startsWith('/') ? (url.startsWith('http') ? url : `${API_URL}${url}`) : `${API_URL}/uploads/${url}`} 
                                                 alt={`existente-${index}`} 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} 
+                                                style={{ width: '90px', height: '90px', objectFit: 'cover', display: 'block' }} 
                                             />
                                             <button 
                                                 type="button" 
                                                 onClick={() => handleRemoveExistingImage(url)}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                                                style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                title="Eliminar imagen"
                                             >
-                                                X
+                                                <FiX size={14} />
                                             </button>
                                         </div>
                                     ))}
 
                                     {/* Previsualización de nuevos archivos seleccionados */}
                                     {previewUrls.map((url, index) => (
-                                        <div key={`prev-${index}`} style={{ position: 'relative' }}>
+                                        <div key={`prev-${index}`} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '2px solid #10b981' }}>
                                             <img 
                                                 src={url} 
                                                 alt={`preview-${index}`} 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #4CAF50' }} 
+                                                style={{ width: '86px', height: '86px', objectFit: 'cover', display: 'block' }} 
                                             />
                                             <button 
                                                 type="button" 
                                                 onClick={() => handleRemoveNewFile(index)}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                                                style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                title="Descartar archivo"
                                             >
-                                                X
+                                                <FiX size={14} />
                                             </button>
                                         </div>
                                     ))}
