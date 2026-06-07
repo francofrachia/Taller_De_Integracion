@@ -55,7 +55,7 @@ const AdminProducts = () => {
                     setFormData({
                         nombre: detailedProd.nombre,
                         descripcion: detailedProd.descripcion || '',
-                        precio: detailedProd.precio,
+                        precio: Math.round(parseFloat(detailedProd.precio)),
                         stock: detailedProd.stock,
                         id_categoria: detailedProd.id_categoria,
                         edad_recomendada: detailedProd.edad_recomendada || ''
@@ -65,7 +65,7 @@ const AdminProducts = () => {
                     setFormData({
                         nombre: prod.nombre,
                         descripcion: prod.descripcion || '',
-                        precio: prod.precio,
+                        precio: Math.round(parseFloat(prod.precio)),
                         stock: prod.stock,
                         id_categoria: prod.id_categoria,
                         edad_recomendada: prod.edad_recomendada || ''
@@ -77,7 +77,7 @@ const AdminProducts = () => {
                 setFormData({
                     nombre: prod.nombre,
                     descripcion: prod.descripcion || '',
-                    precio: prod.precio,
+                    precio: Math.round(parseFloat(prod.precio)),
                     stock: prod.stock,
                     id_categoria: prod.id_categoria,
                     edad_recomendada: prod.edad_recomendada || ''
@@ -275,7 +275,7 @@ const AdminProducts = () => {
                             </div>
                             <div className="admin-form-group">
                                 <label>Precio</label>
-                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} required min="1" step="0.01"/>
+                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} required min="1" step="1"/>
                             </div>
                             <div className="admin-form-group">
                                 <label>Stock</label>
@@ -377,8 +377,8 @@ const AdminProducts = () => {
                                     {existingImages.map((url, index) => (
                                         <div key={`exist-${index}`} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                                             <img 
-                                                src={url.startsWith('http') || url.startsWith('/') ? (url.startsWith('http') ? url : `${API_URL}${url}`) : `${API_URL}/uploads/${url}`} 
-                                                alt={`existente-${index}`} 
+                                                src={url.startsWith('http') ? url : `${API_URL.replace('/api', '')}${url.startsWith('/') ? url : '/uploads/' + url}`} 
+                                                alt={`Imagen guardada ${index + 1}`} 
                                                 style={{ width: '90px', height: '90px', objectFit: 'cover', display: 'block' }} 
                                             />
                                             <button 
