@@ -38,8 +38,12 @@ const addProducto = async (req, res) => {
             return res.status(400).json({ error: 'Stock insuficiente' });
         }
 
+        const originalPrice = parseFloat(producto.precio) || 0;
+        const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
+        const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
+
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
-        await Carrito.addItem(carrito.id_carrito, id_producto, cantidad, producto.precio);
+        await Carrito.addItem(carrito.id_carrito, id_producto, cantidad, finalPrice);
         
         // Devolvemos el estado actualizado
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);

@@ -8,6 +8,15 @@ const Producto = {
                 p.*, 
                 c.nombre AS categoria_nombre, 
                 i.url AS imagen_url,
+                (
+                    SELECT promo.porcentaje 
+                    FROM promocion promo 
+                    WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
+                      AND promo.fecha_inicio <= NOW() 
+                      AND promo.fecha_fin >= NOW()
+                    ORDER BY promo.porcentaje DESC
+                    LIMIT 1
+                ) AS descuento,
                 COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
                 COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion,
                 COALESCE((
@@ -32,6 +41,15 @@ const Producto = {
                 p.*, 
                 c.nombre AS categoria_nombre, 
                 array_remove(array_agg(i.url), NULL) AS imagenes,
+                (
+                    SELECT promo.porcentaje 
+                    FROM promocion promo 
+                    WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
+                      AND promo.fecha_inicio <= NOW() 
+                      AND promo.fecha_fin >= NOW()
+                    ORDER BY promo.porcentaje DESC
+                    LIMIT 1
+                ) AS descuento,
                 COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
                 COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion
             FROM producto p

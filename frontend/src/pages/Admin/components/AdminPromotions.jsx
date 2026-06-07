@@ -3,7 +3,7 @@ import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const AdminPromotions = () => {
-    const { token, API_URL } = useContext(AppContext);
+    const { token, API_URL, obtenerPromociones } = useContext(AppContext);
     const [promotions, setPromotions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState(null);
@@ -92,6 +92,7 @@ const AdminPromotions = () => {
                 alert(editingPromo ? 'Promoción actualizada' : 'Promoción creada');
                 setIsModalOpen(false);
                 fetchPromotions();
+                if (obtenerPromociones) obtenerPromociones();
             } else {
                 const data = await res.json();
                 alert(data.error || 'Error al guardar');
@@ -113,6 +114,7 @@ const AdminPromotions = () => {
             });
             if (res.ok) {
                 fetchPromotions();
+                if (obtenerPromociones) obtenerPromociones();
             } else {
                 alert('Error al eliminar');
             }

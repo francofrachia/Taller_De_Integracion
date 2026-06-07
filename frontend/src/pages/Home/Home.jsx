@@ -18,6 +18,46 @@ import logoBm from '../../assets/BM logo recortado.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+// ── Helpers para visuales de categorías dinámicas ──────────────────
+const displayCategoryName = (name) => {
+  if (!name) return '';
+  const lower = name.toLowerCase();
+  if (lower.includes('icon') || lower.includes('creator')) return 'Clásicos';
+  if (lower.includes('city')) return 'Construcciones';
+  if (lower.includes('technic') || lower.includes('speed')) return 'Vehículos';
+  return name;
+};
+
+const getCategoryVisuals = (name) => {
+  if (!name) return { emoji: '🧱', icon: null };
+  const lower = name.toLowerCase().trim();
+
+  let emoji = '🧱';
+  let iconPath = null;
+
+  if (lower.includes('star wars')) {
+    iconPath = '/imagenes icons/star wars.svg';
+  } else if (lower.includes('dc')) {
+    iconPath = '/imagenes icons/dc.svg';
+  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('super heroes')) {
+    iconPath = '/imagenes icons/marvel.svg';
+  } else if (lower.includes('harry potter')) {
+    iconPath = '/imagenes icons/harry potter.svg';
+  } else if (lower.includes('city') || lower.includes('construcciones')) {
+    iconPath = '/imagenes icons/city.svg';
+  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture') || lower.includes('vehiculos') || lower.includes('vehículos')) {
+    iconPath = '/imagenes icons/vehiculos.svg';
+  } else if (lower.includes('minecraft')) {
+    iconPath = '/imagenes icons/minecraft.svg';
+  } else if (lower.includes('icon') || lower.includes('creator') || lower.includes('clasico') || lower.includes('clásico')) {
+    iconPath = '/imagenes icons/icons.svg';
+  } else if (lower.includes('cartoon') || lower.includes('network') || lower.includes('looney')) {
+    iconPath = '/imagenes icons/cartoonNetwork.svg';
+  }
+
+  return { emoji, icon: iconPath };
+};
+
 const ProductCardSkeleton = () => (
   <div className="product-card" style={{ height: '100%' }}>
     <div className="product-card-image-container" style={{ display: 'block', padding: '0' }}>
@@ -40,6 +80,7 @@ const ProductCardSkeleton = () => (
 
 const Home = () => {
   const [productos, setProductos] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
   const { favoritos, toggleFavorito, promociones, agregarAlCarrito } = useContext(AppContext);
@@ -163,15 +204,17 @@ const Home = () => {
       .then(data => {
         // Mapeamos los datos de la DB al formato que espera nuestro ProductCard
         const productosMapeados = data.map(item => {
-          const precioNum = parseFloat(item.precio) || 0;
+          const originalPrice = parseFloat(item.precio) || 0;
+          const discountPct = item.descuento ? parseFloat(item.descuento) : null;
+          const finalPrice = discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
           return {
             id: item.id_producto,
             title: item.nombre || item.titulo || 'Producto sin nombre',
             description: item.descripcion || '',
             categoryName: item.categoria_nombre || '',
-            price: precioNum,
-            oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-            discount: item.discount || item.descuento || null,
+            price: finalPrice,
+            oldPrice: discountPct ? originalPrice : null,
+            discount: discountPct ? Math.round(discountPct) : null,
             rating: parseFloat(item.calificacion) || 5,
             reviews: parseInt(item.resenas || item.reseñas) || 0,
             image: item.imagen_url, // URL que viene del JOIN de la BD
@@ -179,7 +222,7 @@ const Home = () => {
             age: item.edad_recomendada || null,
             stock: item.stock || 0,
             // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
-            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
+            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || finalPrice > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
             // Próximamente: Lógica escalable desde BDD
             isComingSoon: !!item.ultimo_lanzamiento,
             // Ventas reales desde BDD
@@ -197,16 +240,28 @@ const Home = () => {
       });
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_URL}/productos/categorias`)
+      .then(res => {
+        if (!res.ok) throw new Error('Server response not ok');
+        return res.json();
+      })
+      .then(data => {
+        setDbCategories(data);
+      })
+      .catch(error => {
+        console.error('Error fetching categories:', error);
+      });
+  }, []);
+
   const promoItems = (promociones || []).map(promo => {
     const p = productos.find(pr => pr.id === promo.id_producto);
     if (!p) return null;
-    const orig = parseFloat(p.price);
-    const disc = parseFloat(promo.porcentaje);
     return { 
       ...p, 
-      discount_pct: disc, 
-      original_price: orig.toFixed(2), 
-      final_price: (orig - orig * disc / 100).toFixed(2) 
+      discount_pct: p.discount || parseFloat(promo.porcentaje), 
+      original_price: parseFloat(p.oldPrice || p.price).toFixed(2), 
+      final_price: parseFloat(p.price).toFixed(2) 
     };
   }).filter(Boolean);
 
@@ -272,33 +327,23 @@ const Home = () => {
         <section className="collections-nav-section">
           <div className="container">
             <div className="collections-grid">
-              {['Star Wars', 'Marvel', 'Harry Potter', 'Construcciones', 'Vehículos', 'Cartoon Network', 'Clásicos'].map((col, index) => {
-                const collectionVisuals = {
-                  'Star Wars': { icon: '/imagenes icons/star wars.svg' },
-                  'Marvel': { icon: '/imagenes icons/marvel.svg' },
-                  'Harry Potter': { icon: '/imagenes icons/harry potter.svg' },
-                  'Construcciones': { icon: '/imagenes icons/city.svg' },
-                  'Vehículos': { icon: '/imagenes icons/vehiculos.svg' },
-                  'Cartoon Network': { icon: '/imagenes icons/cartoonNetwork.svg' },
-                  'Clásicos': { icon: '/imagenes icons/icons.svg' }
-                };
-                const visuals = collectionVisuals[col] || { icon: null, emoji: '🧱' };
+              {dbCategories.map((cat, index) => {
+                const displayName = displayCategoryName(cat.nombre);
+                const visuals = getCategoryVisuals(cat.nombre);
                 return (
                   <Link 
                     to="/productos" 
-                    state={{ theme: col }} 
+                    state={{ theme: cat.nombre }} 
                     className="collection-card" 
-                    key={col} 
+                    key={cat.id_categoria} 
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <div className="col-icon">
-                      {visuals.icon ? (
+                    {visuals.icon && (
+                      <div className="col-icon">
                         <img src={visuals.icon} alt="" className="col-icon-svg" />
-                      ) : (
-                        <span className="col-emoji">{visuals.emoji}</span>
-                      )}
-                    </div>
-                    <span className="col-name">{col}</span>
+                      </div>
+                    )}
+                    <span className="col-name">{displayName}</span>
                   </Link>
                 );
               })}
