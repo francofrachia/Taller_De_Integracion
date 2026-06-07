@@ -95,8 +95,11 @@ const getPromociones = async (req, res) => {
 const createProducto = async (req, res) => {
     try {
         const data = req.body;
-        if (!data.nombre || !data.precio || !data.id_categoria) {
-            return res.status(400).json({ error: 'Nombre, precio y categoría son obligatorios.' });
+        
+        if (data.precio) data.precio = data.precio.toString().replace(',', '.');
+
+        if (!data.nombre || !data.precio || !data.stock || !data.id_categoria) {
+            return res.status(400).json({ error: 'Faltan campos obligatorios.' });
         }
         if (data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
         if (data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
@@ -113,7 +116,6 @@ const createProducto = async (req, res) => {
                 const rutaDestino = path.join(uploadDir, nombreArchivo);
                 
                 await sharp(file.buffer)
-                    .trim() // <-- MAGIA: elimina todo borde de color uniforme (fondo blanco o transparente)
                     .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
                     .webp({ quality: 80 })
                     .toFile(rutaDestino);
@@ -134,6 +136,10 @@ const updateProducto = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const data = req.body;
+        
+        if (data.precio) data.precio = data.precio.toString().replace(',', '.');
+        if (data.edad_recomendada === '') data.edad_recomendada = null;
+        if (data.stock === '') data.stock = 0;
         
         if (data.precio !== undefined && data.precio <= 0) return res.status(400).json({ error: 'El precio debe ser mayor a 0.' });
         if (data.stock !== undefined && data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo.' });
@@ -159,7 +165,6 @@ const updateProducto = async (req, res) => {
                 const rutaDestino = path.join(uploadDir, nombreArchivo);
                 
                 await sharp(file.buffer)
-                    .trim() // <-- MAGIA: elimina todo borde de color uniforme (fondo blanco o transparente)
                     .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
                     .webp({ quality: 80 })
                     .toFile(rutaDestino);
@@ -175,6 +180,7 @@ const updateProducto = async (req, res) => {
         res.json({ mensaje: 'Producto actualizado', producto: productoActualizado });
     } catch (error) {
         console.error('Error en updateProducto:', error);
+        require('fs').writeFileSync('error_log.txt', error.toString() + '\\n' + error.stack);
         res.status(500).json({ error: 'Error al actualizar el producto' });
     }
 };
