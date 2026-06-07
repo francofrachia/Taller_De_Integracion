@@ -103,11 +103,17 @@ const createProducto = async (req, res) => {
 
         const urlsImagenes = [];
         if (req.files && req.files.length > 0) {
+            const uploadDir = path.join(__dirname, '../public/uploads');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
             for (const file of req.files) {
                 const nombreArchivo = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}.webp`;
-                const rutaDestino = path.join(__dirname, '../public/uploads', nombreArchivo);
+                const rutaDestino = path.join(uploadDir, nombreArchivo);
                 
                 await sharp(file.buffer)
+                    .trim() // <-- MAGIA: elimina todo borde de color uniforme (fondo blanco o transparente)
                     .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
                     .webp({ quality: 80 })
                     .toFile(rutaDestino);
@@ -143,11 +149,17 @@ const updateProducto = async (req, res) => {
 
         const urlsImagenes = [];
         if (req.files && req.files.length > 0) {
+            const uploadDir = path.join(__dirname, '../public/uploads');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
             for (const file of req.files) {
                 const nombreArchivo = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}.webp`;
-                const rutaDestino = path.join(__dirname, '../public/uploads', nombreArchivo);
+                const rutaDestino = path.join(uploadDir, nombreArchivo);
                 
                 await sharp(file.buffer)
+                    .trim() // <-- MAGIA: elimina todo borde de color uniforme (fondo blanco o transparente)
                     .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
                     .webp({ quality: 80 })
                     .toFile(rutaDestino);
