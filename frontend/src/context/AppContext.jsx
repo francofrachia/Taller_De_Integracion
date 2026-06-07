@@ -602,7 +602,9 @@ export function AppProvider({ children }) {
             API_URL,
             fetchError,
             loginTooltipVisible,
-            setLoginTooltipVisible
+            setLoginTooltipVisible,
+            obtenerProductos,
+            obtenerPromociones
         }}>
             {children}
         </AppContext.Provider>

@@ -163,12 +163,18 @@ const ProductDetail = () => {
         return res.json();
       })
       .then(data => {
+        const originalPrice = parseFloat(data.precio) || 0;
+        const discountPct = data.descuento ? parseFloat(data.descuento) : null;
+        const finalPrice = discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
+
         setProduct({
           id: data.id_producto,
           categoryId: data.id_categoria,
           categoryName: data.categoria_nombre,
           title: data.nombre,
-          price: data.precio,
+          price: finalPrice.toFixed(2),
+          oldPrice: discountPct ? originalPrice.toFixed(2) : null,
+          discount: discountPct ? Math.round(discountPct) : null,
           description: data.descripcion || 'Sin descripción disponible.',
           stock: data.stock,
           images: data.imagenes && data.imagenes.length > 0 ? data.imagenes : [placeholderProduct],
@@ -439,7 +445,23 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            <div className="product-detail-price">${product.price}</div>
+            <div className="product-detail-price" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {product.oldPrice ? (
+                <>
+                  <span style={{ textDecoration: 'line-through', color: 'var(--text-gray)', fontSize: '1.25rem', fontWeight: 'normal' }}>
+                    ${parseFloat(product.oldPrice).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                  </span>
+                  <span style={{ color: '#ff3366', fontWeight: '800' }}>
+                    ${parseFloat(product.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="discount-badge" style={{ backgroundColor: '#ffefef', color: '#ff3366', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '800', border: '1px solid rgba(255, 51, 102, 0.2)' }}>
+                    -{product.discount}%
+                  </span>
+                </>
+              ) : (
+                <span>${parseFloat(product.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+              )}
+            </div>
 
             <div className="product-description">
               <p><strong>Descripción:</strong> {product.description}</p>

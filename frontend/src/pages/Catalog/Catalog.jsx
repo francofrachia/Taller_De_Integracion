@@ -31,7 +31,11 @@ const getCategoryVisuals = (name) => {
     color = '#263238';
     iconPath = '/imagenes icons/star wars.svg';
     textColor = '#ffffff';
-  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('dc') || lower.includes('super heroes')) {
+  } else if (lower.includes('dc')) {
+    color = '#0076F6';
+    iconPath = '/imagenes icons/dc.svg';
+    textColor = '#ffffff';
+  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('super heroes')) {
     color = '#EF5350';
     iconPath = '/imagenes icons/marvel.svg';
     textColor = '#ffffff';
@@ -172,23 +176,25 @@ const Catalog = () => {
       .then(res => { if (!res.ok) throw new Error(); return res.json(); })
       .then(data => {
         const mapped = data.map(item => {
-          const price = parseFloat(item.precio) || 0;
+          const originalPrice = parseFloat(item.precio) || 0;
+          const discountPct = item.descuento ? parseFloat(item.descuento) : null;
+          const finalPrice = discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
           return {
             id: item.id_producto,
             title: item.nombre || item.titulo || 'Producto sin nombre',
             description: item.descripcion || '',
             categoryName: item.categoria_nombre || '',
             categoryId: item.id_categoria,
-            price,
-            oldPrice: item.precio_anterior ? parseFloat(item.precio_anterior) : null,
-            discount: item.descuento || null,
+            price: finalPrice,
+            oldPrice: discountPct ? originalPrice : null,
+            discount: discountPct ? Math.round(discountPct) : null,
             rating: parseFloat(item.calificacion) || 5,
             reviews: parseInt(item.resenas || item.reseñas) || 0,
             image: item.imagen_url,
             collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
             age: item.edad_recomendada || null,
             stock: item.stock || 0,
-            isExclusive: (item.edad_recomendada >= 16) || price > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
+            isExclusive: (item.edad_recomendada >= 16) || finalPrice > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
             isComingSoon: !!item.proximo_lanzamiento,
           };
         });
@@ -267,11 +273,12 @@ const Catalog = () => {
           const visuals = getCategoryVisuals(catName);
           return (
             <span className="active-filter-badge">
-              {visuals.icon ? (
-                <img src={visuals.icon} alt="" className="active-filter-badge-svg" />
-              ) : (
-                <span className="col-chip-emoji">{visuals.emoji}</span>
-              )}{' '}
+              {visuals.icon && (
+                <>
+                  <img src={visuals.icon} alt="" className="active-filter-badge-svg" />
+                  {' '}
+                </>
+              )}
               {catName}
               <button className="remove-badge-btn" onClick={() => setActiveCategoryId(null)}>✖</button>
             </span>
@@ -354,15 +361,15 @@ const Catalog = () => {
                 </div>
                 <input
                   type="range" min="0" max="7"
-                  value={activeAge ? ['3', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7}
+                  value={activeAge ? ['2', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7}
                   onChange={e => {
-                    const ages = ['3', '6', '8', '9', '12', '16', '18', 'Todos'];
+                    const ages = ['2', '6', '8', '9', '12', '16', '18', 'Todos'];
                     const val = parseInt(e.target.value);
                     setActiveAge(ages[val] === 'Todos' ? null : ages[val]);
                   }}
                   className="price-range-slider age-range-slider"
                 />
-                <div className="price-range-labels"><span>3+</span><span>Todas</span></div>
+                <div className="price-range-labels"><span>2+</span><span>Todas</span></div>
               </div>
 
               {/* Precio */}
@@ -473,23 +480,19 @@ const Catalog = () => {
                 </p>
               </div>
               <div className="catalog-hero-bricks" aria-hidden="true">
-                {[
-                  '/imagenes icons/star wars.svg',
-                  '/imagenes icons/marvel.svg',
-                  '/imagenes icons/harry potter.svg',
-                  '/imagenes icons/city.svg',
-                  '/imagenes icons/icons.svg',
-                  '/imagenes icons/minecraft.svg',
-                  '/imagenes icons/cartoonNetwork.svg',
-                  '/imagenes icons/vehiculos.svg'
-                ].map((iconPath, i) => (
-                  <img
-                    key={i}
-                    src={iconPath}
-                    alt=""
-                    className={`catalog-brick catalog-brick-${i + 1}`}
-                  />
-                ))}
+                {dbCategories
+                  .map(cat => getCategoryVisuals(cat.nombre).icon)
+                  .filter(Boolean)
+                  .slice(0, 8)
+                  .map((iconPath, i) => (
+                    <img
+                      key={i}
+                      src={iconPath}
+                      alt=""
+                      className={`catalog-brick catalog-brick-${i + 1}`}
+                    />
+                  ))
+                }
               </div>
             </div>
 
@@ -537,10 +540,8 @@ const Catalog = () => {
                       }}
                       onClick={() => setActiveCategoryId(cat.id_categoria)}
                     >
-                      {visuals.icon ? (
+                      {visuals.icon && (
                         <img src={visuals.icon} alt="" className="col-chip-svg" />
-                      ) : (
-                        <span className="col-chip-emoji">{visuals.emoji}</span>
                       )}
                       <span className="col-chip-label">{displayCategoryName(cat.nombre)}</span>
                       {activeCategoryId === cat.id_categoria && <span className="col-chip-check">✓</span>}

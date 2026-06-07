@@ -14,7 +14,8 @@ const AdminProducts = () => {
         precio: '',
         stock: '',
         id_categoria: '',
-        edad_recomendada: ''
+        edad_recomendada: '',
+        ultimo_lanzamiento: false
     });
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [previewUrls, setPreviewUrls] = useState([]);
@@ -58,7 +59,8 @@ const AdminProducts = () => {
                         precio: Math.round(parseFloat(detailedProd.precio)),
                         stock: detailedProd.stock,
                         id_categoria: detailedProd.id_categoria,
-                        edad_recomendada: detailedProd.edad_recomendada || ''
+                        edad_recomendada: detailedProd.edad_recomendada || '',
+                        ultimo_lanzamiento: detailedProd.ultimo_lanzamiento || false
                     });
                     setExistingImages(detailedProd.imagenes || []);
                 } else {
@@ -68,7 +70,8 @@ const AdminProducts = () => {
                         precio: Math.round(parseFloat(prod.precio)),
                         stock: prod.stock,
                         id_categoria: prod.id_categoria,
-                        edad_recomendada: prod.edad_recomendada || ''
+                        edad_recomendada: prod.edad_recomendada || '',
+                        ultimo_lanzamiento: prod.ultimo_lanzamiento || false
                     });
                     setExistingImages(prod.imagen_url ? [prod.imagen_url] : []);
                 }
@@ -80,7 +83,8 @@ const AdminProducts = () => {
                     precio: Math.round(parseFloat(prod.precio)),
                     stock: prod.stock,
                     id_categoria: prod.id_categoria,
-                    edad_recomendada: prod.edad_recomendada || ''
+                    edad_recomendada: prod.edad_recomendada || '',
+                    ultimo_lanzamiento: prod.ultimo_lanzamiento || false
                 });
                 setExistingImages(prod.imagen_url ? [prod.imagen_url] : []);
             }
@@ -92,7 +96,8 @@ const AdminProducts = () => {
                 precio: '',
                 stock: '',
                 id_categoria: categorias.length > 0 ? categorias[0].id_categoria : '',
-                edad_recomendada: ''
+                edad_recomendada: '',
+                ultimo_lanzamiento: false
             });
             setExistingImages([]);
         }
@@ -282,6 +287,24 @@ const AdminProducts = () => {
                                 <input type="number" name="stock" value={formData.stock} onChange={handleChange} required min="0" />
                             </div>
                             <div className="admin-form-group">
+                                <label>Edad Recomendada</label>
+                                <select 
+                                    name="edad_recomendada" 
+                                    value={formData.edad_recomendada} 
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Todas las edades</option>
+                                    <option value="2">2+ años</option>
+                                    <option value="3">3+ años</option>
+                                    <option value="6">6+ años</option>
+                                    <option value="8">8+ años</option>
+                                    <option value="9">9+ años</option>
+                                    <option value="12">12+ años</option>
+                                    <option value="16">16+ años</option>
+                                    <option value="18">18+ años</option>
+                                </select>
+                            </div>
+                            <div className="admin-form-group">
                                 <label>Categoría</label>
                                 {isCreatingCategory ? (
                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -416,6 +439,21 @@ const AdminProducts = () => {
                                     ))}
                                 </div>
                             </div>
+
+                            <div className="admin-form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.75rem', marginTop: '1rem', padding: '0.5rem 0' }}>
+                                <input 
+                                    type="checkbox" 
+                                    name="ultimo_lanzamiento" 
+                                    id="ultimo_lanzamiento"
+                                    checked={formData.ultimo_lanzamiento} 
+                                    onChange={(e) => setFormData(prev => ({ ...prev, ultimo_lanzamiento: e.target.checked }))} 
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer', margin: 0 }}
+                                />
+                                <label htmlFor="ultimo_lanzamiento" style={{ cursor: 'pointer', marginBottom: 0, fontSize: '0.95rem', fontWeight: '600', color: '#374151' }}>
+                                    Último Lanzamiento (Mostrar en la sección de novedades de la página principal)
+                                </label>
+                            </div>
+
                             <div className="admin-modal-actions">
                                 <button type="button" className="admin-btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>
                                 <button type="submit" className="admin-btn primary">Guardar</button>
