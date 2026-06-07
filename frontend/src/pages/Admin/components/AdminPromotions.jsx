@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const AdminPromotions = () => {
     const { token, API_URL } = useContext(AppContext);
@@ -144,15 +145,32 @@ const AdminPromotions = () => {
                             <tr key={p.id_promo}>
                                 <td>{p.id_promo}</td>
                                 <td>{p.descripcion}</td>
-                                <td>{p.porcentaje}%</td>
+                                <td>{parseFloat(p.porcentaje).toString()}%</td>
                                 <td>
-                                    {p.producto_nombre ? `Producto: ${p.producto_nombre}` : ''}
+                                    {p.producto_nombre ? `${p.producto_nombre}` : ''}
                                     {p.categoria_nombre ? `Categoría: ${p.categoria_nombre}` : ''}
+                                    {!p.producto_nombre && !p.categoria_nombre && 'Global (Toda la tienda)'}
                                 </td>
                                 <td>{new Date(p.fecha_fin).toLocaleDateString()}</td>
-                                <td>
-                                    <button className="admin-btn edit" onClick={() => handleOpenModal(p)} style={{marginRight: '0.5rem'}}>Editar</button>
-                                    <button className="admin-btn danger" onClick={() => handleDelete(p.id_promo)}>Eliminar</button>
+                                <td style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }}>
+                                    <button 
+                                        onClick={() => handleOpenModal(p)} 
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                        title="Editar"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <FiEdit2 size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(p.id_promo)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                        title="Eliminar"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <FiTrash2 size={18} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -183,11 +201,29 @@ const AdminPromotions = () => {
                             </div>
                             <div className="admin-form-group">
                                 <label>ID Producto (opcional)</label>
-                                <input type="number" name="id_producto" value={formData.id_producto} onChange={handleChange} placeholder="Si aplica a un producto" />
+                                <input 
+                                    type="number" 
+                                    name="id_producto" 
+                                    value={formData.id_producto} 
+                                    onChange={handleChange} 
+                                    placeholder="Si aplica a un producto"
+                                    disabled={!!formData.id_categoria}
+                                    title={formData.id_categoria ? "Deshabilitado porque ya seleccionaste una categoría" : ""}
+                                    min="1"
+                                />
                             </div>
                             <div className="admin-form-group">
                                 <label>ID Categoría (opcional)</label>
-                                <input type="number" name="id_categoria" value={formData.id_categoria} onChange={handleChange} placeholder="Si aplica a una categoría" />
+                                <input 
+                                    type="number" 
+                                    name="id_categoria" 
+                                    value={formData.id_categoria} 
+                                    onChange={handleChange} 
+                                    placeholder="Si aplica a una categoría" 
+                                    disabled={!!formData.id_producto}
+                                    title={formData.id_producto ? "Deshabilitado porque ya seleccionaste un producto" : ""}
+                                    min="1"
+                                />
                             </div>
                             <div className="admin-modal-actions">
                                 <button type="button" className="admin-btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>

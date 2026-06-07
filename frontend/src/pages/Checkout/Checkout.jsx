@@ -10,7 +10,6 @@ export default function Checkout() {
     const { cart, API_URL, usuario, productos, loading, isInitialized, token, removerDelCarrito, actualizarCantidadCarrito } = useContext(AppContext);
     const navigate = useNavigate();
     const location = useLocation();
-    const [coupon, setCoupon] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
     const selectedItemIds = location.state?.selectedItems || null;
@@ -180,10 +179,6 @@ export default function Checkout() {
                                     <span className="skeleton" style={{ width: '80px', height: '20px' }}></span>
                                 </div>
 
-                                <div className="coupon-section">
-                                    <div className="skeleton" style={{ flex: 1, height: '44px' }}></div>
-                                    <div className="skeleton" style={{ width: '110px', height: '44px' }}></div>
-                                </div>
 
                                 <div className="payment-options-centered">
                                     <div className="skeleton" style={{ width: '140px', height: '28px' }}></div>
@@ -543,16 +538,6 @@ export default function Checkout() {
                                 <span>${total % 1 === 0 ? total.toFixed(0) : total.toFixed(2)}</span>
                             </div>
 
-                            <div className="coupon-section">
-                                <input 
-                                    type="text" 
-                                    placeholder="Código de Cupón" 
-                                    value={coupon}
-                                    onChange={(e) => setCoupon(e.target.value)}
-                                    disabled={hasAnyQtyError}
-                                />
-                                <button className="btn-yellow" type="button" disabled={hasAnyQtyError}>Aplicar Cupón</button>
-                            </div>
 
                             <div className="payment-options-centered">
                                 <img src={mercadopagoLogo} alt="Mercado Pago" className="mercadopago-centered-logo" />

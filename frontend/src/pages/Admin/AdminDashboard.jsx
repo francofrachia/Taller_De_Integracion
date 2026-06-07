@@ -31,25 +31,25 @@ const AdminDashboard = () => {
                             className={activeTab === 'products' ? 'active' : ''} 
                             onClick={() => setActiveTab('products')}
                         >
-                            📦 Productos
+                            Productos
                         </li>
                         <li 
                             className={activeTab === 'categories' ? 'active' : ''} 
                             onClick={() => setActiveTab('categories')}
                         >
-                            📂 Categorías
+                            Categorías
                         </li>
                         <li 
                             className={activeTab === 'promotions' ? 'active' : ''} 
                             onClick={() => setActiveTab('promotions')}
                         >
-                            🏷️ Promociones
+                            Promociones
                         </li>
                         <li 
                             className={activeTab === 'orders' ? 'active' : ''} 
                             onClick={() => setActiveTab('orders')}
                         >
-                            🛍️ Ventas
+                            Ventas
                         </li>
                     </ul>
                 </aside>
