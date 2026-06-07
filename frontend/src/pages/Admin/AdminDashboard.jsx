@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import AdminProducts from './components/AdminProducts';
-import AdminPromotions from './components/AdminPromotions';
 import AdminOrders from './components/AdminOrders';
 import './AdminDashboard.css';
 
@@ -12,7 +11,6 @@ const AdminDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'products': return <AdminProducts />;
-            case 'promotions': return <AdminPromotions />;
             case 'orders': return <AdminOrders />;
             default: return <AdminProducts />;
         }
@@ -22,20 +20,14 @@ const AdminDashboard = () => {
         <div className="admin-page">
             <Navbar />
             <div className="admin-container">
-                <aside className="admin-sidebar">
+                <div className="admin-top-nav">
                     <h2>Panel Admin</h2>
-                    <ul>
+                    <ul className="admin-nav-tabs">
                         <li 
                             className={activeTab === 'products' ? 'active' : ''} 
                             onClick={() => setActiveTab('products')}
                         >
                             Productos
-                        </li>
-                        <li 
-                            className={activeTab === 'promotions' ? 'active' : ''} 
-                            onClick={() => setActiveTab('promotions')}
-                        >
-                            Promociones
                         </li>
                         <li 
                             className={activeTab === 'orders' ? 'active' : ''} 
@@ -44,7 +36,7 @@ const AdminDashboard = () => {
                             Ventas
                         </li>
                     </ul>
-                </aside>
+                </div>
                 <main className="admin-content">
                     {renderContent()}
                 </main>

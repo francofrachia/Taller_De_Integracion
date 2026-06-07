@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
-import { FiEdit2, FiUploadCloud, FiX } from 'react-icons/fi';
+import { FiEdit2, FiUploadCloud, FiX, FiSearch } from 'react-icons/fi';
 
 const AdminProducts = () => {
-    const { token, API_URL, productos } = useContext(AppContext);
+    const { token, API_URL, productos, obtenerProductos, obtenerPromociones } = useContext(AppContext);
     const [localProducts, setLocalProducts] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,10 +24,44 @@ const AdminProducts = () => {
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
 
+    // Buscador y panel de ofertas
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [allPromotions, setAllPromotions] = useState([]);
+    const [promoFormData, setPromoFormData] = useState({
+        descripcion: '',
+        porcentaje: '',
+        fecha_inicio: '',
+        fecha_fin: ''
+    });
+
     useEffect(() => {
         setLocalProducts(productos);
         fetchCategorias();
+        fetchAllPromotions();
     }, [productos]);
+
+    // Llenar campos de promoción al seleccionar un producto
+    useEffect(() => {
+        if (selectedProduct) {
+            const promo = allPromotions.find(p => p.id_producto === selectedProduct.id_producto);
+            if (promo) {
+                setPromoFormData({
+                    descripcion: promo.descripcion || '',
+                    porcentaje: parseFloat(promo.porcentaje).toString(),
+                    fecha_inicio: promo.fecha_inicio ? promo.fecha_inicio.split('T')[0] : '',
+                    fecha_fin: promo.fecha_fin ? promo.fecha_fin.split('T')[0] : ''
+                });
+            } else {
+                setPromoFormData({
+                    descripcion: '',
+                    porcentaje: '',
+                    fecha_inicio: '',
+                    fecha_fin: ''
+                });
+            }
+        }
+    }, [selectedProduct, allPromotions]);
 
     const fetchCategorias = async () => {
         try {
@@ -42,6 +76,22 @@ const AdminProducts = () => {
             }
         } catch (e) {
             console.error("Error fetching categorias", e);
+        }
+    };
+
+    const fetchAllPromotions = async () => {
+        try {
+            const res = await fetch(`${API_URL}/promociones`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAllPromotions(data);
+            }
+        } catch (e) {
+            console.error("Error fetching promotions", e);
         }
     };
 
@@ -117,8 +167,6 @@ const AdminProducts = () => {
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         setSelectedFiles(prev => [...prev, ...files]);
-        
-        // Crear object URLs para previsualización
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setPreviewUrls(prev => [...prev, ...newPreviews]);
     };
@@ -130,7 +178,6 @@ const AdminProducts = () => {
 
     const handleRemoveNewFile = (index) => {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-        // Revocar la URL de objeto para evitar fugas de memoria
         URL.revokeObjectURL(previewUrls[index]);
         setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
@@ -157,7 +204,6 @@ const AdminProducts = () => {
             const res = await fetch(url, {
                 method,
                 headers: {
-                    // NO incluimos Content-Type aquí para que el navegador genere correctamente el boundary de multipart/form-data
                     'Authorization': `Bearer ${token}`
                 },
                 body: submitData
@@ -166,8 +212,7 @@ const AdminProducts = () => {
             if (res.ok) {
                 alert(editingProduct ? 'Producto actualizado' : 'Producto creado');
                 setIsModalOpen(false);
-                // Acá idealmente se debería re-fetchear los productos llamando a un fetch interno o recargar la página.
-                window.location.reload(); 
+                if (obtenerProductos) await obtenerProductos();
             } else {
                 const data = await res.json();
                 alert(data.error || 'Error al guardar');
@@ -198,11 +243,7 @@ const AdminProducts = () => {
                 alert('Categoría creada exitosamente');
                 setNewCategoryName('');
                 setIsCreatingCategory(false);
-                
-                // Re-obtener las categorías
                 await fetchCategorias();
-                
-                // Seleccionar la nueva categoría automáticamente
                 if (data.categoria && data.categoria.id_categoria) {
                     setFormData(prev => ({ ...prev, id_categoria: data.categoria.id_categoria }));
                 }
@@ -216,50 +257,309 @@ const AdminProducts = () => {
         }
     };
 
+    // Crear o editar una promoción para el producto seleccionado
+    const handleSavePromo = async (e) => {
+        e.preventDefault();
+        if (!selectedProduct) return;
+
+        const currentPromo = allPromotions.find(p => p.id_producto === selectedProduct.id_producto);
+        const url = currentPromo ? `${API_URL}/promociones/${currentPromo.id_promo}` : `${API_URL}/promociones`;
+        const method = currentPromo ? 'PUT' : 'POST';
+
+        const dataToSend = {
+            descripcion: promoFormData.descripcion,
+            porcentaje: parseFloat(promoFormData.porcentaje),
+            fecha_inicio: promoFormData.fecha_inicio,
+            fecha_fin: promoFormData.fecha_fin,
+            id_producto: selectedProduct.id_producto
+        };
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            if (res.ok) {
+                alert(currentPromo ? 'Oferta actualizada exitosamente' : 'Oferta creada exitosamente');
+                await fetchAllPromotions();
+                if (obtenerProductos) await obtenerProductos();
+                if (obtenerPromociones) await obtenerPromociones();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error al guardar la oferta');
+            }
+        } catch (err) {
+            console.error("Error saving promo:", err);
+            alert("Error al guardar la oferta");
+        }
+    };
+
+    // Eliminar la promoción del producto seleccionado
+    const handleDeletePromo = async () => {
+        if (!selectedProduct) return;
+        const currentPromo = allPromotions.find(p => p.id_producto === selectedProduct.id_producto);
+        if (!currentPromo) return;
+
+        if (!window.confirm("¿Seguro que deseas eliminar la oferta de este producto?")) return;
+
+        try {
+            const res = await fetch(`${API_URL}/promociones/${currentPromo.id_promo}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                alert('Oferta eliminada exitosamente');
+                setSelectedProduct(null);
+                await fetchAllPromotions();
+                if (obtenerProductos) await obtenerProductos();
+                if (obtenerPromociones) await obtenerPromociones();
+            } else {
+                alert('Error al eliminar la oferta');
+            }
+        } catch (err) {
+            console.error("Error deleting promo:", err);
+            alert("Error de red");
+        }
+    };
+
+    // Filtrado de productos basado en la consulta de búsqueda
+    const filteredProducts = localProducts.filter(p => 
+        p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.id_producto.toString().includes(searchQuery) ||
+        (p.categoria_nombre && p.categoria_nombre.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            {/* Header del panel de productos con buscador integrado */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2>Gestión de Productos</h2>
-                <button className="admin-btn primary" onClick={() => handleOpenModal()}>+ Nuevo Producto</button>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+                    {/* Buscador premium con iconografía */}
+                    <div style={{ position: 'relative', maxWidth: '350px', width: '100%' }}>
+                        <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar producto por nombre, ID o categoría..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.6rem 1rem 0.6rem 2.25rem',
+                                borderRadius: '8px',
+                                border: '1px solid #d1d5db',
+                                fontSize: '0.9rem',
+                                outline: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                            onFocus={(e) => { e.target.style.borderColor = '#111827'; e.target.style.boxShadow = '0 0 0 3px rgba(17, 24, 39, 0.05)'; }}
+                            onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => setSearchQuery('')}
+                                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center' }}
+                            >
+                                <FiX size={16} />
+                            </button>
+                        )}
+                    </div>
+                    
+                    <button className="admin-btn primary" onClick={() => handleOpenModal()}>+ Nuevo Producto</button>
+                </div>
             </div>
 
-            <div className="admin-table-container">
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Categoría</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {localProducts.map(p => (
-                            <tr key={p.id_producto}>
-                                <td>{p.id_producto}</td>
-                                <td>{p.nombre}</td>
-                                <td>{p.categoria_nombre || 'Sin categoría'}</td>
-                                <td>${parseFloat(p.precio).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-                                <td>{p.stock}</td>
-                                <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }}>
+            {/* Layout principal flexible: Oferta a la izquierda (si hay selección), Tabla a la derecha */}
+            <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', position: 'relative' }}>
+                
+                {/* Panel lateral de Promoción */}
+                {selectedProduct && (
+                    <div className="promo-side-panel animate-slide-right" style={{
+                        width: '320px',
+                        background: '#ffffff',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.05)',
+                        border: '1px solid rgba(0, 0, 0, 0.05)',
+                        position: 'sticky',
+                        top: '100px',
+                        zIndex: 10,
+                        flexShrink: 0
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#111827' }}>
+                                {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Editar Oferta' : 'Crear Oferta'}
+                            </h3>
+                            <button 
+                                onClick={() => setSelectedProduct(null)} 
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center' }}
+                                title="Cerrar panel"
+                            >
+                                <FiX size={18} />
+                            </button>
+                        </div>
+                        
+                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4' }}>
+                            Producto: <strong style={{ color: '#111827' }}>{selectedProduct.nombre}</strong> <br/>
+                            <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>ID del producto: {selectedProduct.id_producto}</span>
+                        </p>
+
+                        <form onSubmit={handleSavePromo}>
+                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descripción</label>
+                                <input 
+                                    name="descripcion" 
+                                    value={promoFormData.descripcion} 
+                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                                    placeholder="Ej: Oferta del mes" 
+                                    required 
+                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                />
+                            </div>
+                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descuento (%)</label>
+                                <input 
+                                    type="number" 
+                                    name="porcentaje" 
+                                    value={promoFormData.porcentaje} 
+                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, porcentaje: e.target.value }))}
+                                    placeholder="15" 
+                                    min="1" 
+                                    max="100" 
+                                    required 
+                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                />
+                            </div>
+                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Inicio</label>
+                                <input 
+                                    type="date" 
+                                    name="fecha_inicio" 
+                                    value={promoFormData.fecha_inicio} 
+                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_inicio: e.target.value }))}
+                                    required 
+                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                />
+                            </div>
+                            <div className="admin-form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Fin</label>
+                                <input 
+                                    type="date" 
+                                    name="fecha_fin" 
+                                    value={promoFormData.fecha_fin} 
+                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_fin: e.target.value }))}
+                                    required 
+                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                />
+                            </div>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <button type="submit" className="admin-btn primary" style={{ width: '100%', padding: '0.65rem' }}>
+                                    {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Guardar Cambios' : 'Crear Oferta'}
+                                </button>
+                                {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) && (
                                     <button 
-                                        onClick={() => handleOpenModal(p)} 
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
-                                        title="Editar"
-                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                        type="button" 
+                                        className="admin-btn danger" 
+                                        onClick={handleDeletePromo} 
+                                        style={{ width: '100%', padding: '0.65rem' }}
                                     >
-                                        <FiEdit2 size={18} />
+                                        Eliminar Oferta
                                     </button>
-                                </td>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {/* Tabla de Productos */}
+                <div className="admin-table-container" style={{ flex: 1, minWidth: 0, marginTop: 0 }}>
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Oferta</th>
+                                <th>Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {filteredProducts.map(p => {
+                                const isSelected = selectedProduct?.id_producto === p.id_producto;
+                                return (
+                                    <tr 
+                                        key={p.id_producto}
+                                        onClick={() => setSelectedProduct(p)}
+                                        style={{ 
+                                            cursor: 'pointer', 
+                                            backgroundColor: isSelected ? '#f1f5f9' : '',
+                                            borderLeft: isSelected ? '4px solid #ffcf00' : '4px solid transparent',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <td>{p.id_producto}</td>
+                                        <td style={{ fontWeight: '600', color: '#1f2937' }}>{p.nombre}</td>
+                                        <td>{p.categoria_nombre || 'Sin categoría'}</td>
+                                        <td>${parseFloat(p.precio).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                        <td>{p.stock}</td>
+                                        <td>
+                                            {p.descuento ? (
+                                                <span style={{ 
+                                                    backgroundColor: '#ffefef', 
+                                                    color: '#ff3366', 
+                                                    padding: '4px 10px', 
+                                                    borderRadius: '20px', 
+                                                    fontSize: '0.8rem', 
+                                                    fontWeight: '700',
+                                                    border: '1px solid rgba(255, 51, 102, 0.15)',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    -{Math.round(parseFloat(p.descuento))}% OFF
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: '#9ca3af' }}>-</span>
+                                            )}
+                                        </td>
+                                        <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }} onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                onClick={() => handleOpenModal(p)} 
+                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: '6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                                                title="Editar Producto"
+                                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                            >
+                                                <FiEdit2 size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {filteredProducts.length === 0 && (
+                                <tr>
+                                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', fontStyle: 'italic' }}>
+                                        No se encontraron productos que coincidan con la búsqueda.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
 
+            {/* Modal de Creación/Edición de Producto */}
             {isModalOpen && (
                 <div className="admin-modal-overlay">
                     <div className="admin-modal">
@@ -364,7 +664,6 @@ const AdminProducts = () => {
                             
                             <div className="admin-form-group">
                                 <label>Imágenes del Producto</label>
-                                
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{
                                         display: 'inline-flex',
@@ -396,7 +695,6 @@ const AdminProducts = () => {
                                 </div>
                                 
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                    {/* Imágenes existentes (al editar) */}
                                     {existingImages.map((url, index) => (
                                         <div key={`exist-${index}`} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                                             <img 
@@ -417,7 +715,6 @@ const AdminProducts = () => {
                                         </div>
                                     ))}
 
-                                    {/* Previsualización de nuevos archivos seleccionados */}
                                     {previewUrls.map((url, index) => (
                                         <div key={`prev-${index}`} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '2px solid #10b981' }}>
                                             <img 
