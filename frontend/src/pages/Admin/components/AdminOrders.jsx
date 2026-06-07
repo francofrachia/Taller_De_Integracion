@@ -78,10 +78,10 @@ const AdminOrders = () => {
                 o.total,
                 `"${o.estado}"`,
                 `"${prods}"`
-            ].join(',');
+            ].join(';');
         });
         
-        const csvContent = [headers.join(','), ...rows].join('\n');
+        const csvContent = [headers.join(';'), ...rows].join('\n');
         
         // Agregar BOM para que Excel detecte UTF-8 sin problemas de codificación
         const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
