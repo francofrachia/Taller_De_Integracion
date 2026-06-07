@@ -181,7 +181,7 @@ const Home = () => {
             // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
             isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || precioNum > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
             // Próximamente: Lógica escalable desde BDD
-            isComingSoon: !!item.proximo_lanzamiento,
+            isComingSoon: !!item.ultimo_lanzamiento,
             // Ventas reales desde BDD
             ventasTotales: parseInt(item.ventas_totales) || 0
           };
@@ -197,7 +197,23 @@ const Home = () => {
       });
   }, []);
 
+  const promoItems = (promociones || []).map(promo => {
+    const p = productos.find(pr => pr.id === promo.id_producto);
+    if (!p) return null;
+    const orig = parseFloat(p.price);
+    const disc = parseFloat(promo.porcentaje);
+    return { 
+      ...p, 
+      discount_pct: disc, 
+      original_price: orig.toFixed(2), 
+      final_price: (orig - orig * disc / 100).toFixed(2) 
+    };
+  }).filter(Boolean);
 
+  const bestSellers = [...productos]
+    .filter(p => p.ventasTotales > 0)
+    .sort((a, b) => b.ventasTotales - a.ventasTotales)
+    .slice(0, 10);
 
   return (
     <div className={`home-page ${isDarkTheme ? 'dark-theme' : ''}`}>
@@ -304,42 +320,31 @@ const Home = () => {
             <div style={{ height: '40px' }}></div> {/* Espaciador reducido */}
 
             {/* Ofertas Relámpago con Glassmorphism */}
-            <section className="flash-deals-modern" ref={darkSectionRef}>
-              <div className="container">
-                <div className="flash-header">
-                  <div className="flash-title-group">
-                    <h2>Ofertas</h2>
-                    <p>Los mejores precios para expandir tu colección.</p>
+            {(loading || promoItems.length > 0) && (
+              <section className="flash-deals-modern" ref={darkSectionRef}>
+                <div className="container">
+                  <div className="flash-header">
+                    <div className="flash-title-group">
+                      <h2>Ofertas</h2>
+                      <p>Los mejores precios para expandir tu colección.</p>
+                    </div>
                   </div>
-
                 </div>
-              </div>
-                
-              <div className="flash-carousel-container" style={{ position: 'relative' }}>
-                {canScrollLeft && (
-                  <button className="flash-carousel-btn left" onClick={() => scrollCarousel(flashCarouselRef, 'left')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
-                  </button>
-                )}
-                
-                <div className="apple-carousel-container" ref={flashCarouselRef} onScroll={checkScrollState}>
-                    {loading ? (
-                      <div className="apple-card" style={{ padding: '0', display: 'block' }}>
-                        <ProductCardSkeleton />
-                      </div>
-                    ) : (
-                      (() => {
-                        // El Home mapea id_producto→id, precio→price
-                        const promoItems = (promociones || []).map(promo => {
-                          const p = productos.find(pr => pr.id === promo.id_producto);
-                          if (!p) return null;
-                          const orig = parseFloat(p.price);
-                          const disc = parseFloat(promo.porcentaje);
-                          return { ...p, discount_pct: disc, original_price: orig.toFixed(2), final_price: (orig - orig * disc / 100).toFixed(2) };
-                        }).filter(Boolean);
-                        const itemsToShow = promoItems.length > 0 ? promoItems : productos.slice(0, 10);
-                        const isRealPromo = promoItems.length > 0;
-                        return itemsToShow.map((product, i) => {
+                  
+                <div className="flash-carousel-container" style={{ position: 'relative' }}>
+                  {canScrollLeft && (
+                    <button className="flash-carousel-btn left" onClick={() => scrollCarousel(flashCarouselRef, 'left')}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                    </button>
+                  )}
+                  
+                  <div className="apple-carousel-container" ref={flashCarouselRef} onScroll={checkScrollState}>
+                      {loading ? (
+                        <div className="apple-card" style={{ padding: '0', display: 'block' }}>
+                          <ProductCardSkeleton />
+                        </div>
+                      ) : (
+                        promoItems.map((product, i) => {
                           const isFav = favoritos && favoritos.includes(product.id);
                           const isDark = i % 3 === 0;
                           const isAccent = i % 3 === 1;
@@ -356,15 +361,13 @@ const Home = () => {
                                 {product.stock <= 0 ? (
                                   <div className="apple-card-tag out-of-stock-tag">Agotado</div>
                                 ) : (
-                                  <div className="apple-card-tag">{isRealPromo ? `🔥 -${product.discount_pct}%` : 'Oferta Limitada'}</div>
+                                  <div className="apple-card-tag">{`🔥 -${product.discount_pct}%`}</div>
                                 )}
                                 <h3 className="apple-card-title">{product.title}</h3>
                                 <p className="apple-card-subtitle">{product.categoryName || "Construye tu imaginación."}</p>
                                 <div className="apple-card-price">
                                   {product.stock <= 0 ? "Sin stock" : (
-                                    isRealPromo ? (
-                                      <><span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '13px', marginRight: '6px' }}>${product.original_price}</span><strong>${product.final_price}</strong></>
-                                    ) : `Desde $${product.price}`
+                                    <><span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '13px', marginRight: '6px' }}>${product.original_price}</span><strong>${product.final_price}</strong></>
                                   )}
                                 </div>
                               </div>
@@ -389,24 +392,24 @@ const Home = () => {
                               </div>
                             </Link>
                           );
-                        });
-                      })()
-                    )}
-                  </div>
-                
-                {canScrollRight && (
-                  <button className="flash-carousel-btn right" onClick={() => scrollCarousel(flashCarouselRef, 'right')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                        })
+                      )}
+                    </div>
+                  
+                  {canScrollRight && (
+                    <button className="flash-carousel-btn right" onClick={() => scrollCarousel(flashCarouselRef, 'right')}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
                   </button>
-                )}
-              </div>
-
-              <div className="container">
-                <div className="center-btn-container" style={{ marginTop: '40px' }}>
-                  <Link to="/promociones" className="btn-glass-outline">Ver Todas las Promociones</Link>
+                  )}
                 </div>
-              </div>
-            </section>
+
+                <div className="container">
+                  <div className="center-btn-container" style={{ marginTop: '40px' }}>
+                    <Link to="/promociones" className="btn-glass-outline">Ver Todas las Promociones</Link>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Banner Parallax Secundario (Star Wars) */}
             <section className="parallax-banner-section full-width no-margin-top no-margin-bottom">
@@ -421,96 +424,98 @@ const Home = () => {
             </section>
 
             {/* Productos Más Vendidos */}
-            <div className="best-sellers-dark-wrapper" ref={bestSellersRef}>
-              <section className="best-sellers-section">
-                <div className="container">
-                  <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
-                    <h2 className="section-title-highlight">Los Más Vendidos</h2>
-                    <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+            {(loading || bestSellers.length > 0) && (
+              <div className="best-sellers-dark-wrapper" ref={bestSellersRef}>
+                <section className="best-sellers-section">
+                  <div className="container">
+                    <div className={`section-header modern-header ${showBestSellers ? 'animate-item' : 'hidden-item'}`}>
+                      <h2 className="section-title-highlight">Los Más Vendidos</h2>
+                      <Link to="/productos" className="view-all-link">Ver Todos <span>→</span></Link>
+                    </div>
                   </div>
-                </div>
-                <div className="flash-carousel-container" style={{ position: 'relative' }}>
-                  {canScrollBsLeft && (
-                    <button className="flash-carousel-btn left" onClick={() => scrollCarousel(bestSellersCarouselRef, 'left')}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
-                    </button>
-                  )}
-                  
-                  <div className="apple-carousel-container" ref={bestSellersCarouselRef} onScroll={checkScrollState}>
-                      {loading ? (
-                        <div className="apple-card" style={{ padding: '0', display: 'block' }}>
-                          <ProductCardSkeleton />
-                        </div>
-                      ) : (
-                        [...productos].sort((a, b) => b.ventasTotales - a.ventasTotales).slice(0, 8).map((product, i) => {
-                          const isFav = favoritos && favoritos.includes(product.id);
-                          const isDark = i % 3 === 0;
-                          const isAccent = i % 3 === 1;
+                  <div className="flash-carousel-container" style={{ position: 'relative' }}>
+                    {canScrollBsLeft && (
+                      <button className="flash-carousel-btn left" onClick={() => scrollCarousel(bestSellersCarouselRef, 'left')}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                      </button>
+                    )}
+                    
+                    <div className="apple-carousel-container" ref={bestSellersCarouselRef} onScroll={checkScrollState}>
+                        {loading ? (
+                          <div className="apple-card" style={{ padding: '0', display: 'block' }}>
+                            <ProductCardSkeleton />
+                          </div>
+                        ) : (
+                          bestSellers.map((product, i) => {
+                            const isFav = favoritos && favoritos.includes(product.id);
+                            const isDark = i % 3 === 0;
+                            const isAccent = i % 3 === 1;
 
-                          return (
-                            <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
-                              <button 
-                                className={`apple-card-fav ${isFav ? 'active' : ''}`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  toggleFavorito(product.id);
-                                }}
-                                title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
-                              >
-                                {isFav ? <FaHeart /> : <FaRegHeart />}
-                              </button>
-
-                              <div className="apple-card-content">
-                                {product.stock <= 0 ? (
-                                  <div className="apple-card-tag out-of-stock-tag">Agotado</div>
-                                ) : (
-                                  <div className="apple-card-tag">Los Más Vendidos</div>
-                                )}
-                                <h3 className="apple-card-title">{product.title}</h3>
-                                <p className="apple-card-subtitle">
-                                  {product.category_name || "Construye tu imaginación."}
-                                </p>
-                                <div className="apple-card-price">
-                                  {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
-                                </div>
-                              </div>
-                              <img 
-                                src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
-                                alt={product.title} 
-                                className="apple-card-image"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = placeholderProduct;
-                                }}
-                              />
-                              <div className="apple-card-actions">
+                            return (
+                              <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
                                 <button 
-                                  className="apple-add-to-cart-btn"
-                                  disabled={product.stock <= 0}
-                                  onClick={async (e) => {
+                                  className={`apple-card-fav ${isFav ? 'active' : ''}`}
+                                  onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                    toggleFavorito(product.id);
                                   }}
+                                  title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
                                 >
-                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                  {isFav ? <FaHeart /> : <FaRegHeart />}
                                 </button>
-                              </div>
-                            </Link>
-                          );
-                        })
-                      )}
-                    </div>
-                  
-                  {canScrollBsRight && (
-                    <button className="flash-carousel-btn right" onClick={() => scrollCarousel(bestSellersCarouselRef, 'right')}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
-                    </button>
-                  )}
-                </div>
-              </section>
-            </div>
+
+                                <div className="apple-card-content">
+                                  {product.stock <= 0 ? (
+                                    <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                                  ) : (
+                                    <div className="apple-card-tag">Los Más Vendidos</div>
+                                  )}
+                                  <h3 className="apple-card-title">{product.title}</h3>
+                                  <p className="apple-card-subtitle">
+                                    {product.categoryName || "Construye tu imaginación."}
+                                  </p>
+                                  <div className="apple-card-price">
+                                    {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
+                                  </div>
+                                </div>
+                                <img 
+                                  src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
+                                  alt={product.title} 
+                                  className="apple-card-image"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = placeholderProduct;
+                                  }}
+                                />
+                                <div className="apple-card-actions">
+                                  <button 
+                                    className="apple-add-to-cart-btn"
+                                    disabled={product.stock <= 0}
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                    }}
+                                  >
+                                    {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                  </button>
+                                </div>
+                              </Link>
+                            );
+                          })
+                        )}
+                      </div>
+                    
+                    {canScrollBsRight && (
+                      <button className="flash-carousel-btn right" onClick={() => scrollCarousel(bestSellersCarouselRef, 'right')}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                      </button>
+                    )}
+                  </div>
+                </section>
+              </div>
+            )}
 
             {/* Banner Parallax (Marvel - Superhéroe) */}
             <section className="parallax-banner-section full-width no-margin-top no-margin-bottom cinematic-marvel-banner" ref={hulkRef}>
@@ -559,7 +564,7 @@ const Home = () => {
                   </>
                 ) : (
                   <>
-                    {productos.filter(p => p.isComingSoon || p.isExclusive).slice(0, 4).map((product, index) => {
+                    {productos.filter(p => p.isComingSoon).slice(0, 4).map((product, index) => {
                       const spans = ['large-span', '', 'tall-span', ''];
                       const sizes = [24, 20, 22, 20];
                       const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];

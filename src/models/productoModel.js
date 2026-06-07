@@ -183,8 +183,8 @@ const Producto = {
         try {
             await client.query('BEGIN');
             const query = `
-                INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria, edad_recomendada)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO producto (nombre, descripcion, precio, stock, id_categoria, edad_recomendada, ultimo_lanzamiento)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             `;
             const { rows } = await client.query(query, [
@@ -193,7 +193,8 @@ const Producto = {
                 data.precio,
                 data.stock || 0,
                 data.id_categoria,
-                data.edad_recomendada || null
+                data.edad_recomendada !== undefined && data.edad_recomendada !== '' && data.edad_recomendada !== null ? parseInt(data.edad_recomendada, 10) : null,
+                data.ultimo_lanzamiento === 'true' || data.ultimo_lanzamiento === true
             ]);
             
             const producto = rows[0];
@@ -227,17 +228,19 @@ const Producto = {
                     precio = COALESCE($3, precio),
                     stock = COALESCE($4, stock),
                     id_categoria = COALESCE($5, id_categoria),
-                    edad_recomendada = COALESCE($6, edad_recomendada)
-                WHERE id_producto = $7
+                    edad_recomendada = COALESCE($6, edad_recomendada),
+                    ultimo_lanzamiento = COALESCE($7, ultimo_lanzamiento)
+                WHERE id_producto = $8
                 RETURNING *
             `;
             const { rows } = await client.query(query, [
-                data.nombre,
-                data.descripcion,
-                data.precio,
-                data.stock,
-                data.id_categoria,
-                data.edad_recomendada,
+                data.nombre || null,
+                data.descripcion || null,
+                data.precio ? parseFloat(data.precio) : null,
+                data.stock !== undefined && data.stock !== '' ? parseInt(data.stock, 10) : null,
+                data.id_categoria ? parseInt(data.id_categoria, 10) : null,
+                data.edad_recomendada !== undefined && data.edad_recomendada !== '' && data.edad_recomendada !== null ? parseInt(data.edad_recomendada, 10) : null,
+                data.ultimo_lanzamiento !== undefined ? (data.ultimo_lanzamiento === 'true' || data.ultimo_lanzamiento === true) : null,
                 id
             ]);
 

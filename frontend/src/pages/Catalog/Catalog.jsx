@@ -354,15 +354,15 @@ const Catalog = () => {
                 </div>
                 <input
                   type="range" min="0" max="7"
-                  value={activeAge ? ['3', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7}
+                  value={activeAge ? ['2', '6', '8', '9', '12', '16', '18', 'Todos'].indexOf(activeAge) : 7}
                   onChange={e => {
-                    const ages = ['3', '6', '8', '9', '12', '16', '18', 'Todos'];
+                    const ages = ['2', '6', '8', '9', '12', '16', '18', 'Todos'];
                     const val = parseInt(e.target.value);
                     setActiveAge(ages[val] === 'Todos' ? null : ages[val]);
                   }}
                   className="price-range-slider age-range-slider"
                 />
-                <div className="price-range-labels"><span>3+</span><span>Todas</span></div>
+                <div className="price-range-labels"><span>2+</span><span>Todas</span></div>
               </div>
 
               {/* Precio */}
