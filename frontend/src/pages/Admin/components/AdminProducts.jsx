@@ -20,6 +20,8 @@ const AdminProducts = () => {
     const [previewUrls, setPreviewUrls] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
     const [imagenes_a_borrar, setImagenesABorrar] = useState([]);
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
     useEffect(() => {
         setLocalProducts(productos);
@@ -42,19 +44,46 @@ const AdminProducts = () => {
         }
     };
 
-    const handleOpenModal = (prod = null) => {
+    const handleOpenModal = async (prod = null) => {
         if (prod) {
             setEditingProduct(prod);
-            setFormData({
-                nombre: prod.nombre,
-                descripcion: prod.descripcion || '',
-                precio: prod.precio,
-                stock: prod.stock,
-                id_categoria: prod.id_categoria,
-                edad_recomendada: prod.edad_recomendada || ''
-            });
-            // Asumiendo que el endpoint de obtener todos o ID devuelve el array de 'imagenes'
-            setExistingImages(prod.imagenes || (prod.imagen_url ? [prod.imagen_url] : []));
+            // Fetch detailed product from backend to get all images
+            try {
+                const res = await fetch(`${API_URL}/productos/${prod.id_producto}`);
+                if (res.ok) {
+                    const detailedProd = await res.json();
+                    setFormData({
+                        nombre: detailedProd.nombre,
+                        descripcion: detailedProd.descripcion || '',
+                        precio: detailedProd.precio,
+                        stock: detailedProd.stock,
+                        id_categoria: detailedProd.id_categoria,
+                        edad_recomendada: detailedProd.edad_recomendada || ''
+                    });
+                    setExistingImages(detailedProd.imagenes || []);
+                } else {
+                    setFormData({
+                        nombre: prod.nombre,
+                        descripcion: prod.descripcion || '',
+                        precio: prod.precio,
+                        stock: prod.stock,
+                        id_categoria: prod.id_categoria,
+                        edad_recomendada: prod.edad_recomendada || ''
+                    });
+                    setExistingImages(prod.imagen_url ? [prod.imagen_url] : []);
+                }
+            } catch (e) {
+                console.error("Error fetching detailed product", e);
+                setFormData({
+                    nombre: prod.nombre,
+                    descripcion: prod.descripcion || '',
+                    precio: prod.precio,
+                    stock: prod.stock,
+                    id_categoria: prod.id_categoria,
+                    edad_recomendada: prod.edad_recomendada || ''
+                });
+                setExistingImages(prod.imagen_url ? [prod.imagen_url] : []);
+            }
         } else {
             setEditingProduct(null);
             setFormData({
@@ -70,6 +99,8 @@ const AdminProducts = () => {
         setSelectedFiles([]);
         setPreviewUrls([]);
         setImagenesABorrar([]);
+        setIsCreatingCategory(false);
+        setNewCategoryName('');
         setIsModalOpen(true);
     };
 
@@ -142,6 +173,44 @@ const AdminProducts = () => {
         }
     };
 
+    const handleSaveCategoryInline = async () => {
+        if (!newCategoryName.trim()) {
+            alert("El nombre de la categoría no puede estar vacío");
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/productos/categorias/admin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ nombre: newCategoryName.trim() })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert('Categoría creada exitosamente');
+                setNewCategoryName('');
+                setIsCreatingCategory(false);
+                
+                // Re-obtener las categorías
+                await fetchCategorias();
+                
+                // Seleccionar la nueva categoría automáticamente
+                if (data.categoria && data.categoria.id_categoria) {
+                    setFormData(prev => ({ ...prev, id_categoria: data.categoria.id_categoria }));
+                }
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error al guardar la categoría');
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de red");
+        }
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -155,6 +224,7 @@ const AdminProducts = () => {
                         <tr>
                             <th>ID</th>
                             <th>Nombre</th>
+                            <th>Categoría</th>
                             <th>Precio</th>
                             <th>Stock</th>
                             <th>Acciones</th>
@@ -165,6 +235,7 @@ const AdminProducts = () => {
                             <tr key={p.id_producto}>
                                 <td>{p.id_producto}</td>
                                 <td>{p.nombre}</td>
+                                <td>{p.categoria_nombre || 'Sin categoría'}</td>
                                 <td>${parseFloat(p.precio).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                                 <td>{p.stock}</td>
                                 <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: 'none' }}>
@@ -212,12 +283,60 @@ const AdminProducts = () => {
                             </div>
                             <div className="admin-form-group">
                                 <label>Categoría</label>
-                                <select name="id_categoria" value={formData.id_categoria} onChange={handleChange} required>
-                                    <option value="">Seleccione...</option>
-                                    {categorias.map(c => (
-                                        <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
-                                    ))}
-                                </select>
+                                {isCreatingCategory ? (
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Nombre de la nueva categoría" 
+                                            value={newCategoryName} 
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            style={{ flex: 1 }}
+                                        />
+                                        <button 
+                                            type="button" 
+                                            className="admin-btn primary"
+                                            onClick={handleSaveCategoryInline}
+                                            style={{ height: '38px', padding: '0 1rem' }}
+                                        >
+                                            Crear
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            className="admin-btn"
+                                            onClick={() => {
+                                                setIsCreatingCategory(false);
+                                                setNewCategoryName('');
+                                            }}
+                                            style={{ height: '38px', padding: '0 1rem', background: '#f3f4f6', color: '#4b5563' }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <select 
+                                            name="id_categoria" 
+                                            value={formData.id_categoria} 
+                                            onChange={handleChange} 
+                                            required
+                                            style={{ flex: 1 }}
+                                        >
+                                            <option value="">Seleccione...</option>
+                                            {categorias.map(c => (
+                                                <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
+                                            ))}
+                                        </select>
+                                        <button 
+                                            type="button" 
+                                            className="admin-btn"
+                                            onClick={() => setIsCreatingCategory(true)}
+                                            style={{ padding: '0 1.25rem', height: '42px', background: '#f3f4f6', color: '#111827', border: '1px solid #d1d5db', whiteSpace: 'nowrap' }}
+                                            title="Crear Nueva Categoría"
+                                        >
+                                            + Nueva
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="admin-form-group">

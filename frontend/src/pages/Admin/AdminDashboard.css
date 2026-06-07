@@ -102,6 +102,7 @@
     text-align: center;
     border-bottom: 1px solid #f3f4f6;
     color: #374151;
+    cursor: default;
 }
 
 .admin-table th {
@@ -111,6 +112,7 @@
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     color: #6b7280;
+    user-select: none;
 }
 
 .admin-table tbody tr {

@@ -4,7 +4,6 @@ import Footer from '../../components/Footer/Footer';
 import AdminProducts from './components/AdminProducts';
 import AdminPromotions from './components/AdminPromotions';
 import AdminOrders from './components/AdminOrders';
-import AdminCategories from './components/AdminCategories';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -13,7 +12,6 @@ const AdminDashboard = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'products': return <AdminProducts />;
-            case 'categories': return <AdminCategories />;
             case 'promotions': return <AdminPromotions />;
             case 'orders': return <AdminOrders />;
             default: return <AdminProducts />;
@@ -32,12 +30,6 @@ const AdminDashboard = () => {
                             onClick={() => setActiveTab('products')}
                         >
                             Productos
-                        </li>
-                        <li 
-                            className={activeTab === 'categories' ? 'active' : ''} 
-                            onClick={() => setActiveTab('categories')}
-                        >
-                            Categorías
                         </li>
                         <li 
                             className={activeTab === 'promotions' ? 'active' : ''} 
