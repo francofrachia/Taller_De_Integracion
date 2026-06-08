@@ -19,6 +19,7 @@ const ProductCard = ({ product }) => {
 
   const handleToggleFav = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     toggleFavorito(product.id);
   };
 
@@ -55,7 +56,16 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card">
+    <div className="product-card" style={{ position: 'relative' }}>
+      <button 
+        className={`favorite-btn ${isFav ? 'active' : ''}`} 
+        title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"} 
+        onClick={handleToggleFav}
+        style={{ zIndex: 10 }}
+      >
+        {isFav ? <FaHeart /> : <FaRegHeart />}
+      </button>
+
       <Link to={`/producto/${product.id}`} className="product-card-link">
         <div className="product-card-image-container">
           {product.stock <= 0 ? (
@@ -63,13 +73,6 @@ const ProductCard = ({ product }) => {
           ) : product.discount ? (
             <span className="discount-badge">-{product.discount}%</span>
           ) : null}
-          <button 
-            className={`favorite-btn ${isFav ? 'active' : ''}`} 
-            title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"} 
-            onClick={handleToggleFav}
-          >
-            {isFav ? <FaHeart /> : <FaRegHeart />}
-          </button>
           <img 
             src={(!product.image || product.image.includes('legostore.com')) ? placeholderImg : product.image} 
             alt={product.title} 

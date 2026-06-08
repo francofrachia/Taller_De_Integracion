@@ -387,8 +387,8 @@ export function AppProvider({ children }) {
             });
             if (response.ok) {
                 const data = await response.json();
-                setFavoritos(data.favoritos.map(f => f.id_producto)); // Guardamos solo IDs en el contexto para acceso rápido
-                setFavoritosData(data.favoritos); // Guardamos la info completa para mostrar inactivos
+                setFavoritos(data.favoritos.map(f => Number(f.id_producto))); // Guardamos solo IDs en formato numérico
+                setFavoritosData(data.favoritos); // Guardamos la info completa para mostrar
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida detectada al obtener favoritos. Auto-logout.");
                 logout();
@@ -406,16 +406,17 @@ export function AppProvider({ children }) {
             return;
         }
 
-        const isFav = favoritos.includes(id_producto);
+        const idNum = Number(id_producto);
+        const isFav = favoritos.map(Number).includes(idNum);
         const method = isFav ? 'DELETE' : 'POST';
 
         // Actualización optimista
         if (isFav) {
-            setFavoritos(prev => prev.filter(id => id !== id_producto));
-            setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+            setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+            setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
         } else {
-            setFavoritos(prev => [...prev, id_producto]);
-            const prod = productos.find(p => p.id_producto === id_producto);
+            setFavoritos(prev => [...prev.map(Number), idNum]);
+            const prod = productos.find(p => Number(p.id_producto) === idNum);
             if (prod) setFavoritosData(prev => [...prev, prod]);
         }
 
@@ -426,17 +427,17 @@ export function AppProvider({ children }) {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ id_producto })
+                body: JSON.stringify({ id_producto: idNum })
             });
             if (!response.ok) {
                 // Revertir en caso de error
                 if (isFav) {
-                    setFavoritos(prev => [...prev, id_producto]);
-                    const prod = productos.find(p => p.id_producto === id_producto);
+                    setFavoritos(prev => [...prev.map(Number), idNum]);
+                    const prod = productos.find(p => Number(p.id_producto) === idNum);
                     if (prod) setFavoritosData(prev => [...prev, prod]);
                 } else {
-                    setFavoritos(prev => prev.filter(id => id !== id_producto));
-                    setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+                    setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+                    setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
                 }
 
                 if (response.status === 401 || response.status === 403) {
@@ -447,12 +448,12 @@ export function AppProvider({ children }) {
         } catch (error) {
             console.error("Error al hacer toggle en favoritos:", error);
             if (isFav) {
-                setFavoritos(prev => [...prev, id_producto]);
-                const prod = productos.find(p => p.id_producto === id_producto);
+                setFavoritos(prev => [...prev.map(Number), idNum]);
+                const prod = productos.find(p => Number(p.id_producto) === idNum);
                 if (prod) setFavoritosData(prev => [...prev, prod]);
             } else {
-                setFavoritos(prev => prev.filter(id => id !== id_producto));
-                setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+                setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+                setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
             }
         }
     }
