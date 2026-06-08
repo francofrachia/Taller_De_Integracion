@@ -119,11 +119,34 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(false);
   const { favoritos, toggleFavorito, promociones, agregarAlCarrito } = useContext(AppContext);
-  
+
+  const [comingSoonStartIndex, setComingSoonStartIndex] = useState(0);
+
+  // Filtrar productos coming soon para la rotación
+  const comingSoonProducts = productos.filter(p => p.isComingSoon);
+
+  useEffect(() => {
+    if (comingSoonProducts.length <= 4) return;
+    const interval = setInterval(() => {
+      setComingSoonStartIndex(prevIndex => (prevIndex + 4) % comingSoonProducts.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [comingSoonProducts.length]);
+
+  const visibleComingSoon = (() => {
+    if (comingSoonProducts.length <= 4) return comingSoonProducts;
+    const visible = [];
+    for (let i = 0; i < 4; i++) {
+      const idx = (comingSoonStartIndex + i) % comingSoonProducts.length;
+      visible.push(comingSoonProducts[idx]);
+    }
+    return visible;
+  })();
+
   const flashCarouselRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  
+
   const bestSellersCarouselRef = useRef(null);
   const [canScrollBsLeft, setCanScrollBsLeft] = useState(false);
   const [canScrollBsRight, setCanScrollBsRight] = useState(true);
@@ -173,11 +196,11 @@ const Home = () => {
       if (!transitionRef.current) return;
       const rect = transitionRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-      
+
       // Si la cinta asoma por la parte inferior de la pantalla (hasta un 60%)
       if (rect.top < windowHeight * 0.9 && rect.top >= windowHeight * 0.5) {
         setTransitionState(1); // Muestra primera parte
-      } 
+      }
       // Si la cinta sube a la mitad superior de la pantalla
       else if (rect.top < windowHeight * 0.5 && rect.bottom > 0) {
         setTransitionState(2); // Muestra ambas partes
@@ -264,7 +287,7 @@ const Home = () => {
             ventasTotales: parseInt(item.ventas_totales) || 0
           };
         });
-        
+
         setProductos(productosMapeados);
         setLoading(false);
       })
@@ -292,11 +315,11 @@ const Home = () => {
   const promoItems = (promociones || []).map(promo => {
     const p = productos.find(pr => pr.id === promo.id_producto);
     if (!p) return null;
-    return { 
-      ...p, 
-      discount_pct: p.discount || parseFloat(promo.porcentaje), 
-      original_price: parseFloat(p.oldPrice || p.price).toFixed(2), 
-      final_price: parseFloat(p.price).toFixed(2) 
+    return {
+      ...p,
+      discount_pct: p.discount || parseFloat(promo.porcentaje),
+      original_price: parseFloat(p.oldPrice || p.price).toFixed(2),
+      final_price: parseFloat(p.price).toFixed(2)
     };
   }).filter(Boolean);
 
@@ -309,26 +332,26 @@ const Home = () => {
     <div className={`home-page ${isDarkTheme ? 'dark-theme' : ''}`}>
       <div className={`fixed-background ${isDarkTheme ? 'dark-active' : ''}`}></div>
       <Navbar />
-      
+
       <main className="home-main">
         {/* Nuevo Hero Section Moderno */}
         <section className="hero-section-custom">
           {/* Fondo usando la imagen original sin el gradiente blanco */}
           <div className="hero-custom-bg" style={{ backgroundImage: `url(${newHeroBanner})` }}></div>
-          
+
           <div className="container">
             <div className="hero-custom-content">
               {/* Title */}
               <h1 className="hero-custom-title animate-fade-in-up delay-2">
-                <span className="dark-blue">Construye tu</span><br/>
-                <span className="colorful-mundo" style={{color: '#ffcf00'}}>
+                <span className="dark-blue">Construye tu</span><br />
+                <span className="colorful-mundo" style={{ color: '#ffcf00' }}>
                   mundo
                 </span>
               </h1>
-              
+
               <div className="animate-fade-in-up delay-3" style={{ marginTop: '20px' }}>
                 <Link to="/productos" className="btn-hero-yellow">
-                  Ver productos <span style={{marginLeft: '10px'}}>→</span>
+                  Ver productos <span style={{ marginLeft: '10px' }}>→</span>
                 </Link>
               </div>
             </div>
@@ -348,10 +371,10 @@ const Home = () => {
                       .replace(/[\u0300-\u036f]/g, "")
                       .replace(/\s+/g, '-');
                     return (
-                      <Link 
-                        to="/productos" 
-                        state={{ theme: cat.nombre }} 
-                        className={`collection-card cat-${classFriendlyName}`} 
+                      <Link
+                        to="/productos"
+                        state={{ theme: cat.nombre }}
+                        className={`collection-card cat-${classFriendlyName}`}
                         key={cat.id_categoria}
                       >
                         <div className="col-icon">
@@ -379,11 +402,11 @@ const Home = () => {
                     .replace(/[\u0300-\u036f]/g, "")
                     .replace(/\s+/g, '-');
                   return (
-                    <Link 
-                      to="/productos" 
-                      state={{ theme: cat.nombre }} 
-                      className={`collection-card cat-${classFriendlyName}`} 
-                      key={cat.id_categoria} 
+                    <Link
+                      to="/productos"
+                      state={{ theme: cat.nombre }}
+                      className={`collection-card cat-${classFriendlyName}`}
+                      key={cat.id_categoria}
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <div className="col-icon">
@@ -428,76 +451,76 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-                  
+
                 <div className="flash-carousel-container" style={{ position: 'relative' }}>
                   {canScrollLeft && (
                     <button className="flash-carousel-btn left" onClick={() => scrollCarousel(flashCarouselRef, 'left')}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" /></svg>
                     </button>
                   )}
-                  
+
                   <div className="apple-carousel-container" ref={flashCarouselRef} onScroll={checkScrollState}>
-                      {loading ? (
-                        <div className="apple-card" style={{ padding: '0', display: 'block' }}>
-                          <ProductCardSkeleton />
-                        </div>
-                      ) : (
-                        promoItems.map((product, i) => {
-                          const isFav = favoritos && favoritos.includes(product.id);
-                          const isDark = i % 3 === 0;
-                          const isAccent = i % 3 === 1;
-                          return (
-                            <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
-                              <button 
-                                className={`apple-card-fav ${isFav ? 'active' : ''}`}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorito(product.id); }}
-                                title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
-                              >
-                                {isFav ? <FaHeart /> : <FaRegHeart />}
-                              </button>
-                              <div className="apple-card-content">
-                                {product.stock <= 0 ? (
-                                  <div className="apple-card-tag out-of-stock-tag">Agotado</div>
-                                ) : (
-                                  <div className="apple-card-tag">{`-${product.discount_pct}%`}</div>
+                    {loading ? (
+                      <div className="apple-card" style={{ padding: '0', display: 'block' }}>
+                        <ProductCardSkeleton />
+                      </div>
+                    ) : (
+                      promoItems.map((product, i) => {
+                        const isFav = favoritos && favoritos.includes(product.id);
+                        const isDark = i % 3 === 0;
+                        const isAccent = i % 3 === 1;
+                        return (
+                          <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
+                            <button
+                              className={`apple-card-fav ${isFav ? 'active' : ''}`}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorito(product.id); }}
+                              title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                            >
+                              {isFav ? <FaHeart /> : <FaRegHeart />}
+                            </button>
+                            <div className="apple-card-content">
+                              {product.stock <= 0 ? (
+                                <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                              ) : (
+                                <div className="apple-card-tag">{`-${product.discount_pct}%`}</div>
+                              )}
+                              <h3 className="apple-card-title">{product.title}</h3>
+                              <p className="apple-card-subtitle">{product.categoryName || "Construye tu imaginación."}</p>
+                              <div className="apple-card-price">
+                                {product.stock <= 0 ? "Sin stock" : (
+                                  <><span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '13px', marginRight: '6px' }}>${product.original_price}</span><strong>${product.final_price}</strong></>
                                 )}
-                                <h3 className="apple-card-title">{product.title}</h3>
-                                <p className="apple-card-subtitle">{product.categoryName || "Construye tu imaginación."}</p>
-                                <div className="apple-card-price">
-                                  {product.stock <= 0 ? "Sin stock" : (
-                                    <><span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '13px', marginRight: '6px' }}>${product.original_price}</span><strong>${product.final_price}</strong></>
-                                  )}
-                                </div>
                               </div>
-                              <img 
-                                src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
-                                alt={product.title} 
-                                className="apple-card-image"
-                                onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
-                              />
-                              <div className="apple-card-actions">
-                                <button 
-                                  className="apple-add-to-cart-btn"
-                                  disabled={product.stock <= 0}
-                                  onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
-                                  }}
-                                >
-                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
-                                </button>
-                              </div>
-                            </Link>
-                          );
-                        })
-                      )}
-                    </div>
-                  
+                            </div>
+                            <img
+                              src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image}
+                              alt={product.title}
+                              className="apple-card-image"
+                              onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
+                            />
+                            <div className="apple-card-actions">
+                              <button
+                                className="apple-add-to-cart-btn"
+                                disabled={product.stock <= 0}
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                }}
+                              >
+                                {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                              </button>
+                            </div>
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+
                   {canScrollRight && (
                     <button className="flash-carousel-btn right" onClick={() => scrollCarousel(flashCarouselRef, 'right')}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
-                  </button>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" /></svg>
+                    </button>
                   )}
                 </div>
 
@@ -514,7 +537,7 @@ const Home = () => {
               <div className="parallax-container star-wars-theme">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${starWarsBanner})` }}></div>
                 <div className="parallax-content left-aligned">
-                  <h2 className="star-wars-title">Colecciones<br/>Especiales</h2>
+                  <h2 className="star-wars-title">Colecciones<br />Especiales</h2>
                   <p className="star-wars-subtitle">Descubre el lado oscuro de la fuerza.</p>
                   <Link to="/productos" state={{ theme: 'star wars' }} className="btn-star-wars">Únete al Imperio</Link>
                 </div>
@@ -534,80 +557,80 @@ const Home = () => {
                   <div className="flash-carousel-container" style={{ position: 'relative' }}>
                     {canScrollBsLeft && (
                       <button className="flash-carousel-btn left" onClick={() => scrollCarousel(bestSellersCarouselRef, 'left')}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" /></svg>
                       </button>
                     )}
-                    
-                    <div className="apple-carousel-container" ref={bestSellersCarouselRef} onScroll={checkScrollState}>
-                        {loading ? (
-                          <div className="apple-card" style={{ padding: '0', display: 'block' }}>
-                            <ProductCardSkeleton />
-                          </div>
-                        ) : (
-                          bestSellers.map((product, i) => {
-                            const isFav = favoritos && favoritos.includes(product.id);
-                            const isDark = i % 3 === 0;
-                            const isAccent = i % 3 === 1;
 
-                            return (
-                              <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
-                                <button 
-                                  className={`apple-card-fav ${isFav ? 'active' : ''}`}
-                                  onClick={(e) => {
+                    <div className="apple-carousel-container" ref={bestSellersCarouselRef} onScroll={checkScrollState}>
+                      {loading ? (
+                        <div className="apple-card" style={{ padding: '0', display: 'block' }}>
+                          <ProductCardSkeleton />
+                        </div>
+                      ) : (
+                        bestSellers.map((product, i) => {
+                          const isFav = favoritos && favoritos.includes(product.id);
+                          const isDark = i % 3 === 0;
+                          const isAccent = i % 3 === 1;
+
+                          return (
+                            <Link to={`/producto/${product.id}`} className={`apple-card ${isDark ? 'dark' : (isAccent ? 'color-accent' : '')} ${product.stock <= 0 ? 'out-of-stock' : ''}`} key={product.id}>
+                              <button
+                                className={`apple-card-fav ${isFav ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleFavorito(product.id);
+                                }}
+                                title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                              >
+                                {isFav ? <FaHeart /> : <FaRegHeart />}
+                              </button>
+
+                              <div className="apple-card-content">
+                                {product.stock <= 0 ? (
+                                  <div className="apple-card-tag out-of-stock-tag">Agotado</div>
+                                ) : (
+                                  <div className="apple-card-tag">Los Más Vendidos</div>
+                                )}
+                                <h3 className="apple-card-title">{product.title}</h3>
+                                <p className="apple-card-subtitle">
+                                  {product.categoryName || "Construye tu imaginación."}
+                                </p>
+                                <div className="apple-card-price">
+                                  {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
+                                </div>
+                              </div>
+                              <img
+                                src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image}
+                                alt={product.title}
+                                className="apple-card-image"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = placeholderProduct;
+                                }}
+                              />
+                              <div className="apple-card-actions">
+                                <button
+                                  className="apple-add-to-cart-btn"
+                                  disabled={product.stock <= 0}
+                                  onClick={async (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    toggleFavorito(product.id);
+                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
                                   }}
-                                  title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
                                 >
-                                  {isFav ? <FaHeart /> : <FaRegHeart />}
+                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
                                 </button>
+                              </div>
+                            </Link>
+                          );
+                        })
+                      )}
+                    </div>
 
-                                <div className="apple-card-content">
-                                  {product.stock <= 0 ? (
-                                    <div className="apple-card-tag out-of-stock-tag">Agotado</div>
-                                  ) : (
-                                    <div className="apple-card-tag">Los Más Vendidos</div>
-                                  )}
-                                  <h3 className="apple-card-title">{product.title}</h3>
-                                  <p className="apple-card-subtitle">
-                                    {product.categoryName || "Construye tu imaginación."}
-                                  </p>
-                                  <div className="apple-card-price">
-                                    {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
-                                  </div>
-                                </div>
-                                <img 
-                                  src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image} 
-                                  alt={product.title} 
-                                  className="apple-card-image"
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = placeholderProduct;
-                                  }}
-                                />
-                                <div className="apple-card-actions">
-                                  <button 
-                                    className="apple-add-to-cart-btn"
-                                    disabled={product.stock <= 0}
-                                    onClick={async (e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      if (product.stock > 0) await agregarAlCarrito(product.id, 1);
-                                    }}
-                                  >
-                                    {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
-                                  </button>
-                                </div>
-                              </Link>
-                            );
-                          })
-                        )}
-                      </div>
-                    
                     {canScrollBsRight && (
                       <button className="flash-carousel-btn right" onClick={() => scrollCarousel(bestSellersCarouselRef, 'right')}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" /></svg>
                       </button>
                     )}
                   </div>
@@ -620,9 +643,9 @@ const Home = () => {
               <div className="parallax-container cinematic-theme marvel-style large-banner">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${hulkBanner})` }}></div>
                 <div className="parallax-content right-aligned">
-                  <h2 className="star-wars-title marvel-title">Nuevos<br/>Ingresos</h2>
+                  <h2 className="star-wars-title marvel-title">Nuevos<br />Ingresos</h2>
                   <p className="star-wars-subtitle">Descubre el poder de Marvel.</p>
-                  <button 
+                  <button
                     onClick={() => {
                       if (newArrivalsRef.current) {
                         const offset = 80;
@@ -633,7 +656,7 @@ const Home = () => {
                           behavior: 'smooth'
                         });
                       }
-                    }} 
+                    }}
                     className="btn-star-wars btn-marvel"
                     style={{ cursor: 'pointer', fontFamily: 'inherit' }}
                   >
@@ -646,56 +669,56 @@ const Home = () => {
             <div className="dark-marvel-bg">
               {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}
               <section className="new-arrivals-modern container" ref={newArrivalsRef}>
-                
-                <div className={`section-header-modern ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0s' }}>
-                <h2>Últimos Lanzamientos</h2>
-                <p>Explora nuestras novedades más recientes y expande tu colección con las piezas exclusivas que acaban de aterrizar.</p>
-              </div>
 
-              <div className="masonry-grid">
-                {loading ? (
-                  <>
-                    <div className="masonry-item large-span skeleton" style={{ borderRadius: '24px' }}></div>
-                    <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
-                    <div className="masonry-item tall-span skeleton" style={{ borderRadius: '24px' }}></div>
-                    <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
-                  </>
-                ) : (
-                  <>
-                    {productos.filter(p => p.isComingSoon).slice(0, 4).map((product, index) => {
-                      const spans = ['large-span', '', 'tall-span', ''];
-                      const sizes = [24, 20, 22, 20];
-                      const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];
-                      
-                      return (
-                        <div key={product.id} className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: delays[index] }}>
-                          <button
-                            className="masonry-fav-btn"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              toggleFavorito(product.id);
-                            }}
-                          >
-                            {favoritos.includes(product.id) ? <FaHeart color="red" size={sizes[index]} /> : <FaRegHeart color="#999" size={sizes[index]} />}
-                          </button>
-                          <img 
-                            src={product.image || placeholderProduct} 
-                            alt={product.title}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = placeholderProduct;
-                            }}
-                          />
-                          <div className="masonry-overlay">
-                            <h3 style={{ fontSize: '18px' }}>{product.title} {product.stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                            <Link to={`/producto/${product.id}`}>{product.stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
+                <div className={`section-header-modern ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0s' }}>
+                  <h2>Últimos Lanzamientos</h2>
+                  <p>Explora nuestras novedades más recientes y expande tu colección con las piezas exclusivas que acaban de aterrizar.</p>
+                </div>
+
+                <div className="masonry-grid">
+                  {loading ? (
+                    <>
+                      <div className="masonry-item large-span skeleton" style={{ borderRadius: '24px' }}></div>
+                      <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
+                      <div className="masonry-item tall-span skeleton" style={{ borderRadius: '24px' }}></div>
+                      <div className="masonry-item skeleton" style={{ borderRadius: '24px' }}></div>
+                    </>
+                  ) : (
+                    <>
+                      {visibleComingSoon.map((product, index) => {
+                        const spans = ['large-span', '', 'tall-span', ''];
+                        const sizes = [24, 20, 22, 20];
+                        const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];
+
+                        return (
+                          <div key={product.id} className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: delays[index] }}>
+                            <button
+                              className="masonry-fav-btn"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleFavorito(product.id);
+                              }}
+                            >
+                              {favoritos.includes(product.id) ? <FaHeart color="red" size={sizes[index]} /> : <FaRegHeart color="#999" size={sizes[index]} />}
+                            </button>
+                            <img
+                              src={product.image || placeholderProduct}
+                              alt={product.title}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = placeholderProduct;
+                              }}
+                            />
+                            <div className="masonry-overlay">
+                              <h3 style={{ fontSize: '18px' }}>{product.title} {product.stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
+                              <Link to={`/producto/${product.id}`}>{product.stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
               </section>
             </div>
           </>

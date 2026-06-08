@@ -92,7 +92,7 @@
    ========================================================================== */
 .navbar-links {
   display: flex;
-  gap: 28px;
+  gap: 20px;
   align-items: center;
 }
 
@@ -449,13 +449,13 @@
   border: 1.5px solid rgba(0, 0, 0, 0.08);
   border-radius: 99px;
   padding: 4px 14px;
-  width: 260px;
+  width: 220px;
   transition: var(--transition-smooth);
   position: relative;
 }
 
 .navbar-search:focus-within {
-  width: 310px;
+  width: 260px;
   background: #ffffff;
   border-color: var(--text-dark);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
@@ -656,7 +656,7 @@
 /* ==========================================================================
    Responsive Configurations
    ========================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .navbar-container {
     flex-wrap: wrap;
     justify-content: space-between;

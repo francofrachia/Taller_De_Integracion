@@ -24,10 +24,12 @@ const AdminProducts = () => {
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
     // Buscador y panel de ofertas
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [panelTop, setPanelTop] = useState(0);
     const [allPromotions, setAllPromotions] = useState([]);
     const [promoFormData, setPromoFormData] = useState({
         descripcion: '',
@@ -186,6 +188,33 @@ const AdminProducts = () => {
         setSelectedFiles(prev => [...prev, ...files]);
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setPreviewUrls(prev => [...prev, ...newPreviews]);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            if (files.length > 0) {
+                setSelectedFiles(prev => [...prev, ...files]);
+                const newPreviews = files.map(file => URL.createObjectURL(file));
+                setPreviewUrls(prev => [...prev, ...newPreviews]);
+            }
+        }
     };
 
     const handleRemoveExistingImage = (url) => {
@@ -475,94 +504,96 @@ const AdminProducts = () => {
             {/* Layout principal flexible: Oferta a la izquierda (si hay selección), Tabla a la derecha */}
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', position: 'relative' }}>
                 
-                {/* Panel lateral de Promoción */}
-                {selectedProduct && (
-                    <div className="promo-side-panel animate-slide-right" style={{
-                        width: '320px',
-                        background: '#ffffff',
-                        borderRadius: '16px',
-                        padding: '1.5rem',
-                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.05)',
-                        border: '1px solid rgba(0, 0, 0, 0.05)',
-                        position: 'sticky',
-                        top: '100px',
-                        zIndex: 10,
-                        flexShrink: 0
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#111827' }}>
-                                {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Editar Oferta' : 'Crear Oferta'}
-                            </h3>
-                            <button 
-                                onClick={() => setSelectedProduct(null)} 
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center' }}
-                                title="Cerrar panel"
-                            >
-                                <FiX size={18} />
-                            </button>
-                        </div>
-                        
-                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4' }}>
-                            Producto: <strong style={{ color: '#111827' }}>{selectedProduct.nombre}</strong> <br/>
-                            <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>ID del producto: {selectedProduct.id_producto}</span>
-                        </p>
-
-                        <form onSubmit={handleSavePromo}>
-                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descuento (%)</label>
-                                <input 
-                                    type="number" 
-                                    name="porcentaje" 
-                                    value={promoFormData.porcentaje} 
-                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, porcentaje: e.target.value }))}
-                                    placeholder="15" 
-                                    min="1" 
-                                    max="100" 
-                                    required 
-                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                                />
-                            </div>
-                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Inicio</label>
-                                <input 
-                                    type="date" 
-                                    name="fecha_inicio" 
-                                    value={promoFormData.fecha_inicio} 
-                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_inicio: e.target.value }))}
-                                    required 
-                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
-                                />
-                            </div>
-                            <div className="admin-form-group" style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Fin</label>
-                                <input 
-                                    type="date" 
-                                    name="fecha_fin" 
-                                    value={promoFormData.fecha_fin} 
-                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_fin: e.target.value }))}
-                                    required 
-                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
-                                />
+                {/* Contenedor lateral de Promoción para permitir alineación exacta */}
+                <div style={{ width: '320px', flexShrink: 0, position: 'relative', alignSelf: 'stretch' }}>
+                    {selectedProduct && (
+                        <div className="promo-side-panel animate-slide-right" style={{
+                            width: '320px',
+                            background: '#ffffff',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.05)',
+                            border: '1px solid rgba(0, 0, 0, 0.05)',
+                            position: 'absolute',
+                            top: `${panelTop}px`,
+                            transition: 'top 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                            zIndex: 10
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#111827' }}>
+                                    {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Editar Oferta' : 'Crear Oferta'}
+                                </h3>
+                                <button 
+                                    onClick={() => setSelectedProduct(null)} 
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center' }}
+                                    title="Cerrar panel"
+                                >
+                                    <FiX size={18} />
+                                </button>
                             </div>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <button type="submit" className="admin-btn primary" style={{ width: '100%', padding: '0.65rem' }}>
-                                    {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Guardar Cambios' : 'Crear Oferta'}
-                                </button>
-                                {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) && (
-                                    <button 
-                                        type="button" 
-                                        className="admin-btn danger" 
-                                        onClick={handleDeletePromo} 
-                                        style={{ width: '100%', padding: '0.65rem' }}
-                                    >
-                                        Eliminar Oferta
+                            <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4' }}>
+                                Producto: <strong style={{ color: '#111827' }}>{selectedProduct.nombre}</strong> <br/>
+                                <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>ID del producto: {selectedProduct.id_producto}</span>
+                            </p>
+
+                            <form onSubmit={handleSavePromo}>
+                                <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descuento (%)</label>
+                                    <input 
+                                        type="number" 
+                                        name="porcentaje" 
+                                        value={promoFormData.porcentaje} 
+                                        onChange={(e) => setPromoFormData(prev => ({ ...prev, porcentaje: e.target.value }))}
+                                        placeholder="15" 
+                                        min="1" 
+                                        max="100" 
+                                        required 
+                                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                    />
+                                </div>
+                                <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Inicio</label>
+                                    <input 
+                                        type="date" 
+                                        name="fecha_inicio" 
+                                        value={promoFormData.fecha_inicio} 
+                                        onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_inicio: e.target.value }))}
+                                        required 
+                                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+                                <div className="admin-form-group" style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Fecha de Fin</label>
+                                    <input 
+                                        type="date" 
+                                        name="fecha_fin" 
+                                        value={promoFormData.fecha_fin} 
+                                        onChange={(e) => setPromoFormData(prev => ({ ...prev, fecha_fin: e.target.value }))}
+                                        required 
+                                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <button type="submit" className="admin-btn primary" style={{ width: '100%', padding: '0.65rem' }}>
+                                        {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) ? 'Guardar Cambios' : 'Crear Oferta'}
                                     </button>
-                                )}
-                            </div>
-                        </form>
-                    </div>
-                )}
+                                    {allPromotions.some(p => p.id_producto === selectedProduct.id_producto) && (
+                                        <button 
+                                            type="button" 
+                                            className="admin-btn danger" 
+                                            onClick={handleDeletePromo} 
+                                            style={{ width: '100%', padding: '0.65rem' }}
+                                        >
+                                            Eliminar Oferta
+                                        </button>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                </div>
 
                 {/* Tabla de Productos */}
                 <div className="admin-table-container" style={{ flex: 1, minWidth: 0, marginTop: 0 }}>
@@ -584,7 +615,13 @@ const AdminProducts = () => {
                                 return (
                                     <tr 
                                         key={p.id_producto}
-                                        onClick={() => setSelectedProduct(p)}
+                                        onClick={(e) => {
+                                            setSelectedProduct(p);
+                                            const tr = e.currentTarget;
+                                            const calculatedTop = tr.offsetTop + (tr.offsetHeight / 2) - 200;
+                                            setPanelTop(Math.max(0, calculatedTop));
+                                            e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }}
                                         style={{ 
                                             cursor: 'pointer', 
                                             backgroundColor: isSelected ? '#f1f5f9' : '',
@@ -675,11 +712,11 @@ const AdminProducts = () => {
                             </div>
                             <div className="admin-form-group">
                                 <label>Precio</label>
-                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="100"/>
+                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="1"/>
                             </div>
                             <div className="admin-form-group">
                                 <label>Stock</label>
-                                <input type="number" name="stock" value={formData.stock} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="5" />
+                                <input type="number" name="stock" value={formData.stock} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="1" />
                             </div>
                             <div className="admin-form-group">
                                 <label>Edad Recomendada</label>
@@ -759,34 +796,44 @@ const AdminProducts = () => {
                             
                             <div className="admin-form-group">
                                 <label>Imágenes del Producto</label>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{
-                                        display: 'inline-flex',
+                                <div 
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragEnter}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.75rem 1.5rem',
-                                        backgroundColor: '#f3f4f6',
-                                        color: '#374151',
-                                        borderRadius: '8px',
-                                        border: '1px dashed #9ca3af',
+                                        justifyContent: 'center',
+                                        padding: '2rem',
+                                        backgroundColor: isDragging ? '#fffae6' : '#f9fafb',
+                                        color: isDragging ? '#ffcf00' : '#4b5563',
+                                        borderRadius: '12px',
+                                        border: isDragging ? '2px dashed #ffcf00' : '2px dashed #d1d5db',
                                         cursor: 'pointer',
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: '1rem',
+                                        textAlign: 'center'
                                     }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e5e7eb'; e.currentTarget.style.borderColor = '#6b7280'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f3f4f6'; e.currentTarget.style.borderColor = '#9ca3af'; }}
-                                    >
-                                        <FiUploadCloud size={20} />
-                                        Subir Imágenes
-                                        <input 
-                                            type="file" 
-                                            name="imagenes" 
-                                            accept="image/*" 
-                                            multiple 
-                                            onChange={handleFileChange} 
-                                            style={{ display: 'none' }}
-                                        />
-                                    </label>
+                                    onClick={() => document.getElementById('product-image-input').click()}
+                                >
+                                    <FiUploadCloud size={36} style={{ marginBottom: '0.75rem', color: isDragging ? '#ffcf00' : '#9ca3af' }} />
+                                    <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1f2937' }}>
+                                        {isDragging ? '¡Suelta las imágenes aquí!' : 'Arrastra y suelta imágenes aquí'}
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                                        o haz clic para explorar tus archivos
+                                    </span>
+                                    <input 
+                                        id="product-image-input"
+                                        type="file" 
+                                        name="imagenes" 
+                                        accept="image/*" 
+                                        multiple 
+                                        onChange={handleFileChange} 
+                                        style={{ display: 'none' }}
+                                    />
                                 </div>
                                 
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
