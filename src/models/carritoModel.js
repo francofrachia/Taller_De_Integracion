@@ -19,7 +19,7 @@ class Carrito {
 
     static async getItems(id_carrito) {
         const result = await pool.query(`
-            SELECT lc.id_producto, lc.cantidad, lc.precio, p.nombre, p.stock, array_remove(array_agg(i.url), NULL) AS imagenes
+            SELECT lc.id_producto, lc.cantidad, lc.precio, p.nombre, p.stock, p.activo, array_remove(array_agg(i.url), NULL) AS imagenes
             FROM linea_carrito lc
             JOIN producto p ON lc.id_producto = p.id_producto
             LEFT JOIN imagen i ON p.id_producto = i.id_producto

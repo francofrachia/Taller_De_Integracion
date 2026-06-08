@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 const getFavoritosByUser = async (id_usuario) => {
     const result = await pool.query(
-        `SELECT f.id_producto, p.nombre, p.descripcion, p.precio, p.stock, 
+        `SELECT f.id_producto, p.nombre, p.descripcion, p.precio, p.stock, p.activo, 
                 (SELECT url FROM imagen WHERE id_producto = p.id_producto LIMIT 1) as imagen_url
          FROM favorito f
          JOIN producto p ON f.id_producto = p.id_producto

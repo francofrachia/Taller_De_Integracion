@@ -12,6 +12,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', productoController.getProductos);
 router.get('/promociones', productoController.getPromociones);
 router.get('/categorias', productoController.getCategorias);
+
+// --- Rutas de Administrador ---
+router.get('/admin', verificarToken, verificarAdmin, productoController.getProductosAdmin);
+
 router.get('/:id', productoController.getProductoById);
 router.get('/:id/resenas', productoController.getResenasByProductoId);
 
@@ -21,7 +25,7 @@ router.post('/:id/calificar', verificarToken, productoController.calificarProduc
 // Obtener elegibilidad de calificación del usuario para un producto
 router.get('/:id/elegibilidad-resena', verificarToken, productoController.checkReviewEligibility);
 
-// --- Rutas de Administrador ---
+// --- Más Rutas de Administrador ---
 router.post('/', verificarToken, verificarAdmin, upload.array('imagenes', 5), productoController.createProducto);
 router.put('/:id', verificarToken, verificarAdmin, upload.array('imagenes', 5), productoController.updateProducto);
 router.delete('/:id', verificarToken, verificarAdmin, productoController.deleteProducto);

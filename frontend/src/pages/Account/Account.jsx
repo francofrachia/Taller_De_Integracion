@@ -472,7 +472,7 @@ function PurchaseCard({ compra, isActive }) {
 // Componente principal: Account
 // ───────────────────────────────────────────────
 export default function Account() {
-    const { usuario, isInitialized, loading, API_URL, setUsuario, productos, favoritos, token, actualizarAvatar } = useContext(AppContext);
+    const { usuario, isInitialized, loading, API_URL, setUsuario, productos, favoritos, favoritosData, token, actualizarAvatar } = useContext(AppContext);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -1216,9 +1216,10 @@ export default function Account() {
                                     </div>
                                 ) : (
                                     <div className="products-grid" style={{ marginTop: '20px' }}>
-                                        {productos
-                                            .filter(p => favoritos.includes(p.id_producto))
-                                            .map(item => {
+                                        {favoritosData && favoritosData.length > 0 ? (
+                                            favoritosData.map(item => {
+                                                const isActiveInProducts = productos.some(p => p.id_producto === item.id_producto);
+                                                const isActivo = item.activo !== undefined ? item.activo : isActiveInProducts;
                                                 const precioNum = parseFloat(item.precio) || 0;
                                                 const productMapped = {
                                                     id: item.id_producto,
@@ -1233,10 +1234,14 @@ export default function Account() {
                                                     image: item.imagen_url,
                                                     collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
                                                     age: item.edad_recomendada || null,
-                                                    stock: item.stock || 0
+                                                    stock: item.stock || 0,
+                                                    activo: isActivo
                                                 };
                                                 return <ProductCard key={productMapped.id} product={productMapped} />;
-                                            })}
+                                            })
+                                        ) : (
+                                            <p>Cargando favoritos...</p>
+                                        )}
                                     </div>
                                 )}
                             </div>

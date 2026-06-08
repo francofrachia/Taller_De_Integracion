@@ -24,6 +24,9 @@ const createPreference = async (req, res) => {
             if (!producto) {
                 return res.status(404).json({ error: `Producto ${item.id_producto} no encontrado` });
             }
+            if (producto.activo === false) {
+                return res.status(400).json({ error: `El producto ${producto.nombre} ha sido discontinuado y ya no está disponible.` });
+            }
             if (producto.stock < item.cantidad) {
                 return res.status(400).json({ error: `No hay suficiente stock para ${producto.nombre}` });
             }

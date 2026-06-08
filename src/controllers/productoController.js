@@ -14,6 +14,16 @@ const getProductos = async (req, res) => {
     }
 };
 
+const getProductosAdmin = async (req, res) => {
+    try {
+        const productos = await Producto.getAllAdmin();
+        res.json(productos);
+    } catch (error) {
+        console.error('Error en getProductosAdmin:', error);
+        res.status(500).json({ error: 'Error al obtener productos de Supabase' });
+    }
+};
+
 const getProductoById = async (req, res) => {
     try {
         const producto = await Producto.getById(req.params.id);
@@ -262,5 +272,6 @@ module.exports = {
     createCategoria,
     updateCategoria,
     deleteCategoria,
-    getAllCategoriasAdmin
+    getAllCategoriasAdmin,
+    getProductosAdmin
 };

@@ -28,6 +28,7 @@ const Producto = {
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
             LEFT JOIN imagen i ON p.id_producto = i.id_producto
+            WHERE p.activo = true
             ORDER BY p.id_producto, i.url ASC
         `;
         const { rows } = await pool.query(query);
@@ -101,6 +102,7 @@ const Producto = {
             SELECT DISTINCT c.* 
             FROM categoria c
             JOIN producto p ON c.id_categoria = p.id_categoria
+            WHERE p.activo = true
             ORDER BY c.nombre ASC
         `;
         const { rows } = await pool.query(query);
@@ -290,11 +292,43 @@ const Producto = {
     },
 
     delete: async (id) => {
-        // En lugar de borrar físicamente (que rompería FKs), podemos marcarlo sin stock o un borrado lógico
-        // O si preferimos hard-delete:
-        const query = `DELETE FROM producto WHERE id_producto = $1 RETURNING id_producto`;
+        // Baja lógica:
+        const query = `UPDATE producto SET activo = false WHERE id_producto = $1 RETURNING id_producto`;
         const { rows } = await pool.query(query, [id]);
         return rows[0];
+    },
+
+    // Traer TODOS los productos para el panel de Admin (incluidos inactivos)
+    getAllAdmin: async () => {
+        const query = `
+            SELECT DISTINCT ON (p.id_producto) 
+                p.*, 
+                c.nombre AS categoria_nombre, 
+                i.url AS imagen_url,
+                (
+                    SELECT promo.porcentaje 
+                    FROM promocion promo 
+                    WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
+                      AND promo.fecha_inicio <= NOW() 
+                      AND promo.fecha_fin >= NOW()
+                    ORDER BY promo.porcentaje DESC
+                    LIMIT 1
+                ) AS descuento,
+                COALESCE((SELECT COUNT(*) FROM comentario com WHERE com.id_producto = p.id_producto), 0) AS resenas,
+                COALESCE((SELECT ROUND(AVG(cal.puntaje), 1) FROM calificacion cal WHERE cal.id_producto = p.id_producto), 5.0) AS calificacion,
+                COALESCE((
+                    SELECT SUM(lc.cantidad) 
+                    FROM linea_compra lc 
+                    JOIN compra com ON lc.id_compra = com.id_compra 
+                    WHERE lc.id_producto = p.id_producto AND com.estado NOT IN ('Esperando Pago', 'Cancelado')
+                ), 0) AS ventas_totales
+            FROM producto p
+            LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
+            LEFT JOIN imagen i ON p.id_producto = i.id_producto
+            ORDER BY p.id_producto, i.url ASC
+        `;
+        const { rows } = await pool.query(query);
+        return rows;
     },
 
     createCategoria: async (data) => {
