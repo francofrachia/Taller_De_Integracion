@@ -982,10 +982,10 @@ export default function Account() {
                                             borderRadius: '20px',
                                             marginTop: '6px',
                                             textTransform: 'uppercase',
-                                            backgroundColor: usuario.rol === 'administrador' ? '#EF5350' : '#FFD700',
-                                            color: usuario.rol === 'administrador' ? '#ffffff' : '#1a1a1a'
+                                            backgroundColor: usuario.rol === 'admin' ? '#EF5350' : '#FFD700',
+                                            color: usuario.rol === 'admin' ? '#ffffff' : '#1a1a1a'
                                         }}>
-                                            {usuario.rol === 'administrador' ? 'Administrador' : 'Cliente'}
+                                            {usuario.rol === 'admin' ? 'Administrador' : 'Cliente'}
                                         </span>
                                     </div>
                                     <div className="info-panel-item">

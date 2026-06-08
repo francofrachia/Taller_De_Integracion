@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
@@ -9,7 +9,11 @@ const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [localSearch, setLocalSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState(busqueda || '');
+
+  useEffect(() => {
+    setLocalSearch(busqueda || '');
+  }, [busqueda]);
 
   const filteredProducts = (localSearch && localSearch.trim().length > 0 && Array.isArray(productos)) 
     ? productos.filter(p => {
@@ -48,10 +52,10 @@ const Navbar = () => {
         </div>
         
         <ul className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
-          <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Inicio</NavLink></li>
-          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Productos</NavLink></li>
-          <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Sobre la APP</NavLink></li>
-          <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => setIsMenuOpen(false)}>Ofertas</NavLink></li>
+          <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Inicio</NavLink></li>
+          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Productos</NavLink></li>
+          <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Sobre la APP</NavLink></li>
+          <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Ofertas</NavLink></li>
         </ul>
 
         <div className="navbar-search" style={{ position: 'relative' }}>
@@ -60,7 +64,10 @@ const Navbar = () => {
             placeholder="Buscar productos..." 
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
+            onFocus={(e) => {
+              setIsSearchFocused(true);
+              e.target.select();
+            }}
             onBlur={() => setIsSearchFocused(false)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') submitSearch();

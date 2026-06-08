@@ -23,6 +23,7 @@ const AdminProducts = () => {
     const [imagenes_a_borrar, setImagenesABorrar] = useState([]);
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Buscador y panel de ofertas
     const [searchQuery, setSearchQuery] = useState('');
@@ -184,12 +185,63 @@ const AdminProducts = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        let finalCategoryId = formData.id_categoria;
+
+        if (isCreatingCategory && newCategoryName.trim()) {
+            try {
+                const catRes = await fetch(`${API_URL}/productos/categorias/admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ nombre: newCategoryName.trim() })
+                });
+                
+                if (catRes.ok) {
+                    const data = await catRes.json();
+                    if (data.categoria && data.categoria.id_categoria) {
+                        finalCategoryId = data.categoria.id_categoria;
+                        // update state for UI
+                        setFormData(prev => ({ ...prev, id_categoria: finalCategoryId }));
+                        setNewCategoryName('');
+                        setIsCreatingCategory(false);
+                        await fetchCategorias();
+                    }
+                } else {
+                    const data = await catRes.json();
+                    alert(data.error || 'Error al crear la categoría');
+                    setIsSubmitting(false);
+                    return; // Stop product creation if category fails
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de red al crear la categoría');
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
+        if (!finalCategoryId) {
+            alert("Debe seleccionar o crear una categoría para el producto.");
+            setIsSubmitting(false);
+            return;
+        }
+
         const url = editingProduct ? `${API_URL}/productos/${editingProduct.id_producto}` : `${API_URL}/productos`;
         const method = editingProduct ? 'PUT' : 'POST';
 
         const submitData = new FormData();
         Object.keys(formData).forEach(key => {
-            submitData.append(key, formData[key]);
+            if (key === 'id_categoria') {
+                submitData.append(key, finalCategoryId);
+            } else {
+                submitData.append(key, formData[key]);
+            }
         });
 
         if (imagenes_a_borrar.length > 0) {
@@ -220,6 +272,8 @@ const AdminProducts = () => {
         } catch (e) {
             console.error(e);
             alert("Error de red");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -267,7 +321,7 @@ const AdminProducts = () => {
         const method = currentPromo ? 'PUT' : 'POST';
 
         const dataToSend = {
-            descripcion: promoFormData.descripcion,
+            descripcion: 'Oferta Especial',
             porcentaje: parseFloat(promoFormData.porcentaje),
             fecha_inicio: promoFormData.fecha_inicio,
             fecha_fin: promoFormData.fecha_fin,
@@ -414,17 +468,6 @@ const AdminProducts = () => {
                         </p>
 
                         <form onSubmit={handleSavePromo}>
-                            <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descripción</label>
-                                <input 
-                                    name="descripcion" 
-                                    value={promoFormData.descripcion} 
-                                    onChange={(e) => setPromoFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                    placeholder="Ej: Oferta del mes" 
-                                    required 
-                                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                                />
-                            </div>
                             <div className="admin-form-group" style={{ marginBottom: '1rem' }}>
                                 <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151' }}>Descuento (%)</label>
                                 <input 
@@ -575,16 +618,16 @@ const AdminProducts = () => {
                                     name="descripcion" 
                                     value={formData.descripcion} 
                                     onChange={handleChange} 
-                                    style={{ resize: 'vertical', minHeight: '100px', maxHeight: '300px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
+                                    style={{ resize: 'none', height: '100px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontFamily: 'inherit' }}
                                 />
                             </div>
                             <div className="admin-form-group">
                                 <label>Precio</label>
-                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} required min="1" step="1"/>
+                                <input type="number" name="precio" value={formData.precio} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="100"/>
                             </div>
                             <div className="admin-form-group">
                                 <label>Stock</label>
-                                <input type="number" name="stock" value={formData.stock} onChange={handleChange} required min="0" />
+                                <input type="number" name="stock" value={formData.stock} onChange={handleChange} onWheel={(e) => e.target.blur()} required min="0" step="5" />
                             </div>
                             <div className="admin-form-group">
                                 <label>Edad Recomendada</label>
@@ -753,7 +796,9 @@ const AdminProducts = () => {
 
                             <div className="admin-modal-actions">
                                 <button type="button" className="admin-btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                                <button type="submit" className="admin-btn primary">Guardar</button>
+                                <button type="submit" className="admin-btn primary" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Guardando...' : 'Guardar'}
+                                </button>
                             </div>
                         </form>
                     </div>

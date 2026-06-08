@@ -398,7 +398,9 @@ const ProductDetail = () => {
               </button>
 
               {product.images.length > 1 && (
-                <button className="gallery-arrow prev" onClick={prevImage}>&lt;</button>
+                <button className="gallery-arrow prev" onClick={prevImage}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+                </button>
               )}
               <img
                 src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]}
@@ -410,7 +412,9 @@ const ProductDetail = () => {
                 }}
               />
               {product.images.length > 1 && (
-                <button className="gallery-arrow next" onClick={nextImage}>&gt;</button>
+                <button className="gallery-arrow next" onClick={nextImage}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+                </button>
               )}
             </div>
           </div>
@@ -527,7 +531,9 @@ const ProductDetail = () => {
         <section className="related-products-section">
           <SectionHeader title="Artículos relacionados" />
           <div className="carousel-wrapper">
-            <button className="carousel-btn left" onClick={() => scrollCarousel('left')}>&lt;</button>
+            <button className="carousel-btn left" onClick={() => scrollCarousel('left')}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+            </button>
             <div className={`carousel-container ${relatedProducts.length === 1 ? 'carousel-centered' : ''}`} ref={carouselRef}>
               {relatedProducts.map(prod => (
                 <div className="carousel-item" key={prod.id}>
@@ -535,7 +541,9 @@ const ProductDetail = () => {
                 </div>
               ))}
             </div>
-            <button className="carousel-btn right" onClick={() => scrollCarousel('right')}>&gt;</button>
+            <button className="carousel-btn right" onClick={() => scrollCarousel('right')}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+            </button>
           </div>
         </section>
 
