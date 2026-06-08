@@ -9,6 +9,7 @@ export function AppProvider({ children }) {
     const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
     const [cartCount, setCartCount] = useState(0);
     const [favoritos, setFavoritos] = useState([]);
+    const [favoritosData, setFavoritosData] = useState([]);
     const [usuario, setUsuario] = useState(null);
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -39,6 +40,7 @@ export function AppProvider({ children }) {
         setCart(null);
         setCartCount(0);
         setFavoritos([]); // Limpiar favoritos también al cerrar sesión
+        setFavoritosData([]);
         localStorage.removeItem('usuario_bloquemundo');
         sessionStorage.removeItem('usuario_bloquemundo');
         localStorage.removeItem('token_bloquemundo');
@@ -386,6 +388,7 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 const data = await response.json();
                 setFavoritos(data.favoritos.map(f => f.id_producto)); // Guardamos solo IDs en el contexto para acceso rápido
+                setFavoritosData(data.favoritos); // Guardamos la info completa para mostrar inactivos
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida detectada al obtener favoritos. Auto-logout.");
                 logout();
@@ -409,8 +412,11 @@ export function AppProvider({ children }) {
         // Actualización optimista
         if (isFav) {
             setFavoritos(prev => prev.filter(id => id !== id_producto));
+            setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
         } else {
             setFavoritos(prev => [...prev, id_producto]);
+            const prod = productos.find(p => p.id_producto === id_producto);
+            if (prod) setFavoritosData(prev => [...prev, prod]);
         }
 
         try {
@@ -424,8 +430,14 @@ export function AppProvider({ children }) {
             });
             if (!response.ok) {
                 // Revertir en caso de error
-                if (isFav) setFavoritos(prev => [...prev, id_producto]);
-                else setFavoritos(prev => prev.filter(id => id !== id_producto));
+                if (isFav) {
+                    setFavoritos(prev => [...prev, id_producto]);
+                    const prod = productos.find(p => p.id_producto === id_producto);
+                    if (prod) setFavoritosData(prev => [...prev, prod]);
+                } else {
+                    setFavoritos(prev => prev.filter(id => id !== id_producto));
+                    setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+                }
 
                 if (response.status === 401 || response.status === 403) {
                     console.warn("Sesión expirada o inválida al hacer toggle en favoritos. Auto-logout.");
@@ -434,8 +446,14 @@ export function AppProvider({ children }) {
             }
         } catch (error) {
             console.error("Error al hacer toggle en favoritos:", error);
-            if (isFav) setFavoritos(prev => [...prev, id_producto]);
-            else setFavoritos(prev => prev.filter(id => id !== id_producto));
+            if (isFav) {
+                setFavoritos(prev => [...prev, id_producto]);
+                const prod = productos.find(p => p.id_producto === id_producto);
+                if (prod) setFavoritosData(prev => [...prev, prod]);
+            } else {
+                setFavoritos(prev => prev.filter(id => id !== id_producto));
+                setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+            }
         }
     }
 
@@ -587,6 +605,7 @@ export function AppProvider({ children }) {
             removerDelCarrito,
             vaciarCarrito,
             favoritos,
+            favoritosData,
             toggleFavorito,
             usuario,
             setUsuario,

@@ -109,7 +109,11 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
       <div className="product-card-actions">
-        {product.stock > 0 ? (
+        {product.activo === false ? (
+          <button className="add-to-cart-btn out-of-stock-btn" disabled style={{ backgroundColor: '#ffcccc', color: '#cc0000', border: '1px solid #cc0000' }}>
+            Discontinuado
+          </button>
+        ) : product.stock > 0 ? (
           <button className="add-to-cart-btn" onClick={handleAddCart}>
             Agregar al Carrito
           </button>

@@ -10,10 +10,14 @@ const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(price);
 };
 
-// Helper puro (DRY) para obtener el stock real, centralizando la lógica
 const getRealStock = (item, productos) => {
     const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
     return productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
+};
+
+const isProductActive = (item, productos) => {
+    if (item.activo !== undefined) return item.activo;
+    return productos ? productos.some(p => p.id_producto === item.id_producto) : true;
 };
 
 // Componente extraído para adherirse a Single Responsibility Principle
@@ -29,12 +33,13 @@ const CartItemComponent = React.memo(({
     onLocalQtyChange, 
     onQuantityBlur 
 }) => {
+    const isActive = isProductActive(item, productos);
     const itemStock = getRealStock(item, productos);
     const outOfStock = itemStock === 0;
     const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
 
     return (
-        <div className={`cart-item ${outOfStock ? 'cart-item--out-of-stock' : (isInvalidQty ? 'cart-item--stock-issue' : '')}`}>
+        <div className={`cart-item ${!isActive ? 'cart-item--discontinued' : outOfStock ? 'cart-item--out-of-stock' : (isInvalidQty ? 'cart-item--stock-issue' : '')}`} style={!isActive ? { opacity: 0.8, backgroundColor: '#fff5f5' } : {}}>
             <div className="item-product">
                 <button className="remove-btn" onClick={() => onRemove(item.id_producto)} title="Eliminar"><MdDeleteOutline /></button>
                 <Link to={`/producto/${item.id_producto}`} style={{ display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit' }}>
@@ -43,12 +48,16 @@ const CartItemComponent = React.memo(({
                     ) : (
                         <div className="img-placeholder"></div>
                     )}
-                    <span className="item-name">{item.nombre}</span>
+                    <span className="item-name" style={!isActive ? { textDecoration: 'line-through', color: '#cc0000' } : {}}>{item.nombre}</span>
                 </Link>
             </div>
             <div className="item-price">{formatPrice(item.precio)}</div>
             <div className="item-quantity">
-                {!outOfStock && (
+                {!isActive ? (
+                    <div className="discontinued-badge" style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center' }}>
+                        Producto Discontinuado
+                    </div>
+                ) : !outOfStock ? (
                     <div className={`quantity-controls-inline ${isInvalidQty ? 'qty-controls-error' : ''}`}>
                         <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>-</button>
                         <input
@@ -64,23 +73,23 @@ const CartItemComponent = React.memo(({
                         />
                         <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>+</button>
                     </div>
-                )}
-                {(isInvalidQty || outOfStock) && (
+                ) : null}
+                {isActive && (isInvalidQty || outOfStock) && (
                     <div className={outOfStock ? "out-of-stock-badge" : "qty-error-msg"}>
                         {outOfStock ? 'Agotado' : `Máx: ${itemStock} u`}
                     </div>
                 )}
             </div>
             <div className="item-total">
-                {formatPrice(outOfStock ? 0 : (item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)))}
+                {formatPrice((outOfStock || !isActive) ? 0 : (item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)))}
             </div>
             <div className="item-select" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <button 
                     className="select-btn" 
-                    style={{ background: 'none', border: 'none', cursor: itemStock > 0 ? 'pointer' : 'not-allowed', fontSize: '24px', color: (itemStock > 0 && selected) ? 'var(--primary-yellow)' : '#ccc' }}
-                    onClick={() => itemStock > 0 && onToggleSelection(item.id_producto)}
+                    style={{ background: 'none', border: 'none', cursor: (isActive && itemStock > 0) ? 'pointer' : 'not-allowed', fontSize: '24px', color: (isActive && itemStock > 0 && selected) ? 'var(--primary-yellow)' : '#ccc' }}
+                    onClick={() => isActive && itemStock > 0 && onToggleSelection(item.id_producto)}
                 >
-                    {(itemStock > 0 && selected) ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                    {(isActive && itemStock > 0 && selected) ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
                 </button>
             </div>
         </div>
@@ -239,7 +248,17 @@ export default function Cart() {
         });
     }, [cart, productos, selectedItems]);
 
+    const hasDiscontinuedItems = useMemo(() => {
+        if (!cart?.items || !productos) return false;
+        return cart.items.some(item => !isProductActive(item, productos));
+    }, [cart, productos]);
+
     const handleCheckout = () => {
+        if (hasDiscontinuedItems) {
+            alert('Tu carrito tiene productos que no están disponibles para la compra (discontinuados). Por favor eliminalos para continuar.');
+            return;
+        }
+
         const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
         
         if (selectedIds.length === 0) {
@@ -406,7 +425,7 @@ export default function Cart() {
                                     <button
                                         className="btn-yellow full-width"
                                         onClick={handleCheckout}
-                                        disabled={hasAnyQtyError}
+                                        disabled={hasAnyQtyError || hasDiscontinuedItems}
                                     >
                                         Comprar
                                     </button>

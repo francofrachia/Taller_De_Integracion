@@ -179,7 +179,8 @@ const ProductDetail = () => {
           stock: data.stock,
           images: data.imagenes && data.imagenes.length > 0 ? data.imagenes : [placeholderProduct],
           rating: parseFloat(data.calificacion) || 5,
-          reviews: parseInt(data.resenas || data.reseñas) || 0
+          reviews: parseInt(data.resenas || data.reseñas) || 0,
+          activo: data.activo
         });
 
         // Ahora que tenemos la categoría, buscamos los relacionados y las reseñas en paralelo
@@ -471,6 +472,12 @@ const ProductDetail = () => {
               <p><strong>Descripción:</strong> {product.description}</p>
             </div>
 
+            {product.activo === false && (
+              <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '1rem', borderRadius: '8px', marginTop: '1rem', border: '1px solid #fca5a5', fontWeight: 'bold' }}>
+                Este producto ha sido descontinuado o eliminado y ya no se encuentra disponible para la compra.
+              </div>
+            )}
+
             <hr className="divider" />
 
             <div className="product-actions">
@@ -493,9 +500,9 @@ const ProductDetail = () => {
                 <button
                   className="buy-now-btn"
                   onClick={handleBuyNow}
-                  disabled={isProcessingPayment || product.stock <= 0 || quantity > product.stock}
+                  disabled={isProcessingPayment || product.stock <= 0 || quantity > product.stock || product.activo === false}
                 >
-                  {isProcessingPayment ? 'Procesando...' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
+                  {isProcessingPayment ? 'Procesando...' : product.activo === false ? 'No disponible' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
                 <button
                   className="add-to-cart-btn"
@@ -508,7 +515,7 @@ const ProductDetail = () => {
                       navigate('/login');
                     }
                   }}
-                  disabled={product.stock <= 0 || quantity > product.stock}
+                  disabled={product.stock <= 0 || quantity > product.stock || product.activo === false}
                 >
                   Agregar al Carrito
                 </button>

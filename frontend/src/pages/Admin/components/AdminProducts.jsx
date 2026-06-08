@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
-import { FiEdit2, FiUploadCloud, FiX, FiSearch } from 'react-icons/fi';
+import { FiEdit2, FiUploadCloud, FiX, FiSearch, FiTrash2 } from 'react-icons/fi';
 
 const AdminProducts = () => {
     const { token, API_URL, productos, obtenerProductos, obtenerPromociones } = useContext(AppContext);
@@ -36,11 +36,27 @@ const AdminProducts = () => {
         fecha_fin: ''
     });
 
+    const fetchAdminProductos = async () => {
+        try {
+            const res = await fetch(`${API_URL}/productos/admin`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setLocalProducts(data);
+            }
+        } catch (e) {
+            console.error("Error fetching admin products", e);
+        }
+    };
+
     useEffect(() => {
-        setLocalProducts(productos);
+        fetchAdminProductos();
         fetchCategorias();
         fetchAllPromotions();
-    }, [productos]);
+    }, []);
 
     // Llenar campos de promoción al seleccionar un producto
     useEffect(() => {
@@ -265,6 +281,7 @@ const AdminProducts = () => {
                 alert(editingProduct ? 'Producto actualizado' : 'Producto creado');
                 setIsModalOpen(false);
                 if (obtenerProductos) await obtenerProductos();
+                await fetchAdminProductos();
             } else {
                 const data = await res.json();
                 alert(data.error || 'Error al guardar');
@@ -274,6 +291,29 @@ const AdminProducts = () => {
             alert("Error de red");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteProduct = async (id) => {
+        if (!window.confirm('¿Estás seguro de eliminar este producto? Se ocultará de la tienda.')) return;
+        try {
+            const res = await fetch(`${API_URL}/productos/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                alert('Producto eliminado exitosamente');
+                if (obtenerProductos) await obtenerProductos();
+                await fetchAdminProductos();
+                if (selectedProduct && selectedProduct.id_producto === id) setSelectedProduct(null);
+            } else {
+                alert('Error al eliminar el producto');
+            }
+        } catch (e) {
+            console.error("Error deleting product", e);
+            alert("Error de red");
         }
     };
 
@@ -553,7 +593,10 @@ const AdminProducts = () => {
                                         }}
                                     >
                                         <td>{p.id_producto}</td>
-                                        <td style={{ fontWeight: '600', color: '#1f2937' }}>{p.nombre}</td>
+                                        <td style={{ fontWeight: '600', color: '#1f2937' }}>
+                                            {p.nombre}
+                                            {p.activo === false && <span style={{ color: '#ef4444', fontSize: '0.75rem', marginLeft: '8px', fontWeight: 'bold' }}>(Eliminado)</span>}
+                                        </td>
                                         <td>{p.categoria_nombre || 'Sin categoría'}</td>
                                         <td>${parseFloat(p.precio).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                                         <td>{p.stock}</td>
@@ -584,6 +627,15 @@ const AdminProducts = () => {
                                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
                                             >
                                                 <FiEdit2 size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteProduct(p.id_producto)} 
+                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '6px', borderRadius: '4px', transition: 'all 0.2s', marginLeft: '4px' }}
+                                                title="Eliminar Producto"
+                                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                            >
+                                                <FiTrash2 size={18} />
                                             </button>
                                         </td>
                                     </tr>
