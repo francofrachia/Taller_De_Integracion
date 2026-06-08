@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
+import { FiSearch, FiHeart, FiShoppingCart, FiLogOut, FiUser } from 'react-icons/fi';
 
 const Navbar = () => {
   const { busqueda, setBusqueda, productos, cartCount, favoritos, usuario, logout, loginTooltipVisible, setLoginTooltipVisible } = useContext(AppContext);
@@ -45,20 +46,66 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container container">
+        <button 
+          className={`mobile-menu-btn ${isMenuOpen ? 'open' : ''}`} 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className="burger-line"></span>
+          <span className="burger-line"></span>
+          <span className="burger-line"></span>
+        </button>
+
         <div className="navbar-logo">
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <h1>Bloque Mundo</h1>
+          <Link to="/">
+            <h1>
+              <span className="logo-word bloq">Bloque</span>
+              <span className="logo-word mund">Mundo</span>
+            </h1>
           </Link>
         </div>
         
         <ul className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
-          <li><NavLink to="/" end className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Inicio</NavLink></li>
-          <li><NavLink to="/productos" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Productos</NavLink></li>
-          <li><NavLink to="/nosotros" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Sobre la APP</NavLink></li>
-          <li><NavLink to="/promociones" className={({ isActive }) => isActive ? "active-link" : ""} onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}>Ofertas</NavLink></li>
+          <li>
+            <NavLink 
+              to="/" 
+              end 
+              className={({ isActive }) => isActive ? "active-link" : ""} 
+              onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}
+            >
+              Inicio
+            </NavLink>
+          </li>
+          <li>
+            <NavLink 
+              to="/productos" 
+              className={({ isActive }) => isActive ? "active-link" : ""} 
+              onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}
+            >
+              Productos
+            </NavLink>
+          </li>
+          <li>
+            <NavLink 
+              to="/nosotros" 
+              className={({ isActive }) => isActive ? "active-link" : ""} 
+              onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}
+            >
+              Sobre la APP
+            </NavLink>
+          </li>
+          <li>
+            <NavLink 
+              to="/promociones" 
+              className={({ isActive }) => isActive ? "active-link" : ""} 
+              onClick={() => { setIsMenuOpen(false); setLocalSearch(''); setBusqueda(''); }}
+            >
+              Ofertas
+            </NavLink>
+          </li>
         </ul>
 
-        <div className="navbar-search" style={{ position: 'relative' }}>
+        <div className="navbar-search">
           <input 
             type="text" 
             placeholder="Buscar productos..." 
@@ -73,10 +120,8 @@ const Navbar = () => {
               if (e.key === 'Enter') submitSearch();
             }}
           />
-          <button className="search-btn" onClick={submitSearch}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-            </svg>
+          <button className="search-btn" onClick={submitSearch} aria-label="Buscar">
+            <FiSearch size={18} />
           </button>
           
           {isSearchFocused && localSearch.trim().length > 0 && (
@@ -121,13 +166,10 @@ const Navbar = () => {
           <Link 
             to={usuario ? "/cuenta" : "/login"} 
             state={usuario ? { section: 'favoritos' } : null}
-            className="icon-btn" 
+            className="icon-btn favorites-link" 
             title="Favoritos"
-            style={{ position: 'relative', textDecoration: 'none', color: 'inherit' }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
-            </svg>
+            <FiHeart size={20} />
             {favoritos && favoritos.length > 0 && (
               <span className="navbar-badge">
                 {favoritos.length}
@@ -135,10 +177,8 @@ const Navbar = () => {
             )}
           </Link>
           
-          <Link to="/carrito" className="icon-btn" title="Carrito" style={{ position: 'relative', textDecoration: 'none' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l.84 4.479 9.144-.459L13.89 4H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-            </svg>
+          <Link to="/carrito" className="icon-btn cart-link" title="Carrito">
+            <FiShoppingCart size={20} />
             {cartCount > 0 && (
               <span className="navbar-badge">
                 {cartCount}
@@ -147,106 +187,68 @@ const Navbar = () => {
           </Link>
 
           {usuario && usuario.id_usuario ? (
-            <div className="user-menu">
+            <div className={`user-menu ${usuario.rol === 'admin' ? 'is-admin' : ''}`}>
+              {usuario.rol === 'admin' && (
+                <button onClick={() => navigate('/admin')} className="icon-btn navbar-admin-btn" title="Panel de Administrador">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 -960 960 960">
+                    <path d="M722.5-297.5Q740-315 740-340t-17.5-42.5Q705-400 680-400t-42.5 17.5Q620-365 620-340t17.5 42.5Q655-280 680-280t42.5-17.5ZM680-160q31 0 57-14.5t42-38.5q-22-13-47-20t-52-7q-27 0-52 7t-47 20q16 24 42 38.5t57 14.5ZM480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v227q-19-8-39-14.5t-41-9.5v-147l-240-90-240 90v188q0 47 12.5 94t35 89.5Q310-290 342-254t71 60q11 32 29 61t41 52q-1 0-1.5.5t-1.5.5Zm200 0q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80ZM480-494Z"/>
+                  </svg>
+                </button>
+              )}
+
               <Link
                 to="/cuenta"
                 className="user-profile-link"
                 title="Mi Cuenta"
               >
-                <img 
-                  src={usuario.avatar_url || "/images/logo mario.png"} 
-                  alt="Avatar" 
-                  className="navbar-avatar" 
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    border: '2px solid #ffffff',
-                    objectFit: 'cover',
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                  }}
-                />
-                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-dark)', lineHeight: '1.1', textAlign: 'center' }}>
+                <div className="avatar-wrapper">
+                  <img 
+                    src={usuario.avatar_url || "/images/logo mario.png"} 
+                    alt="Avatar" 
+                    className="navbar-avatar" 
+                  />
+                  {usuario.rol === 'admin' && (
+                    <div className="admin-badge">
+                      ADMIN
+                    </div>
+                  )}
+                </div>
+                <span className="username-text">
                   {usuario.nombre}
                 </span>
               </Link>
-              {usuario.rol === 'admin' && (
-                <Link to="/admin" className="icon-btn" title="Panel de Administrador">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
-                  </svg>
-                </Link>
-              )}
+              
               <button onClick={handleLogout} className="icon-btn logout-btn" title="Cerrar Sesión">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-box-arrow-right" viewBox="0 0 16 16">
-                  <path fillRule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-                  <path fillRule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
-                </svg>
+                <FiLogOut size={24} />
               </button>
             </div>
           ) : (
-            <div style={{ position: 'relative' }}>
-              <Link onClick={() => setLoginTooltipVisible(false)} to="/login" className="icon-btn" title="Iniciar Sesión" style={{ position: 'relative', zIndex: loginTooltipVisible ? 10001 : 1, backgroundColor: loginTooltipVisible ? 'white' : 'transparent', color: loginTooltipVisible ? 'var(--primary-yellow)' : 'inherit', borderRadius: '50%' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                </svg>
+            <div className="login-btn-wrapper">
+              <Link 
+                onClick={() => setLoginTooltipVisible(false)} 
+                to="/login" 
+                className={`icon-btn login-link ${loginTooltipVisible ? 'tooltip-active' : ''}`} 
+                title="Iniciar Sesión"
+              >
+                <FiUser size={20} />
               </Link>
               {loginTooltipVisible && (
                 <>
                   <div 
                     className="login-overlay-backdrop" 
                     onClick={() => setLoginTooltipVisible(false)}
-                    style={{
-                      position: 'fixed',
-                      top: 0, left: 0, right: 0, bottom: 0,
-                      backgroundColor: 'rgba(0,0,0,0.7)',
-                      zIndex: 10000
-                    }}
                   />
-                  <div 
-                    className="login-tooltip-bubble"
-                    style={{
-                      position: 'absolute',
-                      top: '150%',
-                      right: '-5px',
-                      backgroundColor: 'white',
-                      color: '#111',
-                      padding: '12px 18px',
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-                      zIndex: 10001,
-                      width: 'max-content',
-                      fontWeight: '700',
-                      animation: 'fadeInUp 0.3s ease-out'
-                    }}
-                  >
+                  <div className="login-tooltip-bubble">
                     Debes iniciar sesión para realizar esta acción
-                    <div style={{
-                      position: 'absolute',
-                      top: '-6px',
-                      right: '15px',
-                      width: '12px',
-                      height: '12px',
-                      backgroundColor: 'white',
-                      transform: 'rotate(45deg)'
-                    }}></div>
+                    <div className="login-tooltip-arrow"></div>
                   </div>
                 </>
               )}
             </div>
           )}
         </div>
-
-        <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
-          )}
-        </button>
       </div>
+      {isMenuOpen && <div className="mobile-menu-backdrop" onClick={() => setIsMenuOpen(false)} />}
     </nav>
   );
 };

@@ -1,10 +1,24 @@
+/* ==========================================================================
+   Design Variables & Reset Hooks
+   ========================================================================== */
+:root {
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shadow-premium: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+  --shadow-dropdown: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --color-lego-red: #ef4444;
+  --color-lego-orange: #e65100;
+  --color-lego-blue: #002fbe;
+}
+
 .navbar {
-  background-color: var(--primary-yellow);
-  padding: 15px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(180deg, var(--primary-yellow) 0%, #ffcf00 100%);
+  padding: 12px 0;
+  box-shadow: var(--shadow-premium);
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .navbar-container {
@@ -13,8 +27,17 @@
   align-items: center;
 }
 
+/* ==========================================================================
+   Logo & Branding
+   ========================================================================== */
 .navbar-logo {
-  min-width: 160px; /* Reserva espacio fijo para evitar que los links se peguen al título */
+  min-width: 160px;
+}
+
+.navbar-logo a {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
 }
 
 .navbar-logo h1 {
@@ -22,29 +45,70 @@
   font-weight: 800;
   margin: 0;
   color: var(--text-dark);
+  letter-spacing: -0.5px;
+  display: inline-flex;
+  align-items: center;
+  transition: none;
 }
 
+.logo-word {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), text-shadow 0.3s ease;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.08);
+}
+
+.logo-word.bloq {
+  margin-right: 5px;
+}
+
+.navbar-logo:hover .logo-word.bloq {
+  transform: translateY(-3px) rotate(-1.5deg);
+  text-shadow: 2px 4px 0px rgba(0, 0, 0, 0.12), -1px -1px 0px rgba(255, 255, 255, 0.15);
+}
+
+.navbar-logo:hover .logo-word.mund {
+  transform: translateY(-2px) rotate(1.5deg);
+  text-shadow: 2px 3px 0px rgba(0, 0, 0, 0.12), -1px -1px 0px rgba(255, 255, 255, 0.15);
+}
+
+.navbar-logo h1::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-lego-red);
+  border-radius: 1.5px;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.4);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.navbar-logo:hover h1::after {
+  transform: scale(1.3) translateY(-4px);
+}
+
+/* ==========================================================================
+   Navigation Links
+   ========================================================================== */
 .navbar-links {
   display: flex;
-  gap: 30px;
+  gap: 28px;
+  align-items: center;
 }
 
 .navbar-links a {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13.5px;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--text-dark); /* Negro explícito */
+  color: var(--text-dark);
   position: relative;
-  padding-bottom: 5px;
+  padding: 6px 2px;
+  letter-spacing: 0.5px;
+  transition: var(--transition-smooth);
 }
 
-.navbar-links a:hover {
-  text-decoration: none;
-  opacity: 0.7;
-}
-
-.navbar-links a.active-link::after {
+.navbar-links a::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -52,38 +116,29 @@
   width: 100%;
   height: 3px;
   background-color: var(--text-dark);
-  border-radius: 2px;
-}
-
-.navbar-search {
-  display: flex;
-  align-items: center;
-  background: white;
   border-radius: 4px;
-  padding: 5px 10px;
-  width: 300px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.navbar-search input {
-  border: none;
-  outline: none;
-  flex: 1;
-  padding: 5px;
-  font-size: 14px;
+.navbar-links a:hover {
+  opacity: 1;
+  color: #000;
 }
 
-.search-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-gray);
-  padding: 5px;
+.navbar-links a:hover::after,
+.navbar-links a.active-link::after {
+  transform: scaleX(1);
 }
 
+/* ==========================================================================
+   Interactive Action Buttons & Icons
+   ========================================================================== */
 .navbar-icons {
   display: flex;
-  align-items: center; /* Centrado vertical perfecto de todos los iconos */
-  gap: 18px; /* Espaciado premium equilibrado */
+  align-items: center;
+  gap: 16px;
 }
 
 .icon-btn {
@@ -94,121 +149,170 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5px;
-  transition: transform 0.2s;
+  padding: 8px;
+  border-radius: 50%;
+  transition: var(--transition-smooth);
+  position: relative;
 }
 
 .icon-btn:hover {
-  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.35);
+  color: #000;
 }
 
-.mobile-menu-btn {
-  display: none;
+/* Micro-animations */
+.favorites-link:hover svg {
+  animation: heartPulse 0.6s ease-in-out infinite alternate;
 }
 
-@media (max-width: 900px) {
-  .navbar-container {
-    flex-wrap: wrap;
-    gap: 8px;
-    position: relative;
-    justify-content: space-between;
-  }
-  .navbar-logo {
-    order: 2;
-    flex: 1;
-    text-align: center;
-    min-width: 0;
-  }
-  .navbar-logo h1 {
-    font-size: 18px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .navbar-icons {
-    order: 3;
-    margin-left: 0;
-    gap: 10px;
-  }
-  .mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    order: 1;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-dark);
-    padding: 2px;
-    margin-left: 0;
-  }
-  .navbar-search {
-    order: 4;
-    width: 100%;
-    margin-top: 5px;
-  }
-  .navbar-links {
-    display: none;
-    order: 5;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    background-color: var(--primary-yellow);
-    padding: 15px 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    z-index: 100;
-  }
-  .navbar-links.active {
-    display: flex;
-  }
+@keyframes heartPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.18); }
 }
 
-/* Estilos Premium de Avatar en la Navbar */
-.user-profile-link {
+.cart-link {
+  transition: var(--transition-smooth);
+}
+
+.cart-link:hover svg {
+  animation: cartBounce 0.5s ease-out;
+}
+
+@keyframes cartBounce {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  33% { transform: translateY(-4px) rotate(-4deg); }
+  66% { transform: translateY(-2px) rotate(4deg); }
+}
+
+/* Badge count styling */
+.navbar-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background-color: var(--color-lego-red);
+  color: white;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 800;
+  width: 17px;
+  height: 17px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  text-decoration: none;
-  cursor: pointer;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.35);
+  border: 1.5px solid var(--primary-yellow);
+  pointer-events: none;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.user-profile-link span {
-  transition: color 0.2s ease-in-out;
+@keyframes popIn {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
 }
 
-.user-profile-link:hover span {
-  color: #1a202c;
-  text-decoration: none !important;
-}
-
+/* ==========================================================================
+   User Account Actions (Avatar, Admin Badge, Sliders)
+   ========================================================================== */
 .user-menu {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0;
-  padding-right: 32px; /* Constant reserved space to prevent the avatar from moving! */
+  padding-right: 42px;
+  transition: var(--transition-smooth);
 }
 
+.user-menu.is-admin {
+  padding-left: 42px;
+}
+
+.user-profile-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.navbar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  object-fit: cover;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: var(--transition-smooth);
+}
+
+.user-profile-link:hover .navbar-avatar {
+  transform: scale(1.08) rotate(3deg);
+  border-color: var(--color-lego-red);
+}
+
+.admin-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-lego-orange);
+  color: white;
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid white;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.username-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.2;
+  text-align: center;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+  transition: color 0.2s ease;
+}
+
+.user-profile-link:hover .username-text {
+  color: #000;
+}
+
+/* Absolute Sliding Buttons (Admin Panel & Logout) */
 .logout-btn {
   position: absolute;
-  right: 4px; /* Placed inside the reserved space */
+  right: 4px;
   top: 50%;
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-50%) translateX(-8px) scale(0.75); /* Slides to the right when appearing */
-  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-50%) translateX(-14px) scale(0.6);
+  transition: var(--transition-spring);
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-dark);
+  border-radius: 50%;
+}
+
+.logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+  color: var(--color-lego-red);
 }
 
 .user-menu:hover .logout-btn {
@@ -219,53 +323,198 @@
 
 .user-menu:hover .logout-btn:hover {
   opacity: 1;
-  transform: translateY(-50%) translateX(0) scale(1.12);
+  transform: translateY(-50%) translateX(0) scale(1.15);
 }
 
-.navbar-avatar {
-  transition: transform 0.2s ease-in-out, border-color 0.2s ease-in-out;
-}
-
-.user-profile-link:hover .navbar-avatar {
-  transform: scale(1.15) rotate(5deg);
-  border-color: #e65100 !important; /* Lego Orange border */
-}
-
-/* Grey Circular Badge (Favorites and Cart) */
-.navbar-badge {
+.navbar-admin-btn {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: #858585; /* Exact premium medium-dark grey from mockup */
-  color: white;
-  border-radius: 50%;
-  font-size: 10px;
-  font-weight: 700;
-  width: 16px;
-  height: 16px;
+  left: 4px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  pointer-events: none; /* Allows clicks to pass through to the underling Link */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-50%) translateX(14px) scale(0.6);
+  transition: var(--transition-spring);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+.navbar-admin-btn:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+  color: var(--color-lego-blue);
+}
+
+.user-menu:hover .navbar-admin-btn {
+  opacity: 0.85;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+.user-menu:hover .navbar-admin-btn:hover {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) scale(1.15);
 }
 
 /* ==========================================================================
-   Navbar Predictive Search Dropdown
+   Login Wrapper & Modals
    ========================================================================== */
+.login-btn-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-link {
+  transition: var(--transition-smooth);
+}
+
+.login-link.tooltip-active {
+  background-color: white;
+  color: var(--primary-yellow);
+}
+
+.login-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.login-tooltip-bubble {
+  position: absolute;
+  top: 150%;
+  right: -5px;
+  background-color: white;
+  color: var(--text-dark);
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-dropdown);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 10001;
+  width: max-content;
+  font-weight: 700;
+  font-size: 13px;
+  animation: fadeInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.login-tooltip-arrow {
+  position: absolute;
+  top: -6px;
+  right: 15px;
+  width: 12px;
+  height: 12px;
+  background-color: white;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ==========================================================================
+   Predictive Search Input & Autocomplete Dropdown
+   ========================================================================== */
+.navbar-search {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 99px;
+  padding: 4px 14px;
+  width: 260px;
+  transition: var(--transition-smooth);
+  position: relative;
+}
+
+.navbar-search:focus-within {
+  width: 310px;
+  background: #ffffff;
+  border-color: var(--text-dark);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.navbar-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 6px 2px;
+  font-size: 13.5px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-dark);
+}
+
+.navbar-search input::placeholder {
+  color: var(--text-gray);
+  opacity: 0.6;
+}
+
+.search-btn {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  color: var(--text-dark);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.search-btn:hover {
+  transform: scale(1.15);
+  color: #000;
+}
+
+.search-btn:focus,
+.search-btn:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 .navbar-search-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  margin-top: 10px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-dropdown);
   overflow: hidden;
   z-index: 1000;
-  border: 1px solid rgba(0,0,0,0.05);
-  animation: fadeInDown 0.2s ease-out;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: fadeInDown 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 @keyframes fadeInDown {
@@ -285,32 +534,38 @@
   padding: 12px 16px;
   gap: 15px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  transition: var(--transition-smooth);
 }
 
 .search-dropdown-item:hover {
-  background-color: var(--bg-light, #f8f9fa);
+  background-color: #f7f8fa;
 }
 
 .search-dropdown-item img {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
-  background-color: #f0f0f0;
-  border-radius: 6px;
-  padding: 2px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease;
+}
+
+.search-dropdown-item:hover img {
+  transform: scale(1.05);
 }
 
 .search-dropdown-item-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
 }
 
 .search-dropdown-item-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-dark);
   white-space: nowrap;
   overflow: hidden;
@@ -320,31 +575,167 @@
 
 .search-dropdown-item-price {
   font-size: 12px;
-  font-weight: 700;
-  color: var(--primary-yellow, #ffcc00);
-  text-shadow: 0px 0px 1px rgba(0,0,0,0.3);
+  font-weight: 800;
+  color: var(--color-lego-red);
 }
 
 .search-dropdown-view-all {
   padding: 12px;
   text-align: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: #1a1a1a;
-  background-color: #f8f9fa;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-dark);
+  background-color: #fafbfc;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-smooth);
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .search-dropdown-view-all:hover {
   background-color: var(--primary-yellow);
-  color: var(--text-dark);
 }
 
 .search-dropdown-empty {
-  padding: 16px;
+  padding: 18px;
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-gray);
   font-style: italic;
+}
+
+/* ==========================================================================
+   Mobile Morphing Hamburger Button & Side Drawer Panel
+   ========================================================================== */
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 102;
+}
+
+.burger-line {
+  width: 100%;
+  height: 2.5px;
+  background-color: var(--text-dark);
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: left center;
+}
+
+.mobile-menu-btn.open .burger-line:nth-child(1) {
+  transform: rotate(45deg) translate(2.5px, -1px);
+}
+
+.mobile-menu-btn.open .burger-line:nth-child(2) {
+  width: 0%;
+  opacity: 0;
+}
+
+.mobile-menu-btn.open .burger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(2.5px, 1px);
+}
+
+.mobile-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  z-index: 99;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ==========================================================================
+   Responsive Configurations
+   ========================================================================== */
+@media (max-width: 900px) {
+  .navbar-container {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .navbar-logo {
+    order: 2;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .navbar-logo h1 {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .navbar-icons {
+    order: 3;
+    margin-left: 0;
+    gap: 10px;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    order: 1;
+  }
+
+  .navbar-search {
+    order: 4;
+    width: 100%;
+    margin-top: 8px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .navbar-search:focus-within {
+    width: 100%;
+  }
+
+  .navbar-links {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background-color: #ffffff;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.12);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 90px 24px 40px 24px;
+    gap: 20px;
+    z-index: 101;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .navbar-links.active {
+    transform: translateX(0);
+  }
+
+  .navbar-links a {
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 12px 4px;
+    color: var(--text-dark);
+  }
+
+  .navbar-links a::after {
+    display: none;
+  }
+
+  .navbar-links a.active-link {
+    color: var(--color-lego-red);
+    border-bottom-color: var(--color-lego-red);
+  }
 }
