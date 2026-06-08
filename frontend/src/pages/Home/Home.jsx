@@ -299,34 +299,10 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Floating Bar */}
-          <div className="hero-floating-bar animate-fade-in-up delay-5">
-            <div className="feature-item">
-               <FiGift className="feature-icon" color="#e3000f" />
-               <span className="feature-text">Sets para todas<br/>las edades</span>
-            </div>
-            <div className="feature-separator"></div>
-            <div className="feature-item">
-               <FiShield className="feature-icon" color="#006cb7" />
-               <span className="feature-text">Productos originales<br/>y de calidad</span>
-            </div>
-            <div className="feature-separator"></div>
-            <div className="feature-item">
-               <FiTruck className="feature-icon" color="#22c55e" />
-               <span className="feature-text">Envíos rápidos<br/>a todo el país</span>
-            </div>
-            <div className="feature-separator"></div>
-            <div className="feature-item">
-               <FiStar className="feature-icon" color="#ffcf00" />
-               <span className="feature-text">Diversión que<br/>construye recuerdos</span>
-            </div>
-          </div>
-        </section>
 
-        {/* Nueva Sección: Explora por Colecciones */}
-        <section className="collections-nav-section">
-          <div className="container">
-            <div className="collections-grid">
+          {/* Floating Categories Bar */}
+          <div className="hero-floating-bar animate-fade-in-up delay-5" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
+            <div className="collections-grid" style={{ width: '100%', justifyContent: 'center', gap: '25px' }}>
               {dbCategories.map((cat, index) => {
                 const displayName = displayCategoryName(cat.nombre);
                 const visuals = getCategoryVisuals(cat.nombre);
@@ -406,7 +382,7 @@ const Home = () => {
                                 {product.stock <= 0 ? (
                                   <div className="apple-card-tag out-of-stock-tag">Agotado</div>
                                 ) : (
-                                  <div className="apple-card-tag">{`🔥 -${product.discount_pct}%`}</div>
+                                  <div className="apple-card-tag">{`-${product.discount_pct}%`}</div>
                                 )}
                                 <h3 className="apple-card-title">{product.title}</h3>
                                 <p className="apple-card-subtitle">{product.categoryName || "Construye tu imaginación."}</p>

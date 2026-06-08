@@ -82,7 +82,7 @@ const Promociones = () => {
 
               <div className="promo-card-info">
                 <h3 className="promo-card-title">{product.nombre}</h3>
-                <p className="promo-card-category">{product.categoria_nombre} - {product.promo_desc}</p>
+                <p className="promo-card-category">{product.categoria_nombre}</p>
                 
                 <div className="promo-price-wrapper">
                   <span className="promo-original-price">${product.original_price}</span>

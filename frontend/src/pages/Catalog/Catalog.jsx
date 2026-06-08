@@ -223,7 +223,7 @@ const Catalog = () => {
       // Limpiar state para que no se re-ejecute
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, maxPriceLimit, navigate]);
+  }, [location, maxPriceLimit, navigate, setBusqueda]);
 
   const resetFilters = () => {
     setActiveCategoryId(null); setActiveAge(null);
