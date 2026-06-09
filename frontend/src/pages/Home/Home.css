@@ -459,88 +459,26 @@
 }
 
 /* Dynamic Brand Category Hover states with 3D Bevel depth and glowing color shadow */
-.collection-card.cat-marvel:hover {
-  background: #e3000b !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #990007, 0 20px 30px rgba(227, 0, 11, 0.45) !important;
-}
-
-.collection-card.cat-dc:hover {
-  background: #0082f0 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #00569e, 0 20px 30px rgba(0, 130, 240, 0.45) !important;
-}
-
-.collection-card.cat-star-wars:hover {
-  background: #1a1a1a !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #000000, 0 20px 30px rgba(0, 0, 0, 0.5) !important;
-}
-
-.collection-card.cat-disney:hover {
-  background: #00b2eb !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #007ba3, 0 20px 30px rgba(0, 178, 235, 0.45) !important;
-}
-
-.collection-card.cat-harry-potter:hover {
-  background: #740000 !important;
-  color: #ffcc00 !important;
-  box-shadow: 0 8px 0 #4a0000, 0 20px 30px rgba(116, 0, 0, 0.45) !important;
-}
-
-.collection-card.cat-minecraft:hover {
-  background: #508a37 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #325c20, 0 20px 30px rgba(80, 138, 55, 0.45) !important;
-}
-
-.collection-card.cat-vehiculos:hover,
-.collection-card.cat-vehículos:hover {
-  background: #ff7800 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 0 #c85000, 0 20px 30px rgba(255, 120, 0, 0.45) !important;
-}
-
-.collection-card.cat-clasicos:hover,
-.collection-card.cat-clásicos:hover,
-.collection-card.cat-clasico:hover,
-.collection-card.cat-clásico:hover {
-  background: #ffcf00 !important;
-  color: #111827 !important;
-  box-shadow: 0 8px 0 #cc9e00, 0 20px 30px rgba(255, 207, 0, 0.45) !important;
+/* Dynamic Brand Category Hover states using CSS Custom Variables */
+.collection-card:hover {
+  animation-play-state: paused !important;
+  transform: translateY(-12px) scale(1.05) !important;
+  border-color: transparent !important;
+  background: var(--cat-hover-bg, rgba(255, 255, 255, 0.45)) !important;
+  color: var(--cat-hover-text, #111827) !important;
+  box-shadow: 0 8px 0 var(--cat-hover-shadow, #cc9e00), 0 20px 30px var(--cat-hover-shadow-glow, rgba(255, 207, 0, 0.2)) !important;
 }
 
 /* Tactical Active Press effect */
 .collection-card:active {
   transform: translateY(-4px) scale(0.98) !important;
   transition: all 0.1s ease !important;
+  box-shadow: 0 2px 0 var(--cat-hover-shadow, #cc9e00), 0 5px 10px var(--cat-hover-shadow-glow, rgba(255, 207, 0, 0.1)) !important;
 }
-
-.collection-card.cat-marvel:active { box-shadow: 0 2px 0 #990007, 0 5px 10px rgba(227, 0, 11, 0.2) !important; }
-.collection-card.cat-dc:active { box-shadow: 0 2px 0 #00569e, 0 5px 10px rgba(0, 130, 240, 0.2) !important; }
-.collection-card.cat-star-wars:active { box-shadow: 0 2px 0 #000000, 0 5px 10px rgba(0, 0, 0, 0.3) !important; }
-.collection-card.cat-disney:active { box-shadow: 0 2px 0 #007ba3, 0 5px 10px rgba(0, 178, 235, 0.2) !important; }
-.collection-card.cat-harry-potter:active { box-shadow: 0 2px 0 #4a0000, 0 5px 10px rgba(116, 0, 0, 0.2) !important; }
-.collection-card.cat-minecraft:active { box-shadow: 0 2px 0 #325c20, 0 5px 10px rgba(80, 138, 55, 0.2) !important; }
-.collection-card.cat-vehiculos:active,
-.collection-card.cat-vehículos:active { box-shadow: 0 2px 0 #c85000, 0 5px 10px rgba(255, 120, 0, 0.2) !important; }
-.collection-card.cat-clasicos:active,
-.collection-card.cat-clásicos:active,
-.collection-card.cat-clasico:active,
-.collection-card.cat-clásico:active { box-shadow: 0 2px 0 #cc9e00, 0 5px 10px rgba(255, 207, 0, 0.2) !important; }
 
 /* Micro-animations inside hovered card */
 .collection-card:hover .col-icon-svg {
-  filter: brightness(0) invert(1) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)) !important;
-  transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
-}
-
-.collection-card.cat-clasicos:hover .col-icon-svg,
-.collection-card.cat-clásicos:hover .col-icon-svg,
-.collection-card.cat-clasico:hover .col-icon-svg,
-.collection-card.cat-clásico:hover .col-icon-svg {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) !important;
+  filter: var(--cat-hover-icon-filter, brightness(0) invert(1) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25))) !important;
   transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
 }
 
@@ -568,19 +506,10 @@
 }
 
 .collection-card:hover .col-icon-react {
-  color: #ffffff !important;
+  color: var(--cat-hover-text, #ffffff) !important;
   opacity: 1 !important;
   transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)) !important;
-}
-
-.collection-card.cat-clasicos:hover .col-icon-react,
-.collection-card.cat-clásicos:hover .col-icon-react,
-.collection-card.cat-clasico:hover .col-icon-react,
-.collection-card.cat-clásico:hover .col-icon-react {
-  color: #111827 !important;
-  transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)) !important;
 }
 
 /* ==========================================================================

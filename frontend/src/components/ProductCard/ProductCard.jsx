@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
+import { displayCategoryName } from '../../utils/categoryHelpers';
 import placeholderImg from '../../assets/imagen no existente BM.webp';
 import './ProductCard.css';
 
@@ -27,19 +28,19 @@ const ProductCard = ({ product }) => {
 
   // Helper to resolve and format category name with fallback
   const getCategoryDisplay = () => {
+    let catName = 'LEGO';
     if (product.categoryName && product.categoryName.trim()) {
-      return product.categoryName;
-    }
-    if (product.collection && product.collection.trim() && product.collection.toLowerCase() !== 'otros') {
+      catName = product.categoryName;
+    } else if (product.collection && product.collection.trim() && product.collection.toLowerCase() !== 'otros') {
       const coll = product.collection.toLowerCase();
       if (coll === 'super heroes') return 'Super Héroes';
       if (coll === 'star wars') return 'Star Wars';
-      if (coll === 'harry potter') return 'Harry Potter';
+      if (coll.includes('harry potter')) return 'Harry Potter';
       if (coll === 'marvel') return 'Marvel';
       if (coll === 'city') return 'City';
-      return coll.charAt(0).toUpperCase() + coll.slice(1);
+      catName = coll.charAt(0).toUpperCase() + coll.slice(1);
     }
-    return 'LEGO';
+    return displayCategoryName(catName);
   };
 
   // Render stars based on rating (mock)

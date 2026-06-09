@@ -4,69 +4,10 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { AppContext } from '../../context/AppContext';
+import { displayCategoryName, getCategoryVisuals } from '../../utils/categoryHelpers';
 import './Catalog.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-// ── Helper para emojis y colores de categorías dinámicas ──────────────────
-const displayCategoryName = (name) => {
-  if (!name) return '';
-  const lower = name.toLowerCase();
-  if (lower.includes('icon') || lower.includes('creator')) return 'Clásicos';
-  if (lower.includes('city')) return 'Construcciones';
-  if (lower.includes('technic') || lower.includes('speed')) return 'Vehículos';
-  return name;
-};
-
-const getCategoryVisuals = (name) => {
-  if (!name) return { emoji: '🧱', color: '#FFD700', icon: null, textColor: '#1a1a1a' };
-  const lower = name.toLowerCase().trim();
-
-  let emoji = '🧱';
-  let color = '#FFD700';
-  let iconPath = null;
-  let textColor = '#1a1a1a';
-
-  if (lower.includes('star wars')) {
-    color = '#263238';
-    iconPath = '/imagenes icons/star wars.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('dc')) {
-    color = '#0076F6';
-    iconPath = '/imagenes icons/dc.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('super heroes')) {
-    color = '#EF5350';
-    iconPath = '/imagenes icons/marvel.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('harry potter')) {
-    color = '#7E57C2';
-    iconPath = '/imagenes icons/harry potter.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('city') || lower.includes('construcciones')) {
-    color = '#4FC3F7';
-    iconPath = '/imagenes icons/city.svg';
-    textColor = '#1a1a1a';
-  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture') || lower.includes('vehiculos') || lower.includes('vehículos')) {
-    color = '#455A64';
-    iconPath = '/imagenes icons/vehiculos.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('minecraft')) {
-    color = '#4CAF50';
-    iconPath = '/imagenes icons/minecraft.svg';
-    textColor = '#ffffff';
-  } else if (lower.includes('icon') || lower.includes('creator') || lower.includes('clasico') || lower.includes('clásico')) {
-    color = '#FFB300';
-    iconPath = '/imagenes icons/icons.svg';
-    textColor = '#1a1a1a';
-  } else if (lower.includes('cartoon') || lower.includes('network') || lower.includes('looney')) {
-    color = '#1a1a1a';
-    iconPath = '/imagenes icons/cartoonNetwork.svg';
-    textColor = '#ffffff';
-  }
-
-  return { emoji, color, icon: iconPath, textColor };
-};
 
 // ── Skeleton card ─────────────────────────────────────────────────────────
 const ProductCardSkeleton = () => (
@@ -102,14 +43,14 @@ const Catalog = () => {
       const redirectedTheme = location.state.theme.toLowerCase().trim();
       const matchedCat = dbCategories.find(c => {
         const dbName = c.nombre.toLowerCase();
-        if (redirectedTheme === 'clásicos' || redirectedTheme === 'clasicos') {
-          return dbName.includes('icon') || dbName.includes('creator') || dbName.includes('clásico');
+         if (redirectedTheme === 'clásicos' || redirectedTheme === 'clasicos') {
+          return dbName.includes('icon') || dbName.includes('creator') || dbName.includes('clásico') || dbName.includes('clasico');
         }
-        if (redirectedTheme === 'construcciones') {
-          return dbName.includes('city') || dbName.includes('construcciones');
+        if (redirectedTheme === 'construcciones' || redirectedTheme.includes('ciudad') || redirectedTheme.includes('city')) {
+          return dbName.includes('city') || dbName.includes('construcciones') || dbName.includes('ciudad') || dbName.includes('ciudades');
         }
         if (redirectedTheme === 'vehículos' || redirectedTheme === 'vehiculos') {
-          return dbName.includes('technic') || dbName.includes('speed') || dbName.includes('vehículo');
+          return dbName.includes('technic') || dbName.includes('speed') || dbName.includes('vehículo') || dbName.includes('vehiculo');
         }
         return dbName.includes(redirectedTheme);
       });

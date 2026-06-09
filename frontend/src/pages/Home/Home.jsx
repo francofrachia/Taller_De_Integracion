@@ -2,14 +2,14 @@ import React, { useState, useEffect, useContext, useRef, useCallback } from 'rea
 import { Link } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
 const MarqueeComponent = (typeof Marquee === 'object' && Marquee.default) ? Marquee.default : Marquee;
-import { FaHeart, FaRegHeart, FaRocket } from 'react-icons/fa';
-import { FiGift, FiShield, FiTruck, FiStar, FiBox } from 'react-icons/fi';
-import { GiDinosaurRex, GiCastle, GiNinjaMask, GiCrown } from 'react-icons/gi';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FiGift, FiShield, FiTruck, FiStar } from 'react-icons/fi';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import { AppContext } from '../../context/AppContext';
+import { displayCategoryName, getCategoryClass, getCategoryVisuals } from '../../utils/categoryHelpers';
 import './Home.css';
 
 // Import local placeholder images for banners
@@ -17,81 +17,11 @@ import starWarsBanner from '../../assets/starWars.webp';
 import newHeroBanner from '../../assets/imagen_home_arriba.webp';
 import hulkBanner from '../../assets/Home.superheroe.webp';
 import placeholderProduct from '../../assets/imagen no existente BM.webp';
-import logoBm from '../../assets/BM logo recortado.png';
+import logoBm from '../../assets/BM logo recortado.webp';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// ── Helpers para visuales de categorías dinámicas ──────────────────
-const displayCategoryName = (name) => {
-  if (!name) return '';
-  const lower = name.toLowerCase();
-  if (lower.includes('icon') || lower.includes('creator')) return 'Clásicos';
-  if (lower.includes('city')) return 'Construcciones';
-  if (lower.includes('technic') || lower.includes('speed')) return 'Vehículos';
-  return name;
-};
 
-const getCategoryVisuals = (name) => {
-  if (!name) return { emoji: '🧱', icon: null, vectorComponent: FiBox };
-  const lower = name.toLowerCase().trim();
-
-  let emoji = '🧱';
-  let iconPath = null;
-  let vectorComponent = null;
-
-  if (lower.includes('star wars')) {
-    iconPath = '/imagenes icons/star wars.svg';
-    emoji = '🚀';
-  } else if (lower.includes('dc')) {
-    iconPath = '/imagenes icons/dc.svg';
-    emoji = '🦇';
-  } else if (lower.includes('marvel') || lower.includes('héroes') || lower.includes('super heroes')) {
-    iconPath = '/imagenes icons/marvel.svg';
-    emoji = '🦸‍♂️';
-  } else if (lower.includes('harry potter')) {
-    iconPath = '/imagenes icons/harry potter.svg';
-    emoji = '⚡';
-  } else if (lower.includes('city') || lower.includes('construcciones')) {
-    iconPath = '/imagenes icons/city.svg';
-    emoji = '🏢';
-  } else if (lower.includes('technic') || lower.includes('speed') || lower.includes('architecture') || lower.includes('vehiculos') || lower.includes('vehículos')) {
-    iconPath = '/imagenes icons/vehiculos.svg';
-    emoji = '🏎️';
-  } else if (lower.includes('minecraft')) {
-    iconPath = '/imagenes icons/minecraft.svg';
-    emoji = '🟩';
-  } else if (lower.includes('icon') || lower.includes('creator') || lower.includes('clasico') || lower.includes('clásico')) {
-    iconPath = '/imagenes icons/icons.svg';
-    emoji = '🧱';
-  } else if (lower.includes('disney')) {
-    iconPath = '/imagenes icons/disney.svg';
-    emoji = '🏰';
-  } else if (lower.includes('cartoon') || lower.includes('network') || lower.includes('looney')) {
-    iconPath = '/imagenes icons/cartoonNetwork.svg';
-    emoji = '📺';
-  }
-  // Dinámicas (si el Admin crea categorías nuevas en la DB)
-  else if (lower.includes('jurassic') || lower.includes('dino') || lower.includes('parque')) {
-    vectorComponent = GiDinosaurRex;
-    emoji = '🦖';
-  } else if (lower.includes('castle') || lower.includes('castillo') || lower.includes('knight') || lower.includes('medieval')) {
-    vectorComponent = GiCastle;
-    emoji = '🏰';
-  } else if (lower.includes('space') || lower.includes('espacio') || lower.includes('galaxy') || lower.includes('cohete')) {
-    vectorComponent = FaRocket;
-    emoji = '🚀';
-  } else if (lower.includes('ninja') || lower.includes('ninjago')) {
-    vectorComponent = GiNinjaMask;
-    emoji = '🥷';
-  } else if (lower.includes('friends') || lower.includes('chicas') || lower.includes('princess') || lower.includes('corona')) {
-    vectorComponent = GiCrown;
-    emoji = '👑';
-  } else {
-    vectorComponent = FiBox;
-  }
-
-  return { emoji, icon: iconPath, vectorComponent };
-};
 
 const ProductCardSkeleton = () => (
   <div className="product-card" style={{ height: '100%' }}>
@@ -366,16 +296,20 @@ const Home = () => {
                   {dbCategories.map((cat) => {
                     const displayName = displayCategoryName(cat.nombre);
                     const visuals = getCategoryVisuals(cat.nombre);
-                    const classFriendlyName = cat.nombre.toLowerCase().trim()
-                      .normalize("NFD")
-                      .replace(/[\u0300-\u036f]/g, "")
-                      .replace(/\s+/g, '-');
+                    const classFriendlyName = getCategoryClass(cat.nombre);
                     return (
                       <Link
                         to="/productos"
                         state={{ theme: cat.nombre }}
                         className={`collection-card cat-${classFriendlyName}`}
                         key={cat.id_categoria}
+                        style={{
+                          '--cat-hover-bg': visuals.hoverBg,
+                          '--cat-hover-text': visuals.hoverTextColor,
+                          '--cat-hover-shadow': visuals.shadowColor,
+                          '--cat-hover-shadow-glow': visuals.shadowGlow,
+                          '--cat-hover-icon-filter': visuals.iconFilter
+                        }}
                       >
                         <div className="col-icon">
                           {visuals.icon ? (
@@ -397,17 +331,21 @@ const Home = () => {
                 {dbCategories.map((cat, index) => {
                   const displayName = displayCategoryName(cat.nombre);
                   const visuals = getCategoryVisuals(cat.nombre);
-                  const classFriendlyName = cat.nombre.toLowerCase().trim()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/\s+/g, '-');
+                  const classFriendlyName = getCategoryClass(cat.nombre);
                   return (
                     <Link
                       to="/productos"
                       state={{ theme: cat.nombre }}
                       className={`collection-card cat-${classFriendlyName}`}
                       key={cat.id_categoria}
-                      style={{ animationDelay: `${index * 0.1}s` }}
+                      style={{
+                        animationDelay: `${index * 0.1}s`,
+                        '--cat-hover-bg': visuals.hoverBg,
+                        '--cat-hover-text': visuals.hoverTextColor,
+                        '--cat-hover-shadow': visuals.shadowColor,
+                        '--cat-hover-shadow-glow': visuals.shadowGlow,
+                        '--cat-hover-icon-filter': visuals.iconFilter
+                      }}
                     >
                       <div className="col-icon">
                         {visuals.icon ? (

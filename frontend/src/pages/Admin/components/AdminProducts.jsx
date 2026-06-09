@@ -502,11 +502,11 @@ const AdminProducts = () => {
             </div>
 
             {/* Layout principal flexible: Oferta a la izquierda (si hay selección), Tabla a la derecha */}
-            <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', position: 'relative' }}>
+            <div style={{ display: 'flex', gap: selectedProduct ? '2rem' : '0', alignItems: 'flex-start', position: 'relative' }}>
                 
                 {/* Contenedor lateral de Promoción para permitir alineación exacta */}
-                <div style={{ width: '320px', flexShrink: 0, position: 'relative', alignSelf: 'stretch' }}>
-                    {selectedProduct && (
+                {selectedProduct && (
+                    <div style={{ width: '320px', flexShrink: 0, position: 'relative', alignSelf: 'stretch' }}>
                         <div className="promo-side-panel animate-slide-right" style={{
                             width: '320px',
                             background: '#ffffff',
@@ -592,8 +592,8 @@ const AdminProducts = () => {
                                 </div>
                             </form>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Tabla de Productos */}
                 <div className="admin-table-container" style={{ flex: 1, minWidth: 0, marginTop: 0 }}>

@@ -3,6 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import approvedSeal from '../../assets/approved_seal.webp';
+import rejectedSeal from '../../assets/rejected_seal.webp';
 import './PaymentStatus.css';
 
 const PaymentStatus = ({ type }) => {
@@ -43,7 +45,9 @@ const PaymentStatus = ({ type }) => {
       case 'success':
         return (
           <div className="status-card success">
-            <div className="status-icon lego-stud"></div>
+            <div className="status-icon status-seal">
+              <img src={approvedSeal} alt="Pago Aprobado" className="status-seal-img" />
+            </div>
             <h1>¡Gracias por tu compra!</h1>
             <p className="status-message">Tu pago ha sido aprobado de manera exitosa y hemos registrado tu orden.</p>
             {paymentId && (
@@ -61,7 +65,9 @@ const PaymentStatus = ({ type }) => {
       case 'failure':
         return (
           <div className="status-card failure">
-            <div className="status-icon">✗</div>
+            <div className="status-icon status-seal">
+              <img src={rejectedSeal} alt="Pago Rechazado" className="status-seal-img" />
+            </div>
             <h1>Pago Rechazado</h1>
             <p className="status-message">Lamentablemente no pudimos procesar tu pago. Por favor intenta con otro medio o ponte en contacto con tu banco.</p>
             {paymentId && (
