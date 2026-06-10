@@ -130,23 +130,22 @@
   background: #ffdb33;
 }
 
-/* Barra flotante de beneficios */
+/* Barra flotante de categorías */
 .hero-floating-bar {
   position: absolute;
-  bottom: 20px; /* Dentro del margen inferior de la imagen */
+  bottom: 30px; /* Dentro del margen inferior de la imagen */
   left: 0;
   right: 0;
   margin: 0 auto; /* Centrado sin usar transform para evitar conflicto con la animación fadeInUp */
-  background: #ffffff;
-  border-radius: 15px;
-  padding: 20px 35px;
+  background: transparent;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 90%;
-  max-width: 1000px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15); /* Sombra un poco más fuerte para destacar sobre la imagen */
+  max-width: 800px; /* Constrained to the exact space occupied by 5 centered cards */
+  box-shadow: none;
   z-index: 10;
+  padding: 0;
 }
 
 .feature-item {
@@ -178,22 +177,27 @@
   .hero-custom-title { font-size: 4rem; }
   .hero-custom-title .colorful-mundo { font-size: 4.5rem; }
   .hero-floating-bar {
-    flex-wrap: wrap;
-    gap: 20px;
-    padding: 25px;
-    bottom: -80px;
+    position: relative;
+    bottom: auto;
+    margin-top: 40px;
+    width: 100%;
+    padding: 0 20px;
   }
   .feature-separator { display: none; }
   .feature-item { width: 45%; }
 }
 
 @media (max-width: 768px) {
-  .hero-section-custom { min-height: 60vh; padding-top: 40px; padding-bottom: 150px; }
+  .hero-section-custom { min-height: 60vh; padding-top: 40px; padding-bottom: 40px; }
   .hero-custom-bg { background-position: center; opacity: 0.6; } /* Para que se lea el texto en móvil */
   .hero-custom-title { font-size: 3rem; }
   .hero-custom-title .colorful-mundo { font-size: 3.5rem; }
   .feature-item { width: 100%; }
-  .hero-floating-bar { bottom: 20px; }
+  .hero-floating-bar {
+    position: relative;
+    bottom: auto;
+    margin-top: 30px;
+  }
 }
 
 .hero-content {
@@ -301,26 +305,66 @@
 .collections-grid {
   display: flex;
   justify-content: center;
-  gap: 25px; /* Más espacio entre los íconos de categorías para que no se choquen */
+  gap: 25px;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Marquee Mode Category Scroller Styling */
+.collections-grid.marquee-mode {
+  display: flex;
+  flex-wrap: nowrap; /* Prevent wrapping in marquee slider */
+  gap: 25px;
+  width: max-content;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.collections-grid.marquee-mode .collection-card {
+  opacity: 1 !important;
+  animation: none !important; /* Disables entry fade-in/scale to ensure marquee clones are instantly ready */
+}
+
+/* Prevent Marquee overflow containers from clipping the 3D Lego hover elevation and shadows */
+.hero-floating-bar .rfm-marquee-container {
+  overflow: hidden !important;
+  padding: 20px 0 !important;
+  margin: -20px 0 !important;
+  /* Premium alpha transparency mask to fade out cards smoothly at left and right boundaries */
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+.hero-floating-bar .rfm-marquee,
+.hero-floating-bar .rfm-child {
+  overflow: visible !important;
 }
 
 .collection-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  padding: 20px 25px;
-  background: rgba(255, 255, 255, 0.7);
+  width: 130px !important;
+  height: 130px !important;
+  min-width: 130px !important;
+  min-height: 130px !important;
+  max-width: 130px !important;
+  max-height: 130px !important;
+  flex: 0 0 130px !important;
+  aspect-ratio: 1 / 1 !important;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-radius: 24px;
   text-decoration: none;
   color: var(--text-dark);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   opacity: 0;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.05), 0 10px 25px rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -343,28 +387,37 @@
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(180, 130, 50, 0.25);
   color: #3a2a0a;
-  box-shadow: 0 10px 30px rgba(150, 100, 20, 0.15);
+  box-shadow: 0 4px 0 rgba(150, 100, 20, 0.1), 0 10px 25px rgba(150, 100, 20, 0.1);
 }
 
-.collection-card::before {
+/* Glossy Shine Swipe Effect */
+.collection-card::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(255, 255, 255, 0.4);
-  opacity: 0;
-  z-index: -1;
-  transition: opacity 0.4s ease;
+  top: -50%;
+  left: -150%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 55%
+  );
+  transform: rotate(45deg);
+  transition: all 0.6s ease;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .collection-card:hover {
   animation-play-state: paused !important;
-  transform: translateY(-15px) scale(1.05) !important;
-  border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transform: translateY(-12px) scale(1.05) !important;
+  border-color: transparent !important;
 }
 
-.collection-card:hover::before {
-  opacity: 1;
+.collection-card:hover::after {
+  left: 100%;
 }
 
 .col-icon {
@@ -389,34 +442,74 @@
 
 .col-name {
   font-weight: 700;
-  font-size: 15px;
-  transition: all 0.4s ease;
+  font-size: 14px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .home-page.dark-theme .col-name {
   color: #4a3010;
 }
 
-/* Animaciones impresionantes al hacer hover */
+.col-emoji {
+  font-size: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Dynamic Brand Category Hover states with 3D Bevel depth and glowing color shadow */
+/* Dynamic Brand Category Hover states using CSS Custom Variables */
+.collection-card:hover {
+  animation-play-state: paused !important;
+  transform: translateY(-12px) scale(1.05) !important;
+  border-color: transparent !important;
+  background: var(--cat-hover-bg, rgba(255, 255, 255, 0.45)) !important;
+  color: var(--cat-hover-text, #111827) !important;
+  box-shadow: 0 8px 0 var(--cat-hover-shadow, #cc9e00), 0 20px 30px var(--cat-hover-shadow-glow, rgba(255, 207, 0, 0.2)) !important;
+}
+
+/* Tactical Active Press effect */
+.collection-card:active {
+  transform: translateY(-4px) scale(0.98) !important;
+  transition: all 0.1s ease !important;
+  box-shadow: 0 2px 0 var(--cat-hover-shadow, #cc9e00), 0 5px 10px var(--cat-hover-shadow-glow, rgba(255, 207, 0, 0.1)) !important;
+}
+
+/* Micro-animations inside hovered card */
 .collection-card:hover .col-icon-svg {
-  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.4));
-  transform: scale(1.3) translateY(-5px);
+  filter: var(--cat-hover-icon-filter, brightness(0) invert(1) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25))) !important;
+  transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
 }
 
 .collection-card:hover .col-emoji {
-  display: inline-block;
-  transform: scale(1.3) translateY(-5px);
-  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.4));
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(1.18) translateY(-4px) rotate(5deg) !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)) !important;
 }
 
 .collection-card:hover .col-name {
-  color: #111;
-  transform: translateY(2px);
+  transform: translateY(2px) scale(1.05);
 }
 
-.col-emoji {
+.col-icon-react {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  color: var(--text-dark);
+  opacity: 0.8;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.home-page.dark-theme .col-icon-react {
+  color: #4a3010;
+  opacity: 0.9;
+}
+
+.collection-card:hover .col-icon-react {
+  color: var(--cat-hover-text, #ffffff) !important;
+  opacity: 1 !important;
+  transform: scale(1.18) translateY(-4px) rotate(-3deg) !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)) !important;
 }
 
 /* ==========================================================================

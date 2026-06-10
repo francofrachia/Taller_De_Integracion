@@ -3,6 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import approvedSeal from '../../assets/approved_seal.webp';
+import rejectedSeal from '../../assets/rejected_seal.webp';
 import './PaymentStatus.css';
 
 const PaymentStatus = ({ type }) => {
@@ -43,13 +45,27 @@ const PaymentStatus = ({ type }) => {
       case 'success':
         return (
           <div className="status-card success">
-            <div className="status-icon lego-stud"></div>
+            <div className="status-icon status-seal success-glow">
+              <img src={approvedSeal} alt="Pago Aprobado" className="status-seal-img" />
+            </div>
             <h1>¡Gracias por tu compra!</h1>
             <p className="status-message">Tu pago ha sido aprobado de manera exitosa y hemos registrado tu orden.</p>
             {paymentId && (
               <div className="status-details">
-                <p><strong>ID de Pago:</strong> {paymentId}</p>
-                <p><strong>Estado:</strong> Aprobado</p>
+                <div className="details-header">
+                  <span className="details-title">Detalle de transacción</span>
+                  <span className="details-badge success">Completado</span>
+                </div>
+                <div className="details-body">
+                  <div className="details-row">
+                    <span className="details-label">ID de Pago</span>
+                    <span className="details-value">{paymentId}</span>
+                  </div>
+                  <div className="details-row">
+                    <span className="details-label">Estado</span>
+                    <span className="details-value status-success-text">Aprobado</span>
+                  </div>
+                </div>
               </div>
             )}
             <p className="status-subtext">Te enviamos los detalles del envío y facturación a tu correo registrado.</p>
@@ -61,13 +77,27 @@ const PaymentStatus = ({ type }) => {
       case 'failure':
         return (
           <div className="status-card failure">
-            <div className="status-icon">✗</div>
+            <div className="status-icon status-seal failure-glow">
+              <img src={rejectedSeal} alt="Pago Rechazado" className="status-seal-img" />
+            </div>
             <h1>Pago Rechazado</h1>
             <p className="status-message">Lamentablemente no pudimos procesar tu pago. Por favor intenta con otro medio o ponte en contacto con tu banco.</p>
             {paymentId && (
               <div className="status-details">
-                <p><strong>ID de Transacción:</strong> {paymentId}</p>
-                <p><strong>Estado:</strong> Rechazado / Fallido</p>
+                <div className="details-header">
+                  <span className="details-title">Detalle de transacción</span>
+                  <span className="details-badge failure">Rechazado</span>
+                </div>
+                <div className="details-body">
+                  <div className="details-row">
+                    <span className="details-label">ID de Transacción</span>
+                    <span className="details-value">{paymentId}</span>
+                  </div>
+                  <div className="details-row">
+                    <span className="details-label">Estado</span>
+                    <span className="details-value status-failure-text">Rechazado / Fallido</span>
+                  </div>
+                </div>
               </div>
             )}
             <div className="status-actions">
@@ -79,13 +109,27 @@ const PaymentStatus = ({ type }) => {
       default:
         return (
           <div className="status-card pending">
-            <div className="status-icon">⌛</div>
+            <div className="status-icon pending-glow">
+              <span className="pending-emoji-pulse">⌛</span>
+            </div>
             <h1>Pago Pendiente</h1>
             <p className="status-message">Tu pago se encuentra en proceso de aprobación por parte del proveedor del servicio.</p>
             {paymentId && (
               <div className="status-details">
-                <p><strong>ID de Pago:</strong> {paymentId}</p>
-                <p><strong>Estado:</strong> Pendiente de acreditación</p>
+                <div className="details-header">
+                  <span className="details-title">Detalle de transacción</span>
+                  <span className="details-badge pending">Pendiente</span>
+                </div>
+                <div className="details-body">
+                  <div className="details-row">
+                    <span className="details-label">ID de Pago</span>
+                    <span className="details-value">{paymentId}</span>
+                  </div>
+                  <div className="details-row">
+                    <span className="details-label">Estado</span>
+                    <span className="details-value status-pending-text">Pendiente de acreditación</span>
+                  </div>
+                </div>
               </div>
             )}
             <p className="status-subtext">Te notificaremos vía correo electrónico en cuanto el estado de tu pago cambie.</p>

@@ -16,6 +16,22 @@ export function AppProvider({ children }) {
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
     const [loginTooltipVisible, setLoginTooltipVisible] = useState(false);
     const [promociones, setPromociones] = useState([]);
+    const [toasts, setToasts] = useState([]);
+
+    const addToast = (titulo, mensaje, tipo = 'success') => {
+        const id = Date.now() + Math.random().toString(36).substr(2, 9);
+        setToasts(prev => [...prev, { id, titulo, mensaje, tipo, exiting: false }]);
+        
+        // Iniciar animación de salida a los 2.7 segundos
+        setTimeout(() => {
+            setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
+        }, 2700);
+
+        // Remover del estado a los 3.0 segundos
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
+    };
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -161,6 +177,7 @@ export function AppProvider({ children }) {
 
     async function agregarAlCarrito(id_producto, cantidad = 1) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
+            addToast('Iniciar Sesión', 'Debes iniciar sesión para agregar productos al carrito.', 'warning');
             return { success: false, requireLogin: true };
         }
 
@@ -205,6 +222,11 @@ export function AppProvider({ children }) {
         setCart(newCart);
         setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
 
+        // Mostrar notificación de éxito instantánea / optimista
+        const producto = productos.find(p => p.id_producto === id_producto);
+        const nombreProd = producto ? producto.nombre : 'Producto';
+        addToast('¡Agregado al Carrito!', `${nombreProd} se añadió correctamente.`, 'success');
+
         try {
             const response = await fetch(`${API_URL}/carrito/add`, {
                 method: 'POST',
@@ -225,17 +247,26 @@ export function AppProvider({ children }) {
                 logout();
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                
+                addToast('Sesión Expirada', 'Por favor, inicia sesión de nuevo.', 'warning');
+                
                 return { success: false, requireLogin: true };
             } else {
                 console.error("Error al añadir al carrito");
                 setCart(oldCart);
                 setCartCount(oldCartCount);
+                
+                addToast('Error', 'No se pudo agregar el producto al carrito.', 'error');
+                
                 return { success: false, error: 'Error del servidor' };
             }
         } catch (error) {
             console.error(error);
             setCart(oldCart);
             setCartCount(oldCartCount);
+            
+            addToast('Error de Conexión', 'Comprueba tu conexión e intenta de nuevo.', 'error');
+            
             return { success: false, error: error.message };
         }
     }
@@ -387,8 +418,8 @@ export function AppProvider({ children }) {
             });
             if (response.ok) {
                 const data = await response.json();
-                setFavoritos(data.favoritos.map(f => f.id_producto)); // Guardamos solo IDs en el contexto para acceso rápido
-                setFavoritosData(data.favoritos); // Guardamos la info completa para mostrar inactivos
+                setFavoritos(data.favoritos.map(f => Number(f.id_producto))); // Guardamos solo IDs en formato numérico
+                setFavoritosData(data.favoritos); // Guardamos la info completa para mostrar
             } else if (response.status === 401 || response.status === 403) {
                 console.warn("Sesión expirada o inválida detectada al obtener favoritos. Auto-logout.");
                 logout();
@@ -403,19 +434,21 @@ export function AppProvider({ children }) {
             setLoginTooltipVisible(true);
             // Ocultarlo automáticamente después de unos segundos
             setTimeout(() => setLoginTooltipVisible(false), 2500);
+            addToast('Iniciar Sesión', 'Debes iniciar sesión para agregar productos a tus favoritos.', 'warning');
             return;
         }
 
-        const isFav = favoritos.includes(id_producto);
+        const idNum = Number(id_producto);
+        const isFav = favoritos.map(Number).includes(idNum);
         const method = isFav ? 'DELETE' : 'POST';
 
         // Actualización optimista
         if (isFav) {
-            setFavoritos(prev => prev.filter(id => id !== id_producto));
-            setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+            setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+            setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
         } else {
-            setFavoritos(prev => [...prev, id_producto]);
-            const prod = productos.find(p => p.id_producto === id_producto);
+            setFavoritos(prev => [...prev.map(Number), idNum]);
+            const prod = productos.find(p => Number(p.id_producto) === idNum);
             if (prod) setFavoritosData(prev => [...prev, prod]);
         }
 
@@ -426,18 +459,21 @@ export function AppProvider({ children }) {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ id_producto })
+                body: JSON.stringify({ id_producto: idNum })
             });
-            if (!response.ok) {
+            if (response.ok) {
+            } else {
                 // Revertir en caso de error
                 if (isFav) {
-                    setFavoritos(prev => [...prev, id_producto]);
-                    const prod = productos.find(p => p.id_producto === id_producto);
+                    setFavoritos(prev => [...prev.map(Number), idNum]);
+                    const prod = productos.find(p => Number(p.id_producto) === idNum);
                     if (prod) setFavoritosData(prev => [...prev, prod]);
                 } else {
-                    setFavoritos(prev => prev.filter(id => id !== id_producto));
-                    setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+                    setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+                    setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
                 }
+
+                addToast('Error', 'No se pudo actualizar tus favoritos.', 'error');
 
                 if (response.status === 401 || response.status === 403) {
                     console.warn("Sesión expirada o inválida al hacer toggle en favoritos. Auto-logout.");
@@ -447,13 +483,14 @@ export function AppProvider({ children }) {
         } catch (error) {
             console.error("Error al hacer toggle en favoritos:", error);
             if (isFav) {
-                setFavoritos(prev => [...prev, id_producto]);
-                const prod = productos.find(p => p.id_producto === id_producto);
+                setFavoritos(prev => [...prev.map(Number), idNum]);
+                const prod = productos.find(p => Number(p.id_producto) === idNum);
                 if (prod) setFavoritosData(prev => [...prev, prod]);
             } else {
-                setFavoritos(prev => prev.filter(id => id !== id_producto));
-                setFavoritosData(prev => prev.filter(p => p.id_producto !== id_producto));
+                setFavoritos(prev => prev.map(Number).filter(id => id !== idNum));
+                setFavoritosData(prev => prev.filter(p => Number(p.id_producto) !== idNum));
             }
+            addToast('Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
         }
     }
 
@@ -623,9 +660,46 @@ export function AppProvider({ children }) {
             loginTooltipVisible,
             setLoginTooltipVisible,
             obtenerProductos,
-            obtenerPromociones
+            obtenerPromociones,
+            mostrarNotificacion: addToast
         }}>
             {children}
+            
+            {/* Contenedor de Notificaciones Globales (Toasts) */}
+            <div className="toast-container">
+                {toasts.map(toast => (
+                    <div 
+                        key={toast.id} 
+                        className={`toast-item ${toast.exiting ? 'exiting' : ''}`}
+                    >
+                        <div className={`toast-icon-wrapper ${toast.tipo}`}>
+                            {toast.tipo === 'success' ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            ) : toast.tipo === 'error' ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            ) : (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            )}
+                        </div>
+                        <div className="toast-content">
+                            {toast.titulo && <div className="toast-title">{toast.titulo}</div>}
+                            <div className="toast-message">{toast.mensaje}</div>
+                        </div>
+                        <button 
+                            className="toast-close-btn" 
+                            onClick={() => {
+                                setToasts(prev => prev.map(t => t.id === toast.id ? { ...t, exiting: true } : t));
+                                setTimeout(() => {
+                                    setToasts(prev => prev.filter(t => t.id !== toast.id));
+                                }, 300);
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                        <div className={`toast-progress ${toast.tipo}`} />
+                    </div>
+                ))}
+            </div>
         </AppContext.Provider>
     );
 }

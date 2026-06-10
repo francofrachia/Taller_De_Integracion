@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
-import mercadopagoLogo from '../../assets/mercadopago-seeklogo.png';
+import mercadopagoLogo from '../../assets/mercadopago-seeklogo.webp';
 import './Checkout.css';
 
 export default function Checkout() {

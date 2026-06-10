@@ -534,7 +534,7 @@ export default function Account() {
 
     const handleAvatarChange = async (path) => {
         if (!usuario) return;
-        const currentAvatar = usuario.avatar_url || '/images/logo mario.png';
+        const currentAvatar = usuario.avatar_url || '/images/logo mario.webp';
         if (currentAvatar === path) return; // Ya está seleccionado
         setAvatarFeedback({ type: '', msg: '' });
         try {
@@ -854,11 +854,11 @@ export default function Account() {
 
                                     <div className="avatar-grid">
                                         {[
-                                            { id: 'mario', path: '/images/logo mario.png', name: 'Lego Mario' },
-                                            { id: 'luigi', path: '/images/lego_luigi.png', name: 'Lego Luigi' },
-                                            { id: 'batman', path: '/images/lego_batman.png', name: 'Lego Batman' }
+                                            { id: 'mario', path: '/images/logo mario.webp', name: 'Lego Mario' },
+                                            { id: 'luigi', path: '/images/lego_luigi.webp', name: 'Lego Luigi' },
+                                            { id: 'batman', path: '/images/lego_batman.webp', name: 'Lego Batman' }
                                         ].map(av => {
-                                            const isSelected = (usuario.avatar_url || '/images/logo mario.png') === av.path;
+                                            const isSelected = (usuario.avatar_url || '/images/logo mario.webp') === av.path;
                                             return (
                                                 <div
                                                     key={av.id}

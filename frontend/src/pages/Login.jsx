@@ -25,13 +25,24 @@ export default function Login() {
 
         const inicializarGoogle = () => {
             if (window.google) {
-                window.google.accounts.id.initialize({
-                    client_id: CLIENT_ID,
-                    context: "signin",
-                    ux_mode: "popup",
-                    callback: manejarRespuestaGoogle,
-                    auto_prompt: false
-                });
+                // Establecer el callback activo para esta instancia de componente
+                window._googleSignInActiveCallback = manejarRespuestaGoogle;
+
+                // Solo inicializar una vez a nivel global
+                if (!window._googleSignInInitialized) {
+                    window.google.accounts.id.initialize({
+                        client_id: CLIENT_ID,
+                        context: "signin",
+                        ux_mode: "popup",
+                        callback: (response) => {
+                            if (window._googleSignInActiveCallback) {
+                                window._googleSignInActiveCallback(response);
+                            }
+                        },
+                        auto_prompt: false
+                    });
+                    window._googleSignInInitialized = true;
+                }
 
                 const buttonDiv = document.getElementById("g_id_signin");
                 if (buttonDiv) {
@@ -41,7 +52,6 @@ export default function Login() {
                         theme: "outline",
                         text: "signin_with",
                         size: "large",
-                        width: "100%",
                         logo_alignment: "center"
                     });
                 }
@@ -57,8 +67,22 @@ export default function Login() {
             script.onload = inicializarGoogle;
             document.body.appendChild(script);
         } else {
-            inicializarGoogle();
+            if (window.google) {
+                inicializarGoogle();
+            } else {
+                const existingOnload = script.onload;
+                script.onload = () => {
+                    if (existingOnload) existingOnload();
+                    inicializarGoogle();
+                };
+            }
         }
+
+        return () => {
+            if (window._googleSignInActiveCallback === manejarRespuestaGoogle) {
+                window._googleSignInActiveCallback = null;
+            }
+        };
     }, []);
 
     async function manejarRespuestaGoogle(response) {
@@ -152,7 +176,7 @@ export default function Login() {
                     {/* Panel izquierdo — imagen */}
                     <div className="login-image-panel">
                         <img
-                            src="/images/login_banner.png"
+                            src="/images/login_banner.webp"
                             alt="Bloque Mundo LEGO"
                             className="login-banner-img"
                         />

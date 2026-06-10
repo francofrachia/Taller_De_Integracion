@@ -18,6 +18,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-white);
@@ -62,4 +67,327 @@ ul {
     background-color: #e5e5e5;
   }
 }
+
+/* ==========================================================================
+   Connection Error State - Premium & Glassmorphic
+   ========================================================================== */
+.server-error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 60px 20px;
+  width: 100%;
+}
+
+.error-card-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  padding: 50px 40px;
+  text-align: center;
+  max-width: 550px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05), 
+              0 0 0 1px rgba(0, 0, 0, 0.02),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 auto;
+}
+
+.error-card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 6px;
+  background: linear-gradient(90deg, #ffcf00, #ff5e62, #ffcf00);
+  background-size: 200% 100%;
+  animation: borderGlow 4s linear infinite;
+}
+
+@keyframes borderGlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.error-icon-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-plug-emoji {
+  font-size: 64px;
+  z-index: 2;
+  animation: plugFloat 4s ease-in-out infinite;
+}
+
+@keyframes plugFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-5deg); }
+}
+
+/* Floating Lego Brick Animations for a playful brand touch */
+.floating-brick-error {
+  position: absolute;
+  width: 32px;
+  height: 24px;
+  border-radius: 4px;
+  opacity: 0.8;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.floating-brick-error::after {
+  content: '';
+  position: absolute;
+  top: -4px; left: 6px; width: 8px; height: 4px;
+  background: inherit;
+  border-radius: 2px;
+  box-shadow: 12px 0 0 0 currentColor;
+}
+
+.floating-brick-error.red {
+  background: #ff5e62;
+  color: #d13035;
+  top: 10px;
+  left: -10px;
+  transform: rotate(-15deg);
+  animation: floatRed 5s ease-in-out infinite alternate;
+}
+
+.floating-brick-error.yellow {
+  background: #ffcf00;
+  color: #d1a500;
+  bottom: 10px;
+  right: -10px;
+  transform: rotate(20deg);
+  animation: floatYellow 6s ease-in-out infinite alternate;
+}
+
+@keyframes floatRed {
+  0% { transform: translate(0, 0) rotate(-15deg); }
+  100% { transform: translate(-5px, -10px) rotate(-5deg); }
+}
+
+@keyframes floatYellow {
+  0% { transform: translate(0, 0) rotate(20deg); }
+  100% { transform: translate(8px, 8px) rotate(10deg); }
+}
+
+.error-card-glass h2 {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 15px;
+  letter-spacing: -0.5px;
+}
+
+.error-card-glass p {
+  font-size: 16px;
+  color: #4b5563;
+  margin-bottom: 35px;
+  line-height: 1.6;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-retry-btn {
+  background: linear-gradient(135deg, #ffcf00 0%, #ffb300 100%);
+  color: #111827;
+  border: none;
+  padding: 14px 36px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(255, 207, 0, 0.35),
+              0 0 0 1px rgba(255, 207, 0, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-retry-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -50%; width: 200%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-20deg);
+  transition: 0.75s;
+}
+
+.error-retry-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(255, 207, 0, 0.5),
+              0 0 0 2px rgba(255, 207, 0, 0.2);
+}
+
+.error-retry-btn:hover::after {
+  left: 120%;
+}
+
+.error-retry-btn:active {
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Premium Toast Notifications - Glassmorphic & Animated
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 380px;
+  width: calc(100% - 48px);
+}
+
+.toast-item {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 
+              0 1px 2px rgba(0, 0, 0, 0.02),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-item.exiting {
+  animation: toastSlideOut 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.toast-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.toast-icon-wrapper.success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.toast-icon-wrapper.error {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.toast-icon-wrapper.warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: 12.5px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toast-close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #4b5563;
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: #ffcf00; /* Yellow progress bar */
+  animation: toastProgressLinear 3s linear forwards;
+  width: 100%;
+}
+
+.toast-progress.success {
+  background-color: #10b981;
+}
+
+.toast-progress.error {
+  background-color: #ef4444;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@keyframes toastProgressLinear {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 

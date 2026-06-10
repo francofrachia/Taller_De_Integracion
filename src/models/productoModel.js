@@ -12,8 +12,8 @@ const Producto = {
                     SELECT promo.porcentaje 
                     FROM promocion promo 
                     WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
-                      AND promo.fecha_inicio <= NOW() 
-                      AND promo.fecha_fin >= NOW()
+                      AND promo.fecha_inicio <= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date 
+                      AND promo.fecha_fin >= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
                     ORDER BY promo.porcentaje DESC
                     LIMIT 1
                 ) AS descuento,
@@ -46,8 +46,8 @@ const Producto = {
                     SELECT promo.porcentaje 
                     FROM promocion promo 
                     WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
-                      AND promo.fecha_inicio <= NOW() 
-                      AND promo.fecha_fin >= NOW()
+                      AND promo.fecha_inicio <= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date 
+                      AND promo.fecha_fin >= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
                     ORDER BY promo.porcentaje DESC
                     LIMIT 1
                 ) AS descuento,
@@ -191,7 +191,8 @@ const Producto = {
         const query = `
             SELECT id_promo, id_producto, porcentaje, fecha_inicio, fecha_fin, descripcion
             FROM promocion
-            WHERE fecha_inicio <= NOW() AND fecha_fin >= NOW()
+            WHERE fecha_inicio <= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date 
+              AND fecha_fin >= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
         `;
         const { rows } = await pool.query(query);
         return rows;
@@ -309,8 +310,8 @@ const Producto = {
                     SELECT promo.porcentaje 
                     FROM promocion promo 
                     WHERE (promo.id_producto = p.id_producto OR promo.id_categoria = p.id_categoria)
-                      AND promo.fecha_inicio <= NOW() 
-                      AND promo.fecha_fin >= NOW()
+                      AND promo.fecha_inicio <= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date 
+                      AND promo.fecha_fin >= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
                     ORDER BY promo.porcentaje DESC
                     LIMIT 1
                 ) AS descuento,

@@ -24,7 +24,7 @@ class Carrito {
             JOIN producto p ON lc.id_producto = p.id_producto
             LEFT JOIN imagen i ON p.id_producto = i.id_producto
             WHERE lc.id_carrito = $1
-            GROUP BY lc.id_producto, lc.cantidad, lc.precio, p.nombre, p.stock
+            GROUP BY lc.id_producto, lc.cantidad, lc.precio, p.nombre, p.stock, p.activo
             ORDER BY lc.id_producto
         `, [id_carrito]);
         return result.rows;
