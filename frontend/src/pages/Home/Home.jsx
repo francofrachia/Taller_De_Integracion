@@ -248,8 +248,8 @@ const Home = () => {
     return {
       ...p,
       discount_pct: p.discount || parseFloat(promo.porcentaje),
-      original_price: parseFloat(p.oldPrice || p.price).toFixed(2),
-      final_price: parseFloat(p.price).toFixed(2)
+      original_price: parseFloat(p.oldPrice || p.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+      final_price: parseFloat(p.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
     };
   }).filter(Boolean);
 
@@ -534,7 +534,7 @@ const Home = () => {
                                   {product.categoryName || "Construye tu imaginación."}
                                 </p>
                                 <div className="apple-card-price">
-                                  {product.stock <= 0 ? "Sin stock" : `Desde $${product.price}`}
+                                  {product.stock <= 0 ? "Sin stock" : `Desde $${parseFloat(product.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                                 </div>
                               </div>
                               <img

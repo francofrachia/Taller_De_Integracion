@@ -105,9 +105,9 @@ const ProductCard = ({ product }) => {
           
           <div className="product-prices">
             {product.oldPrice && (
-              <span className="old-price">${product.oldPrice}</span>
+              <span className="old-price">${parseFloat(product.oldPrice).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
             )}
-            <span className="current-price">${product.price}</span>
+            <span className="current-price">${parseFloat(product.price).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
           </div>
           
           <div className="product-rating">
