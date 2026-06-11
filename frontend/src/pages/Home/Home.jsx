@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
 const MarqueeComponent = (typeof Marquee === 'object' && Marquee.default) ? Marquee.default : Marquee;
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
@@ -44,6 +44,7 @@ const ProductCardSkeleton = () => (
 );
 
 const Home = () => {
+  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -627,11 +628,17 @@ const Home = () => {
                         const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];
 
                         return (
-                          <div key={product.id} className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} style={{ animationDelay: delays[index] }}>
+                          <div 
+                            key={product.id} 
+                            className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} 
+                            style={{ animationDelay: delays[index], cursor: 'pointer' }}
+                            onClick={() => navigate(`/producto/${product.id}`)}
+                          >
                             <button
                               className="masonry-fav-btn"
                               onClick={(e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 toggleFavorito(product.id);
                               }}
                             >
