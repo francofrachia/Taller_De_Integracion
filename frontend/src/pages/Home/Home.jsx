@@ -439,14 +439,13 @@ const Home = () => {
                             <div className="apple-card-actions">
                               <button
                                 className="apple-add-to-cart-btn"
-                                disabled={product.stock <= 0}
                                 onClick={async (e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                  await agregarAlCarrito(product.id, 1);
                                 }}
                               >
-                                {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                Agregar al Carrito
                               </button>
                             </div>
                           </Link>
@@ -550,14 +549,13 @@ const Home = () => {
                               <div className="apple-card-actions">
                                 <button
                                   className="apple-add-to-cart-btn"
-                                  disabled={product.stock <= 0}
                                   onClick={async (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    if (product.stock > 0) await agregarAlCarrito(product.id, 1);
+                                    await agregarAlCarrito(product.id, 1);
                                   }}
                                 >
-                                  {product.stock <= 0 ? "Sin stock" : "Agregar al Carrito"}
+                                  Agregar al Carrito
                                 </button>
                               </div>
                             </Link>

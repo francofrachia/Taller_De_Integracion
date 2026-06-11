@@ -42,6 +42,7 @@ export default function Checkout() {
     });
 
     const [errors, setErrors] = useState({});
+    const [paymentError, setPaymentError] = useState(null);
 
     // Guardar cambios del formulario en sessionStorage
     useEffect(() => {
@@ -293,6 +294,7 @@ export default function Checkout() {
             return;
         }
 
+        setPaymentError(null);
         setIsProcessing(true);
 
         try {
@@ -367,6 +369,12 @@ export default function Checkout() {
                                         </Link>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+                        {paymentError && (
+                            <div className="checkout-payment-error" style={{ backgroundColor: '#ffebee', color: '#c62828', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ef9a9a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '20px' }}>⚠️</span>
+                                <span>{paymentError}</span>
                             </div>
                         )}
                         <h2>Factura</h2>

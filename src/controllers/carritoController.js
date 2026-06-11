@@ -34,7 +34,7 @@ const addProducto = async (req, res) => {
         const producto = await Producto.getById(id_producto);
         if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
         
-        if (producto.stock < cantidad) {
+        if (producto.stock > 0 && cantidad > producto.stock) {
             return res.status(400).json({ error: 'Stock insuficiente' });
         }
 

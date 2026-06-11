@@ -104,7 +104,7 @@ const CartItemComponent = React.memo(({
 });
 
 export default function Cart() {
-    const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized } = useContext(AppContext);
+    const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized, mostrarNotificacion } = useContext(AppContext);
     const navigate = useNavigate();
     const toast = useToast();
     

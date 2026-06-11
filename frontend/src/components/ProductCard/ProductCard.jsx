@@ -69,15 +69,25 @@ const ProductCard = ({ product }) => {
 
       <Link to={`/producto/${product.id}`} className="product-card-link">
         <div className="product-card-image-container">
-          {product.stock <= 0 ? (
-            <span className="out-of-stock-badge">Agotado</span>
-          ) : product.discount ? (
-            <span className="discount-badge">-{product.discount}%</span>
-          ) : null}
+          <div className="product-badges">
+            {product.stock <= 0 && (
+              <span className="out-of-stock-badge">Agotado</span>
+            )}
+            {product.stock > 5 && product.stock <= 10 && (
+              <span className="last-units-badge">Últimas unidades</span>
+            )}
+            {product.stock > 0 && product.stock <= 5 && (
+              <span className="last-units-badge" style={{ backgroundColor: '#d32f2f' }}>¡Últimas {product.stock}!</span>
+            )}
+            {product.stock > 0 && product.discount ? (
+              <span className="discount-badge">-{Math.round(Number(product.discount))}%</span>
+            ) : null}
+          </div>
           <img 
             src={(!product.image || product.image.includes('legostore.com')) ? placeholderImg : product.image} 
             alt={product.title} 
             className="product-image" 
+            style={product.stock <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
             onError={(e) => {
               e.target.onerror = null; // Prevent infinite loop if fallback also fails
               e.target.src = placeholderImg;
@@ -117,13 +127,9 @@ const ProductCard = ({ product }) => {
           <button className="add-to-cart-btn out-of-stock-btn" disabled style={{ backgroundColor: '#ffcccc', color: '#cc0000', border: '1px solid #cc0000' }}>
             Discontinuado
           </button>
-        ) : product.stock > 0 ? (
+        ) : (
           <button className="add-to-cart-btn" onClick={handleAddCart}>
             Agregar al Carrito
-          </button>
-        ) : (
-          <button className="add-to-cart-btn out-of-stock-btn" disabled>
-            Sin stock
           </button>
         )}
       </div>

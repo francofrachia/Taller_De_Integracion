@@ -33,17 +33,24 @@
   object-fit: contain;
 }
 
-.discount-badge {
+.product-badges {
   position: absolute;
   top: 10px;
   left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 2;
+  align-items: flex-start;
+}
+
+.discount-badge {
   background-color: #e3000b;
   color: white;
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 700;
   border-radius: 4px;
-  z-index: 2;
 }
 
 .favorite-btn {
@@ -216,16 +223,23 @@
 
 /* Estilos de productos agotados */
 .out-of-stock-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
   background-color: #d32f2f; /* Red color for Sold Out */
   color: white;
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 700;
   border-radius: 4px;
-  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  text-transform: uppercase;
+}
+
+.last-units-badge {
+  background-color: #f57c00; /* Naranja para últimas unidades */
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.15);
   text-transform: uppercase;
 }
