@@ -112,9 +112,9 @@
 .item-quantity {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%; /* Toma todo el alto de la celda de la grilla */
 }
 
 .qty-error-msg {
@@ -128,12 +128,6 @@
   pointer-events: none;
 }
 
-.out-of-stock-badge {
-  color: #d32f2f;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
 
 .qty-btn {
   background: none;
@@ -381,27 +375,81 @@
   box-shadow: 0 4px 15px rgba(211, 47, 47, 0.05);
 }
 
-/* Producto agotado completamente */
+/* Producto agotado o discontinuado */
 .cart-item--out-of-stock {
-  opacity: 0.6;
-  filter: grayscale(0.5);
-  pointer-events: none;
+  background-color: #fbfbfb;
+  border: 1px solid #eeeeee;
 }
 
-/* Permitir clicks en el botón de eliminar aunque esté agotado */
-.cart-item--out-of-stock .remove-btn {
-  pointer-events: auto;
+.cart-item--discontinued {
+  background-color: #fff5f5;
+  border: 1px solid #ffebee;
+  opacity: 0.8;
 }
 
-.out-of-stock-badge {
-  display: inline-block;
-  background-color: #fce8e8;
+.cart-item--out-of-stock .item-product img,
+.cart-item--discontinued .item-product img {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.cart-item--out-of-stock .item-name,
+.cart-item--out-of-stock .item-price {
+  color: #999;
+}
+
+.cart-item--discontinued .item-name {
+  color: #cc0000;
+  text-decoration: line-through;
+}
+
+.cart-item--discontinued .item-price {
+  color: #999;
+}
+
+.cart-item--out-of-stock .item-select button,
+.cart-item--discontinued .item-select button {
+  cursor: not-allowed !important;
+  color: #e0e0e0 !important;
+}
+
+/* Permitir clicks en el botón de eliminar y link */
+.cart-item--out-of-stock .remove-btn,
+.cart-item--discontinued .remove-btn {
+  color: #999;
+}
+.cart-item--out-of-stock .remove-btn:hover,
+.cart-item--discontinued .remove-btn:hover {
   color: #d32f2f;
-  padding: 4px 10px;
-  border-radius: 4px;
+}
+
+/* Badges de estado en lugar del quantity selector */
+.cart-out-of-stock-badge,
+.cart-discontinued-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 6px 12px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+  line-height: 1;
+}
+
+.cart-out-of-stock-badge {
+  background-color: #fff3f3;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.cart-discontinued-badge {
+  background-color: #fce4e4;
+  color: #cc0000;
+  border: 1px solid #ef9a9a;
 }
 
 

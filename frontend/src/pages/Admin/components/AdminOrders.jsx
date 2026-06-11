@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiDownload } from 'react-icons/fi';
+import { useToast } from '../../../components/Toast/ToastContext';
+import { useConfirm } from '../../../components/Confirm/ConfirmContext';
 
 const AdminOrders = () => {
     const { token, API_URL } = useContext(AppContext);
+    const toast = useToast();
+    const { confirm } = useConfirm();
     const [orders, setOrders] = useState([]);
     const [editingOrderId, setEditingOrderId] = useState(null);
     const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -32,8 +36,8 @@ const AdminOrders = () => {
         if (!newStatus || newStatus === currentStatus) return;
 
         if (newStatus === 'Cancelado') {
-            const confirm = window.confirm("¿Estás seguro de cancelar esta compra? Esto restaurará el stock de los productos involucrados.");
-            if (!confirm) return;
+            const isConfirmed = await confirm("¿Estás seguro de cancelar esta compra? Esto restaurará el stock de los productos involucrados.");
+            if (!isConfirmed) return;
         }
 
         try {
@@ -47,22 +51,22 @@ const AdminOrders = () => {
             });
 
             if (res.ok) {
-                // alert('Estado actualizado');
+                toast.success('Estado actualizado exitosamente');
                 fetchOrders(); // recargar
                 setEditingOrderId(null); // ocultar el selector
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al actualizar estado');
+                toast.error(data.error || 'Error al actualizar estado');
             }
         } catch (e) {
             console.error(e);
-            alert('Error de red');
+            toast.error('Error de red');
         }
     };
 
     const exportToCSV = () => {
         if (!orders || orders.length === 0) {
-            alert('No hay ventas para exportar');
+            toast.error('No hay ventas para exportar');
             return;
         }
         

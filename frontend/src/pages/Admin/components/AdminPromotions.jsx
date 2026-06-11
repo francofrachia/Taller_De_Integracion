@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { useToast } from '../../../components/Toast/ToastContext';
+import { useConfirm } from '../../../components/Confirm/ConfirmContext';
 
 const AdminPromotions = () => {
     const { token, API_URL, obtenerPromociones } = useContext(AppContext);
+    const toast = useToast();
+    const { confirm } = useConfirm();
     const [promotions, setPromotions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState(null);
@@ -89,22 +93,24 @@ const AdminPromotions = () => {
             });
 
             if (res.ok) {
-                alert(editingPromo ? 'Promoción actualizada' : 'Promoción creada');
+                toast.success(editingPromo ? 'Promoción actualizada' : 'Promoción creada');
                 setIsModalOpen(false);
                 fetchPromotions();
                 if (obtenerPromociones) obtenerPromociones();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                toast.error(data.error || 'Error al guardar');
             }
         } catch (e) {
             console.error(e);
-            alert("Error de red");
+            toast.error("Error de red");
         }
     };
 
     const handleDelete = async (id_promo) => {
-        if (!window.confirm("¿Seguro que deseas eliminar esta promoción?")) return;
+        const isConfirmed = await confirm("¿Seguro que deseas eliminar esta promoción?");
+        if (!isConfirmed) return;
+        
         try {
             const res = await fetch(`${API_URL}/promociones/${id_promo}`, {
                 method: 'DELETE',
@@ -113,13 +119,14 @@ const AdminPromotions = () => {
                 }
             });
             if (res.ok) {
+                toast.success('Promoción eliminada exitosamente');
                 fetchPromotions();
                 if (obtenerPromociones) obtenerPromociones();
             } else {
-                alert('Error al eliminar');
+                toast.error('Error al eliminar');
             }
         } catch(e) {
-            alert('Error de red');
+            toast.error('Error de red');
         }
     };
 

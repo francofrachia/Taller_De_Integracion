@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { AppProvider } from './context/AppContext.jsx'
+import { ToastProvider } from './components/Toast/ToastProvider.jsx'
+import { ConfirmProvider } from './components/Confirm/ConfirmContext.jsx'
 
 // Cuando el usuario vuelve desde un sitio externo (como Mercado Pago), el browser
 // puede restaurar la página desde el bfcache (back-forward cache) con código viejo congelado.
@@ -16,8 +18,12 @@ window.addEventListener('pageshow', (event) => {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <ToastProvider>
+      <ConfirmProvider>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </ConfirmProvider>
+    </ToastProvider>
   </StrictMode>,
 )

@@ -4,12 +4,14 @@ import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import mercadopagoLogo from '../../assets/mercadopago-seeklogo.webp';
+import { useToast } from '../../components/Toast/ToastContext';
 import './Checkout.css';
 
 export default function Checkout() {
     const { cart, API_URL, usuario, productos, loading, isInitialized, token, removerDelCarrito, actualizarCantidadCarrito } = useContext(AppContext);
     const navigate = useNavigate();
     const location = useLocation();
+    const toast = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
 
     const selectedItemIds = location.state?.selectedItems || null;
@@ -283,7 +285,7 @@ export default function Checkout() {
         e.preventDefault();
 
         if (hasAnyQtyError) {
-            alert('Por favor, corregí las cantidades con exceso de stock en el carrito antes de comprar.');
+            toast.error('Por favor, corregí las cantidades con exceso de stock en el carrito antes de comprar.');
             return;
         }
 
@@ -317,15 +319,15 @@ export default function Checkout() {
                 if (data.init_point) {
                     window.location.href = data.init_point;
                 } else {
-                    alert('Error: No se recibió la URL de pago de Mercado Pago.');
+                    toast.error('Error: No se recibió la URL de pago de Mercado Pago.');
                 }
             } else {
                 const errData = await response.json();
-                alert(`Error al procesar el pago: ${errData.error}`);
+                toast.error(`Error al procesar el pago: ${errData.error}`);
             }
         } catch (error) {
             console.error('Error al iniciar pago:', error);
-            alert('Error al conectar con la pasarela de pagos.');
+            toast.error('Error al conectar con la pasarela de pagos.');
         } finally {
             setIsProcessing(false);
         }

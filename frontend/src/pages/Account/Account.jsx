@@ -6,6 +6,7 @@ import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import placeholderImg from '../../assets/imagen no existente BM.webp';
+import { useConfirm } from '../../components/Confirm/ConfirmContext';
 import './Account.css';
 
 // ───────────────────────────────────────────────
@@ -19,6 +20,7 @@ function DireccionesSection({ API_URL, token }) {
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [feedback, setFeedback] = useState({ type: '', msg: '' });
+    const { confirm } = useConfirm();
 
     const [formDir, setFormDir] = useState({
         calle: '',
@@ -124,7 +126,9 @@ function DireccionesSection({ API_URL, token }) {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('¿Estás seguro de que querés eliminar esta dirección?')) return;
+        const isConfirmed = await confirm('¿Estás seguro de que querés eliminar esta dirección?');
+        if (!isConfirmed) return;
+        
         setIsDeleting(true);
         setFeedback({ type: '', msg: '' });
         try {

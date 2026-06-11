@@ -1049,6 +1049,26 @@
     border: 1px solid #ef9a9a;
 }
 
+.purchase-status-badge.pendiente {
+    color: #e65100;
+    background-color: #fff3e0;
+    border: 1px solid #ffe0b2;
+}
+
+.purchase-status-badge.en-camino,
+.purchase-status-badge.en-manos-del-correo {
+    color: #4a148c;
+    background-color: #f3e5f5;
+    border: 1px solid #e1bee7;
+}
+
+.purchase-status-badge.entregado,
+.purchase-status-badge.finalizado {
+    color: #1b5e20;
+    background-color: #c8e6c9;
+    border: 1px solid #81c784;
+}
+
 .purchase-items-list {
     display: flex;
     flex-direction: column;

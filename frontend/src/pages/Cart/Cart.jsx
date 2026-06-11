@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { MdCheckBox, MdCheckBoxOutlineBlank, MdDeleteOutline } from 'react-icons/md';
+import { useToast } from '../../components/Toast/ToastContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Cart.css';
@@ -39,7 +40,7 @@ const CartItemComponent = React.memo(({
     const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
 
     return (
-        <div className={`cart-item ${!isActive ? 'cart-item--discontinued' : outOfStock ? 'cart-item--out-of-stock' : (isInvalidQty ? 'cart-item--stock-issue' : '')}`} style={!isActive ? { opacity: 0.8, backgroundColor: '#fff5f5' } : {}}>
+        <div className={`cart-item ${!isActive ? 'cart-item--discontinued' : outOfStock ? 'cart-item--out-of-stock' : (isInvalidQty ? 'cart-item--stock-issue' : '')}`}>
             <div className="item-product">
                 <button className="remove-btn" onClick={() => onRemove(item.id_producto)} title="Eliminar"><MdDeleteOutline /></button>
                 <Link to={`/producto/${item.id_producto}`} style={{ display: 'flex', alignItems: 'center', gap: '15px', textDecoration: 'none', color: 'inherit' }}>
@@ -48,40 +49,46 @@ const CartItemComponent = React.memo(({
                     ) : (
                         <div className="img-placeholder"></div>
                     )}
-                    <span className="item-name" style={!isActive ? { textDecoration: 'line-through', color: '#cc0000' } : {}}>{item.nombre}</span>
+                    <span className="item-name">{item.nombre}</span>
                 </Link>
             </div>
             <div className="item-price">{formatPrice(item.precio)}</div>
             <div className="item-quantity">
                 {!isActive ? (
-                    <div className="discontinued-badge" style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center' }}>
-                        Producto Discontinuado
+                    <div className="cart-discontinued-badge">
+                        Discontinuado
                     </div>
-                ) : !outOfStock ? (
-                    <div className={`quantity-controls-inline ${isInvalidQty ? 'qty-controls-error' : ''}`}>
-                        <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>-</button>
-                        <input
-                            type="number"
-                            value={localQtyStr !== undefined ? localQtyStr : qty}
-                            onChange={(e) => onLocalQtyChange(item.id_producto, e.target.value)}
-                            onBlur={(e) => onQuantityBlur(item.id_producto, item.cantidad, itemStock, e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') e.target.blur();
-                            }}
-                            min="1"
-                            max={itemStock || undefined}
-                        />
-                        <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>+</button>
+                ) : outOfStock ? (
+                    <div className="cart-out-of-stock-badge">
+                        Agotado
                     </div>
-                ) : null}
-                {isActive && (isInvalidQty || outOfStock) && (
-                    <div className={outOfStock ? "out-of-stock-badge" : "qty-error-msg"}>
-                        {outOfStock ? 'Agotado' : `Máx: ${itemStock} u`}
-                    </div>
+                ) : (
+                    <>
+                        <div className={`quantity-controls-inline ${isInvalidQty ? 'qty-controls-error' : ''}`}>
+                            <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, -1, itemStock)}>-</button>
+                            <input
+                                type="number"
+                                value={localQtyStr !== undefined ? localQtyStr : qty}
+                                onChange={(e) => onLocalQtyChange(item.id_producto, e.target.value)}
+                                onBlur={(e) => onQuantityBlur(item.id_producto, item.cantidad, itemStock, e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.target.blur();
+                                }}
+                                min="1"
+                                max={itemStock || undefined}
+                            />
+                            <button className="qty-btn" onClick={() => onQuantityChange(item.id_producto, item.cantidad, 1, itemStock)}>+</button>
+                        </div>
+                        {isInvalidQty && (
+                            <div className="qty-error-msg">
+                                {`Máx: ${itemStock} u`}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
             <div className="item-total">
-                {formatPrice((outOfStock || !isActive) ? 0 : (item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad)))}
+                {(outOfStock || !isActive) ? '-' : formatPrice(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad))}
             </div>
             <div className="item-select" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <button 
@@ -99,10 +106,12 @@ const CartItemComponent = React.memo(({
 export default function Cart() {
     const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized } = useContext(AppContext);
     const navigate = useNavigate();
+    const toast = useToast();
     
     // UI Local State
     const [localQuantities, setLocalQuantities] = useState({});
     const [selectedItems, setSelectedItems] = useState({});
+    const [hasAlertedOutOfStock, setHasAlertedOutOfStock] = useState(false);
 
     // Sincronizar items seleccionados por defecto (si hay stock)
     useEffect(() => {
@@ -167,7 +176,7 @@ export default function Cart() {
                     await actualizarCantidadCarrito(id_producto, newQty);
                 } catch (error) {
                     console.error("Error updating quantity:", error);
-                    alert("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
+                    toast.error("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
                     setLocalQuantities(prev => ({ ...prev, [id_producto]: baseQty })); // Rollback UX
                 }
             }
@@ -194,7 +203,7 @@ export default function Cart() {
                 try {
                     await actualizarCantidadCarrito(id_producto, 1);
                 } catch (error) {
-                    alert("No se pudo restaurar la cantidad.");
+                    toast.error("No se pudo restaurar la cantidad.");
                 }
             }
             return;
@@ -208,7 +217,7 @@ export default function Cart() {
                     await actualizarCantidadCarrito(id_producto, val);
                 } catch (error) {
                     console.error("Error updating quantity on blur:", error);
-                    alert("No se pudo actualizar la cantidad.");
+                    toast.error("No se pudo actualizar la cantidad.");
                     setLocalQuantities(prev => ({ ...prev, [id_producto]: currentQty })); // Rollback UX
                 }
             }
@@ -220,7 +229,7 @@ export default function Cart() {
             await removerDelCarrito(id_producto);
         } catch (error) {
             console.error("Error removing item:", error);
-            alert("No se pudo eliminar el producto del carrito. Intenta de nuevo.");
+            toast.error("No se pudo eliminar el producto del carrito. Intenta de nuevo.");
         }
     };
 
@@ -255,19 +264,19 @@ export default function Cart() {
 
     const handleCheckout = () => {
         if (hasDiscontinuedItems) {
-            alert('Tu carrito tiene productos que no están disponibles para la compra (discontinuados). Por favor eliminalos para continuar.');
+            toast.error('Tu carrito tiene productos que no están disponibles para la compra (discontinuados). Por favor eliminalos para continuar.');
             return;
         }
 
         const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
         
         if (selectedIds.length === 0) {
-            alert('Debes seleccionar al menos un producto para proceder con la compra.');
+            toast.error('Debes seleccionar al menos un producto para proceder con la compra.');
             return;
         }
         
         if (hasAnyQtyError) {
-            alert('Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.');
+            toast.error('Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.');
             return;
         }
         

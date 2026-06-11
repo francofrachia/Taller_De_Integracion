@@ -19,7 +19,6 @@
 }
 
 html, body {
-  overflow-x: hidden;
   width: 100%;
 }
 
@@ -28,7 +27,6 @@ body {
   background-color: var(--bg-white);
   color: var(--text-dark);
   line-height: 1.5;
-  overflow-y: scroll;
 }
 
 a {
