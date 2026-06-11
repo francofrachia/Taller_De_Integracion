@@ -320,7 +320,7 @@ const Catalog = () => {
                   <span className="price-value">${priceRange.toLocaleString()}</span>
                 </div>
                 <input
-                  type="range" min="0" max={maxPriceLimit || 100000}
+                  type="range" min="0" max={maxPriceLimit || 100000} step="50"
                   value={priceRange}
                   onChange={e => setPriceRange(Number(e.target.value))}
                   className="price-range-slider"

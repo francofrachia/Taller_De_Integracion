@@ -90,13 +90,13 @@ const Promociones = () => {
                 </div>
 
                 <button 
-                  className={`promo-add-btn ${product.stock <= 0 ? 'disabled' : ''}`}
-                  onClick={() => {
-                    if (product.stock > 0) agregarAlCarrito(product.id_producto, 1);
+                  className={`promo-add-btn`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    agregarAlCarrito(product.id_producto, 1);
                   }}
-                  disabled={product.stock <= 0}
                 >
-                  <FaShoppingCart /> {product.stock <= 0 ? 'Sin Stock' : 'Añadir al Carrito'}
+                  <FaShoppingCart /> Añadir al Carrito
                 </button>
               </div>
             </div>

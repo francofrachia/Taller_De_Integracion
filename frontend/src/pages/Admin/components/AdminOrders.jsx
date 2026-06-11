@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiDownload } from 'react-icons/fi';
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal';
 
 const AdminOrders = () => {
-    const { token, API_URL } = useContext(AppContext);
+    const { token, API_URL, mostrarNotificacion } = useContext(AppContext);
     const [orders, setOrders] = useState([]);
     const [editingOrderId, setEditingOrderId] = useState(null);
     const [expandedOrderId, setExpandedOrderId] = useState(null);
+    const [confirmModalData, setConfirmModalData] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false })) });
 
     useEffect(() => {
         fetchOrders();
@@ -28,14 +30,29 @@ const AdminOrders = () => {
         }
     };
 
-    const handleStatusChange = async (id_compra, newStatus, currentStatus) => {
+    const handleStatusChange = (id_compra, newStatus, currentStatus) => {
         if (!newStatus || newStatus === currentStatus) return;
 
         if (newStatus === 'Cancelado') {
-            const confirm = window.confirm("¿Estás seguro de cancelar esta compra? Esto restaurará el stock de los productos involucrados.");
-            if (!confirm) return;
+            setConfirmModalData({
+                isOpen: true,
+                title: 'Cancelar Compra',
+                message: '¿Estás seguro de cancelar esta compra? Esto restaurará el stock de los productos involucrados.',
+                onConfirm: async () => {
+                    setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                    await proceedWithUpdate(id_compra, newStatus);
+                },
+                onCancel: () => {
+                    setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                    setEditingOrderId(null);
+                }
+            });
+        } else {
+            proceedWithUpdate(id_compra, newStatus);
         }
+    };
 
+    const proceedWithUpdate = async (id_compra, newStatus) => {
         try {
             const res = await fetch(`${API_URL}/compras/admin/${id_compra}/estado`, {
                 method: 'PUT',
@@ -47,22 +64,21 @@ const AdminOrders = () => {
             });
 
             if (res.ok) {
-                // alert('Estado actualizado');
-                fetchOrders(); // recargar
-                setEditingOrderId(null); // ocultar el selector
+                fetchOrders();
+                setEditingOrderId(null);
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al actualizar estado');
+                mostrarNotificacion('Error', data.error || 'Error al actualizar estado', 'error');
             }
         } catch (e) {
             console.error(e);
-            alert('Error de red');
+            mostrarNotificacion('Error', 'Error de red', 'error');
         }
     };
 
     const exportToCSV = () => {
         if (!orders || orders.length === 0) {
-            alert('No hay ventas para exportar');
+            mostrarNotificacion('Atención', 'No hay ventas para exportar', 'warning');
             return;
         }
         
@@ -83,7 +99,6 @@ const AdminOrders = () => {
         
         const csvContent = [headers.join(';'), ...rows].join('\n');
         
-        // Agregar BOM para que Excel detecte UTF-8 sin problemas de codificación
         const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -215,7 +230,6 @@ const AdminOrders = () => {
                                 </td>
                             </tr>
                             
-                            {/* Fila de detalles expandible */}
                             {expandedOrderId === o.id_compra && (
                                 <tr style={{ backgroundColor: '#fcfcfc' }}>
                                     <td colSpan="5" style={{ padding: '0' }}>
@@ -263,6 +277,14 @@ const AdminOrders = () => {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal 
+                isOpen={confirmModalData.isOpen}
+                title={confirmModalData.title}
+                message={confirmModalData.message}
+                onConfirm={confirmModalData.onConfirm}
+                onCancel={confirmModalData.onCancel}
+            />
         </div>
     );
 };

@@ -33,7 +33,6 @@ const ProductDetail = () => {
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState('');
   const [reviewErrorMsg, setReviewErrorMsg] = useState('');
@@ -120,7 +119,7 @@ const ProductDetail = () => {
         body: JSON.stringify({
           puntaje: userRating,
           texto: reviewText,
-          anonimo: isAnonymous
+          anonimo: true
         })
       });
 
@@ -377,6 +376,7 @@ const ProductDetail = () => {
                   <img
                     src={(!img || img.includes('legostore.com')) ? placeholderProduct : img}
                     alt={`Miniatura ${index + 1}`}
+                    style={product.stock <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = placeholderProduct;
@@ -407,6 +407,7 @@ const ProductDetail = () => {
                 src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]}
                 alt={product.title}
                 className="main-image"
+                style={product.stock <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = placeholderProduct;
@@ -442,8 +443,10 @@ const ProductDetail = () => {
               <span className="stock-status" style={{ verticalAlign: 'middle' }}>
                 {product.stock > 10 ? (
                   <span style={{ color: '#2e7d32' }}>En stock</span>
+                ) : product.stock > 5 ? (
+                  <span style={{ color: '#f57c00' }}>Últimas unidades</span>
                 ) : product.stock > 0 ? (
-                  <span style={{ color: '#f57c00' }}>Últimas {product.stock} unidades</span>
+                  <span style={{ color: '#d32f2f' }}>¡Últimas {product.stock} unidades!</span>
                 ) : (
                   <span style={{ color: '#d32f2f' }}>Agotado</span>
                 )}
@@ -483,18 +486,17 @@ const ProductDetail = () => {
             <div className="product-actions">
               <p className="quantity-label">Cantidad:</p>
               <div className="action-row" style={{ flexWrap: 'wrap' }}>
-                <div className={`quantity-selector ${quantity > product.stock ? "qty-selector-error" : ""}`}>
-                  <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment}>-</button>
+                <div className={`quantity-selector ${product.stock > 0 && quantity > product.stock ? "qty-selector-error" : ""}`}>
+                  <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment || product.activo === false}>-</button>
                   <input
                     type="number"
                     value={quantity}
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
                     min="1"
-                    max={product?.stock || 1}
-                    disabled={isProcessingPayment}
+                    disabled={isProcessingPayment || product.activo === false}
                   />
-                  <button className="plus-btn" onClick={() => handleQuantityChange(1)} disabled={isProcessingPayment}>+</button>
+                  <button className="plus-btn" onClick={() => handleQuantityChange(1)} disabled={isProcessingPayment || product.activo === false}>+</button>
                 </div>
 
                 <button
@@ -504,23 +506,23 @@ const ProductDetail = () => {
                 >
                   {isProcessingPayment ? 'Procesando...' : product.activo === false ? 'No disponible' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
-                <button
+                  <button
                   className="add-to-cart-btn"
                   onClick={async () => {
                     let qty = parseInt(quantity, 10);
                     if (isNaN(qty) || qty < 1) qty = 1;
-                    if (product && qty > product.stock) return;
+                    if (product && product.stock > 0 && qty > product.stock) return;
                     const res = await agregarAlCarrito(product.id, qty);
                     if (res && res.requireLogin) {
                       navigate('/login');
                     }
                   }}
-                  disabled={product.stock <= 0 || quantity > product.stock || product.activo === false}
+                  disabled={product.activo === false || (product.stock > 0 && quantity > product.stock)}
                 >
                   Agregar al Carrito
                 </button>
               </div>
-              {quantity > product.stock && (
+              {product.stock > 0 && quantity > product.stock && (
                 <p className="stock-warning-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '-5px', fontWeight: '500' }}>
                    No hay suficiente stock. El máximo es {product.stock} unidades.
                 </p>
@@ -675,15 +677,7 @@ const ProductDetail = () => {
                 />
               </div>
 
-              <div className="review-options-row">
-                <label className="anonymous-toggle">
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                  <span>Publicar como comentario anónimo</span>
-                </label>
+              <div className="review-options-row" style={{ display: 'none' }}>
               </div>
 
               {reviewErrorMsg && <p className="review-error-text">⚠️ {reviewErrorMsg}</p>}

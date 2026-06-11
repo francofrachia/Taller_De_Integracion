@@ -3,8 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
-import approvedSeal from '../../assets/approved_seal.webp';
-import rejectedSeal from '../../assets/rejected_seal.webp';
+import sealLogo from '../../assets/logo_cera_bloque_mundo_removed.webp';
 import './PaymentStatus.css';
 
 const PaymentStatus = ({ type }) => {
@@ -46,7 +45,7 @@ const PaymentStatus = ({ type }) => {
         return (
           <div className="status-card success">
             <div className="status-icon status-seal success-glow">
-              <img src={approvedSeal} alt="Pago Aprobado" className="status-seal-img" />
+              <img src={sealLogo} alt="Sello Bloque Mundo" className="status-seal-img" />
             </div>
             <h1>¡Gracias por tu compra!</h1>
             <p className="status-message">Tu pago ha sido aprobado de manera exitosa y hemos registrado tu orden.</p>
@@ -78,7 +77,7 @@ const PaymentStatus = ({ type }) => {
         return (
           <div className="status-card failure">
             <div className="status-icon status-seal failure-glow">
-              <img src={rejectedSeal} alt="Pago Rechazado" className="status-seal-img" />
+              <img src={sealLogo} alt="Sello Bloque Mundo" className="status-seal-img" />
             </div>
             <h1>Pago Rechazado</h1>
             <p className="status-message">Lamentablemente no pudimos procesar tu pago. Por favor intenta con otro medio o ponte en contacto con tu banco.</p>

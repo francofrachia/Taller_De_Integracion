@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal';
 
 const AdminPromotions = () => {
-    const { token, API_URL, obtenerPromociones } = useContext(AppContext);
+    const { token, API_URL, obtenerPromociones, mostrarNotificacion } = useContext(AppContext);
     const [promotions, setPromotions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState(null);
+    const [confirmModalData, setConfirmModalData] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false })) });
     const [formData, setFormData] = useState({
         fecha_inicio: '',
         fecha_fin: '',
@@ -89,38 +91,48 @@ const AdminPromotions = () => {
             });
 
             if (res.ok) {
-                alert(editingPromo ? 'Promoción actualizada' : 'Promoción creada');
+                mostrarNotificacion('Éxito', editingPromo ? 'Promoción actualizada' : 'Promoción creada', 'success');
                 setIsModalOpen(false);
                 fetchPromotions();
                 if (obtenerPromociones) obtenerPromociones();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                mostrarNotificacion('Error', data.error || 'Error al guardar', 'error');
             }
         } catch (e) {
             console.error(e);
-            alert("Error de red");
+            mostrarNotificacion('Error', 'Error de red', 'error');
         }
     };
 
-    const handleDelete = async (id_promo) => {
-        if (!window.confirm("¿Seguro que deseas eliminar esta promoción?")) return;
-        try {
-            const res = await fetch(`${API_URL}/promociones/${id_promo}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+    const handleDelete = (id) => {
+        setConfirmModalData({
+            isOpen: true,
+            title: 'Eliminar Promoción',
+            message: '¿Seguro que deseas eliminar esta promoción?',
+            onConfirm: async () => {
+                setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                try {
+                    const res = await fetch(`${API_URL}/promociones/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (res.ok) {
+                        mostrarNotificacion('Éxito', 'Promoción eliminada exitosamente', 'success');
+                        fetchPromotions();
+                        if (obtenerPromociones) obtenerPromociones();
+                    } else {
+                        mostrarNotificacion('Error', 'Error al eliminar', 'error');
+                    }
+                } catch(e) {
+                    mostrarNotificacion('Error', 'Error de red', 'error');
                 }
-            });
-            if (res.ok) {
-                fetchPromotions();
-                if (obtenerPromociones) obtenerPromociones();
-            } else {
-                alert('Error al eliminar');
-            }
-        } catch(e) {
-            alert('Error de red');
-        }
+            },
+            onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false }))
+        });
     };
 
     return (
@@ -235,6 +247,14 @@ const AdminPromotions = () => {
                     </div>
                 </div>
             )}
+            
+            <ConfirmModal 
+                isOpen={confirmModalData.isOpen}
+                title={confirmModalData.title}
+                message={confirmModalData.message}
+                onConfirm={confirmModalData.onConfirm}
+                onCancel={confirmModalData.onCancel}
+            />
         </div>
     );
 };

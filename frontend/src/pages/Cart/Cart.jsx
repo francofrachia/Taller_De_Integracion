@@ -97,7 +97,7 @@ const CartItemComponent = React.memo(({
 });
 
 export default function Cart() {
-    const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized } = useContext(AppContext);
+    const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized, mostrarNotificacion } = useContext(AppContext);
     const navigate = useNavigate();
     
     // UI Local State
@@ -167,7 +167,7 @@ export default function Cart() {
                     await actualizarCantidadCarrito(id_producto, newQty);
                 } catch (error) {
                     console.error("Error updating quantity:", error);
-                    alert("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
+                    mostrarNotificacion('Error', 'No se pudo actualizar la cantidad. Por favor, intenta de nuevo.', 'error');
                     setLocalQuantities(prev => ({ ...prev, [id_producto]: baseQty })); // Rollback UX
                 }
             }
@@ -194,7 +194,7 @@ export default function Cart() {
                 try {
                     await actualizarCantidadCarrito(id_producto, 1);
                 } catch (error) {
-                    alert("No se pudo restaurar la cantidad.");
+                    mostrarNotificacion('Error', 'No se pudo restaurar la cantidad.', 'error');
                 }
             }
             return;
@@ -208,7 +208,7 @@ export default function Cart() {
                     await actualizarCantidadCarrito(id_producto, val);
                 } catch (error) {
                     console.error("Error updating quantity on blur:", error);
-                    alert("No se pudo actualizar la cantidad.");
+                    mostrarNotificacion('Error', 'No se pudo actualizar la cantidad.', 'error');
                     setLocalQuantities(prev => ({ ...prev, [id_producto]: currentQty })); // Rollback UX
                 }
             }
@@ -220,7 +220,7 @@ export default function Cart() {
             await removerDelCarrito(id_producto);
         } catch (error) {
             console.error("Error removing item:", error);
-            alert("No se pudo eliminar el producto del carrito. Intenta de nuevo.");
+            mostrarNotificacion('Error', 'No se pudo eliminar el producto del carrito. Intenta de nuevo.', 'error');
         }
     };
 
@@ -255,19 +255,19 @@ export default function Cart() {
 
     const handleCheckout = () => {
         if (hasDiscontinuedItems) {
-            alert('Tu carrito tiene productos que no están disponibles para la compra (discontinuados). Por favor eliminalos para continuar.');
+            mostrarNotificacion('Atención', 'Tu carrito tiene productos que no están disponibles para la compra (discontinuados). Por favor eliminalos para continuar.', 'warning');
             return;
         }
 
         const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
         
         if (selectedIds.length === 0) {
-            alert('Debes seleccionar al menos un producto para proceder con la compra.');
+            mostrarNotificacion('Atención', 'Debes seleccionar al menos un producto para proceder con la compra.', 'warning');
             return;
         }
         
         if (hasAnyQtyError) {
-            alert('Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.');
+            mostrarNotificacion('Atención', 'Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.', 'warning');
             return;
         }
         

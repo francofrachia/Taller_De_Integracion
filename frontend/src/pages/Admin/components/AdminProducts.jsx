@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import { FiEdit2, FiUploadCloud, FiX, FiSearch, FiTrash2 } from 'react-icons/fi';
+import ConfirmModal from '../../../components/ConfirmModal/ConfirmModal';
 
 const AdminProducts = () => {
-    const { token, API_URL, productos, obtenerProductos, obtenerPromociones } = useContext(AppContext);
+    const { token, API_URL, productos, obtenerProductos, obtenerPromociones, mostrarNotificacion } = useContext(AppContext);
     const [localProducts, setLocalProducts] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +24,7 @@ const AdminProducts = () => {
     const [imagenes_a_borrar, setImagenesABorrar] = useState([]);
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [confirmModalData, setConfirmModalData] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false })) });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -259,20 +261,20 @@ const AdminProducts = () => {
                     }
                 } else {
                     const data = await catRes.json();
-                    alert(data.error || 'Error al crear la categoría');
+                    mostrarNotificacion('Error', data.error || 'Error al crear la categoría', 'error');
                     setIsSubmitting(false);
                     return; // Stop product creation if category fails
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de red al crear la categoría');
+                mostrarNotificacion('Error', 'Error de red al crear la categoría', 'error');
                 setIsSubmitting(false);
                 return;
             }
         }
 
         if (!finalCategoryId) {
-            alert("Debe seleccionar o crear una categoría para el producto.");
+            mostrarNotificacion('Atención', 'Debe seleccionar o crear una categoría para el producto.', 'warning');
             setIsSubmitting(false);
             return;
         }
@@ -307,48 +309,56 @@ const AdminProducts = () => {
             });
 
             if (res.ok) {
-                alert(editingProduct ? 'Producto actualizado' : 'Producto creado');
+                mostrarNotificacion('Éxito', editingProduct ? 'Producto actualizado' : 'Producto creado', 'success');
                 setIsModalOpen(false);
                 if (obtenerProductos) await obtenerProductos();
                 await fetchAdminProductos();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                mostrarNotificacion('Error', data.error || 'Error al guardar', 'error');
             }
         } catch (e) {
             console.error(e);
-            alert("Error de red");
+            mostrarNotificacion('Error', 'Error de red', 'error');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleDeleteProduct = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar este producto? Se ocultará de la tienda.')) return;
-        try {
-            const res = await fetch(`${API_URL}/productos/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+    const handleDeleteProduct = (id) => {
+        setConfirmModalData({
+            isOpen: true,
+            title: 'Eliminar Producto',
+            message: '¿Estás seguro de eliminar este producto? Se ocultará de la tienda.',
+            onConfirm: async () => {
+                setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                try {
+                    const res = await fetch(`${API_URL}/productos/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (res.ok) {
+                        mostrarNotificacion('Éxito', 'Producto eliminado exitosamente', 'success');
+                        if (obtenerProductos) await obtenerProductos();
+                        await fetchAdminProductos();
+                        if (selectedProduct && selectedProduct.id_producto === id) setSelectedProduct(null);
+                    } else {
+                        mostrarNotificacion('Error', 'Error al eliminar el producto', 'error');
+                    }
+                } catch (e) {
+                    console.error("Error deleting product", e);
+                    mostrarNotificacion('Error', 'Error de red', 'error');
                 }
-            });
-            if (res.ok) {
-                alert('Producto eliminado exitosamente');
-                if (obtenerProductos) await obtenerProductos();
-                await fetchAdminProductos();
-                if (selectedProduct && selectedProduct.id_producto === id) setSelectedProduct(null);
-            } else {
-                alert('Error al eliminar el producto');
-            }
-        } catch (e) {
-            console.error("Error deleting product", e);
-            alert("Error de red");
-        }
+            },
+            onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false }))
+        });
     };
 
     const handleSaveCategoryInline = async () => {
         if (!newCategoryName.trim()) {
-            alert("El nombre de la categoría no puede estar vacío");
+            mostrarNotificacion('Atención', 'El nombre de la categoría no puede estar vacío', 'warning');
             return;
         }
         try {
@@ -363,7 +373,7 @@ const AdminProducts = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                alert('Categoría creada exitosamente');
+                mostrarNotificacion('Éxito', 'Categoría creada exitosamente', 'success');
                 setNewCategoryName('');
                 setIsCreatingCategory(false);
                 await fetchCategorias();
@@ -372,11 +382,11 @@ const AdminProducts = () => {
                 }
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar la categoría');
+                mostrarNotificacion('Error', data.error || 'Error al guardar la categoría', 'error');
             }
         } catch (e) {
             console.error(e);
-            alert("Error de red");
+            mostrarNotificacion('Error', 'Error de red', 'error');
         }
     };
 
@@ -408,49 +418,56 @@ const AdminProducts = () => {
             });
 
             if (res.ok) {
-                alert(currentPromo ? 'Oferta actualizada exitosamente' : 'Oferta creada exitosamente');
+                mostrarNotificacion('Éxito', currentPromo ? 'Oferta actualizada exitosamente' : 'Oferta creada exitosamente', 'success');
                 await fetchAllPromotions();
                 if (obtenerProductos) await obtenerProductos();
                 if (obtenerPromociones) await obtenerPromociones();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar la oferta');
+                mostrarNotificacion('Error', data.error || 'Error al guardar la oferta', 'error');
             }
         } catch (err) {
             console.error("Error saving promo:", err);
-            alert("Error al guardar la oferta");
+            mostrarNotificacion('Error', 'Error al guardar la oferta', 'error');
         }
     };
 
     // Eliminar la promoción del producto seleccionado
-    const handleDeletePromo = async () => {
+    const handleDeletePromo = () => {
         if (!selectedProduct) return;
         const currentPromo = allPromotions.find(p => p.id_producto === selectedProduct.id_producto);
         if (!currentPromo) return;
 
-        if (!window.confirm("¿Seguro que deseas eliminar la oferta de este producto?")) return;
+        setConfirmModalData({
+            isOpen: true,
+            title: 'Eliminar Oferta',
+            message: '¿Seguro que deseas eliminar la oferta de este producto?',
+            onConfirm: async () => {
+                setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                try {
+                    const res = await fetch(`${API_URL}/promociones/${currentPromo.id_promo}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
 
-        try {
-            const res = await fetch(`${API_URL}/promociones/${currentPromo.id_promo}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+                    if (res.ok) {
+                        mostrarNotificacion('Éxito', 'Oferta eliminada exitosamente', 'success');
+                        setSelectedProduct(null);
+                        await fetchAllPromotions();
+                        if (obtenerProductos) await obtenerProductos();
+                        if (obtenerPromociones) await obtenerPromociones();
+                    } else {
+                        mostrarNotificacion('Error', 'Error al eliminar la oferta', 'error');
+                    }
+                } catch (err) {
+                    console.error("Error deleting promo:", err);
+                    mostrarNotificacion('Error', 'Error de red', 'error');
                 }
-            });
-
-            if (res.ok) {
-                alert('Oferta eliminada exitosamente');
-                setSelectedProduct(null);
-                await fetchAllPromotions();
-                if (obtenerProductos) await obtenerProductos();
-                if (obtenerPromociones) await obtenerPromociones();
-            } else {
-                alert('Error al eliminar la oferta');
-            }
-        } catch (err) {
-            console.error("Error deleting promo:", err);
-            alert("Error de red");
-        }
+            },
+            onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false }))
+        });
     };
 
     // Filtrado de productos basado en la consulta de búsqueda
@@ -903,6 +920,13 @@ const AdminProducts = () => {
                     </div>
                 </div>
             )}
+            <ConfirmModal 
+                isOpen={confirmModalData.isOpen}
+                title={confirmModalData.title}
+                message={confirmModalData.message}
+                onConfirm={confirmModalData.onConfirm}
+                onCancel={confirmModalData.onCancel}
+            />
         </div>
     );
 };

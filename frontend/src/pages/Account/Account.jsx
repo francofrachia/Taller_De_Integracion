@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -19,6 +20,7 @@ function DireccionesSection({ API_URL, token }) {
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [feedback, setFeedback] = useState({ type: '', msg: '' });
+    const [confirmModalData, setConfirmModalData] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false })) });
 
     const [formDir, setFormDir] = useState({
         calle: '',
@@ -123,31 +125,39 @@ function DireccionesSection({ API_URL, token }) {
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm('¿Estás seguro de que querés eliminar esta dirección?')) return;
-        setIsDeleting(true);
-        setFeedback({ type: '', msg: '' });
-        try {
-            const res = await fetch(`${API_URL}/direccion`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+    const handleDelete = () => {
+        setConfirmModalData({
+            isOpen: true,
+            title: 'Eliminar Dirección',
+            message: '¿Estás seguro de que querés eliminar esta dirección?',
+            onConfirm: async () => {
+                setConfirmModalData(prev => ({ ...prev, isOpen: false }));
+                setIsDeleting(true);
+                setFeedback({ type: '', msg: '' });
+                try {
+                    const res = await fetch(`${API_URL}/direccion`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setDireccion(null);
+                        setShowForm(false);
+                        setFeedback({ type: 'success', msg: 'Dirección eliminada.' });
+                    } else {
+                        setFeedback({ type: 'error', msg: data.error || 'Error al eliminar.' });
+                    }
+                } catch (e) {
+                    setFeedback({ type: 'error', msg: 'Error de conexión.' });
+                } finally {
+                    setIsDeleting(false);
                 }
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setDireccion(null);
-                setShowForm(false);
-                setFeedback({ type: 'success', msg: 'Dirección eliminada.' });
-            } else {
-                setFeedback({ type: 'error', msg: data.error || 'Error al eliminar.' });
-            }
-        } catch (e) {
-            setFeedback({ type: 'error', msg: 'Error de conexión.' });
-        } finally {
-            setIsDeleting(false);
-        }
+            },
+            onCancel: () => setConfirmModalData(prev => ({ ...prev, isOpen: false }))
+        });
     };
 
     if (loadingDir) {
@@ -272,6 +282,14 @@ function DireccionesSection({ API_URL, token }) {
                     </div>
                 </form>
             )}
+            
+            <ConfirmModal 
+                isOpen={confirmModalData.isOpen}
+                title={confirmModalData.title}
+                message={confirmModalData.message}
+                onConfirm={confirmModalData.onConfirm}
+                onCancel={confirmModalData.onCancel}
+            />
         </div>
     );
 }
