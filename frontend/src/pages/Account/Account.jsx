@@ -538,7 +538,7 @@ export default function Account() {
 
     const handleAvatarChange = async (path) => {
         if (!usuario) return;
-        const currentAvatar = usuario.avatar_url || '/images/logo mario.webp';
+        const currentAvatar = usuario.avatar_url || '/images/lego_luigi.webp';
         if (currentAvatar === path) return; // Ya está seleccionado
         setAvatarFeedback({ type: '', msg: '' });
         try {
@@ -862,7 +862,7 @@ export default function Account() {
                                             { id: 'luigi', path: '/images/lego_luigi.webp', name: 'Lego Luigi' },
                                             { id: 'batman', path: '/images/lego_batman.webp', name: 'Lego Batman' }
                                         ].map(av => {
-                                            const isSelected = (usuario.avatar_url || '/images/logo mario.webp') === av.path;
+                                            const isSelected = (usuario.avatar_url || '/images/lego_luigi.webp') === av.path;
                                             return (
                                                 <div
                                                     key={av.id}

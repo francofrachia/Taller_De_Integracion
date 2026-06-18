@@ -203,7 +203,7 @@ const Navbar = () => {
               >
                 <div className="avatar-wrapper">
                   <img 
-                    src={usuario.avatar_url || "/images/logo mario.webp"} 
+                    src={usuario.avatar_url || "/images/lego_luigi.webp"} 
                     alt="Avatar" 
                     className="navbar-avatar" 
                   />
