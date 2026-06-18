@@ -9,7 +9,7 @@ const verificarToken = (req, res, next) => {
     }
 
     try {
-        const verificado = jwt.verify(token, process.env.JWT_SECRET || 'bloque_mundo_secret_token_firmas_2026_super_secure_key_123');
+        const verificado = jwt.verify(token, process.env.JWT_SECRET);
         req.usuario = verificado; // Inyecta { id_usuario, rol, email }
         next();
     } catch (err) {

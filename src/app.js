@@ -3,6 +3,12 @@ const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+
+if (!process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET no está definido en las variables de entorno. El servidor no puede arrancar de forma segura.');
+    process.exit(1);
+}
+
 const pool = require('./config/db');
 const productoRoutes = require('./routes/productoRoutes');
 const authRoutes = require('./routes/authRoutes');
