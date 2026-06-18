@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
@@ -499,6 +499,60 @@ export default function Account() {
     const [isSaving, setIsSaving] = useState(false);
     const [avatarFeedback, setAvatarFeedback] = useState({ type: '', msg: '' });
 
+    const avatarGridRef = useRef(null);
+    const [canScrollAvLeft, setCanScrollAvLeft] = useState(false);
+    const [canScrollAvRight, setCanScrollAvRight] = useState(true);
+
+    const checkAvatarScroll = useCallback(() => {
+        if (avatarGridRef.current) {
+            const grid = avatarGridRef.current;
+            const cards = grid.querySelectorAll('.avatar-option-card');
+            
+            // If cards are not rendered yet, default to reasonable states
+            if (cards.length === 0) {
+                setCanScrollAvLeft(false);
+                setCanScrollAvRight(true);
+                return;
+            }
+
+            const gridRect = grid.getBoundingClientRect();
+            
+            // First card visibility: true if its left edge is clipped to the left of the grid
+            const firstCardRect = cards[0].getBoundingClientRect();
+            setCanScrollAvLeft(firstCardRect.left < gridRect.left - 5);
+
+            // Last card visibility: true if its right edge is clipped to the right of the grid
+            const lastCardRect = cards[cards.length - 1].getBoundingClientRect();
+            setCanScrollAvRight(lastCardRect.right > gridRect.right + 5);
+        }
+    }, []);
+
+    const scrollAvatars = (direction) => {
+        if (avatarGridRef.current) {
+            const scrollAmount = 272; // Aprox 2 tarjetas ((120px + 16px gap) * 2)
+            avatarGridRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (activeSection === 'perfil') {
+            const t1 = setTimeout(checkAvatarScroll, 100);
+            const t2 = setTimeout(checkAvatarScroll, 400);
+            const t3 = setTimeout(checkAvatarScroll, 1000);
+            
+            window.addEventListener('resize', checkAvatarScroll);
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                clearTimeout(t3);
+                window.removeEventListener('resize', checkAvatarScroll);
+            };
+        }
+    }, [activeSection, usuario, checkAvatarScroll]);
+
     const [compras, setCompras] = useState([]);
     const [loadingCompras, setLoadingCompras] = useState(true);
 
@@ -863,34 +917,71 @@ export default function Account() {
                                         Elegí el avatar que te represente. Aparecerá en el menú de navegación superior:
                                     </p>
 
-                                    <div className="avatar-grid">
-                                        {[
-                                            { id: 'mario', path: '/images/logo mario.webp', name: 'Lego Mario' },
-                                            { id: 'luigi', path: '/images/lego_luigi.webp', name: 'Lego Luigi' },
-                                            { id: 'batman', path: '/images/lego_batman.webp', name: 'Lego Batman' }
-                                        ].map(av => {
-                                            const isSelected = (usuario.avatar_url || '/images/lego_luigi.webp') === av.path;
-                                            return (
-                                                <div
-                                                    key={av.id}
-                                                    className={`avatar-option-card ${isSelected ? 'selected' : ''}`}
-                                                    onClick={() => handleAvatarChange(av.path)}
-                                                    title={`Seleccionar ${av.name}`}
-                                                >
-                                                    <div className="avatar-img-wrapper">
-                                                        <img src={av.path} alt={av.name} className="avatar-option-img" />
-                                                        {isSelected && (
-                                                            <div className="avatar-check-badge">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
+                                    <div className={`avatar-carousel-container ${canScrollAvLeft ? 'can-scroll-left' : ''} ${canScrollAvRight ? 'can-scroll-right' : ''}`}>
+                                        {canScrollAvLeft && (
+                                            <button 
+                                                type="button" 
+                                                className="avatar-carousel-btn left" 
+                                                onClick={() => scrollAvatars('left')}
+                                                aria-label="Desplazar izquierda"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                    <path d="m15 18-6-6 6-6"/>
+                                                </svg>
+                                            </button>
+                                        )}
+                                        
+                                        <div className="avatar-grid" ref={avatarGridRef} onScroll={checkAvatarScroll}>
+                                            {[
+                                                { id: 'mario', path: '/images/logo mario.webp', name: 'Lego Mario' },
+                                                { id: 'luigi', path: '/images/lego_luigi.webp', name: 'Lego Luigi' },
+                                                { id: 'batman', path: '/images/lego_batman.webp', name: 'Lego Batman' },
+                                                { id: 'spiderman', path: '/images/lego_spiderman.png', name: 'Lego Spider-Man' },
+                                                { id: 'yoda', path: '/images/lego_yoda.png', name: 'Lego Yoda' },
+                                                { id: 'harrypotter', path: '/images/lego_harrypotter.png', name: 'Lego Harry Potter' },
+                                                { id: 'darthvader', path: '/images/lego_darthvader.png', name: 'Lego Darth Vader' }
+                                            ].map(av => {
+                                                const isSelected = (usuario.avatar_url || '/images/lego_luigi.webp') === av.path;
+                                                return (
+                                                    <div
+                                                        key={av.id}
+                                                        className={`avatar-option-card ${isSelected ? 'selected' : ''}`}
+                                                        onClick={() => handleAvatarChange(av.path)}
+                                                        title={`Seleccionar ${av.name}`}
+                                                    >
+                                                        <div className="avatar-img-wrapper">
+                                                            <img 
+                                                                src={av.path} 
+                                                                alt={av.name} 
+                                                                className="avatar-option-img" 
+                                                                onLoad={checkAvatarScroll}
+                                                            />
+                                                            {isSelected && (
+                                                                <div className="avatar-check-badge">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                                                                    </svg>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="avatar-option-name">{av.name}</span>
                                                     </div>
-                                                    <span className="avatar-option-name">{av.name}</span>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        {canScrollAvRight && (
+                                            <button 
+                                                type="button" 
+                                                className="avatar-carousel-btn right" 
+                                                onClick={() => scrollAvatars('right')}
+                                                aria-label="Desplazar derecha"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                    <path d="m9 18 6-6-6-6"/>
+                                                </svg>
+                                            </button>
+                                        )}
                                     </div>
 
                                     {avatarFeedback.msg && (

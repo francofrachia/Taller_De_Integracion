@@ -149,6 +149,7 @@
     padding: 40px 44px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     min-height: 200px;
+    min-width: 0; /* Prevent horizontal layout stretch from overflowing children */
 }
 
 .account-section-title {
@@ -614,39 +615,141 @@
     line-height: 1.4;
 }
 
+.avatar-carousel-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 100%; /* Occupy the full width of the parent panel */
+    padding: 0 40px; /* Leave exactly 40px on left and right for buttons and edge fade overlays */
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    min-width: 0; /* Defensive constraint */
+}
+
 .avatar-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 18px;
-    max-width: 420px;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 12px 6px 16px 6px; /* vertical padding for hover shadows, and 6px horizontal padding so card shadows don't clip */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    scroll-behavior: smooth;
+    width: 100%;
+    min-width: 0; /* Defensive constraint */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.avatar-grid::-webkit-scrollbar {
+    display: none;
+}
+
+/* Fade gradients at scroll bounds */
+.avatar-carousel-container::before,
+.avatar-carousel-container::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    bottom: 16px;
+    width: 32px;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.avatar-carousel-container::before {
+    left: 40px; /* Aligned with the start of the grid content */
+    background: linear-gradient(to right, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.avatar-carousel-container::after {
+    right: 40px; /* Aligned with the end of the grid content */
+    background: linear-gradient(to left, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.avatar-carousel-container.can-scroll-left::before {
+    opacity: 1;
+}
+
+.avatar-carousel-container.can-scroll-right::after {
+    opacity: 1;
+}
+
+/* Arrows styling */
+.avatar-carousel-btn {
+    position: absolute;
+    top: calc(50% - 2px);
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    user-select: none;
+    padding: 0;
+}
+
+.avatar-carousel-btn:hover {
+    background-color: var(--primary-yellow);
+    border-color: var(--primary-yellow);
+    color: var(--text-dark);
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.4);
+    transform: translateY(-50%) scale(1.08);
+}
+
+.avatar-carousel-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.avatar-carousel-btn.left {
+    left: 2px; /* Placed perfectly inside the 40px container padding zone, no overlap with cards! */
+}
+
+.avatar-carousel-btn.right {
+    right: 2px; /* Placed perfectly inside the 40px container padding zone */
 }
 
 .avatar-option-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border: 2px solid #eaeaea;
-    border-radius: 10px;
-    padding: 14px 10px;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    padding: 14px 8px;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     user-select: none;
+    flex-shrink: 0;
+    width: 120px;
+    height: 132px;
+    box-sizing: border-box;
 }
 
 .avatar-option-card:hover {
-    transform: translateY(-3px);
-    border-color: #c8a000;
+    transform: translateY(-4px);
+    border-color: rgba(200, 160, 0, 0.4);
     background: #ffffff;
-    box-shadow: 0 6px 14px rgba(200, 160, 0, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
 }
 
 .avatar-option-card.selected {
     border-color: var(--primary-yellow);
     background: rgba(255, 215, 0, 0.04);
-    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.18);
+    box-shadow: 0 6px 18px rgba(255, 215, 0, 0.16);
 }
 
 .avatar-img-wrapper {
@@ -655,18 +758,18 @@
     height: 68px;
     border-radius: 50%;
     background: #ffffff;
-    border: 1px solid #e2e2e2;
-    padding: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 2px;
     transition: all 0.25s ease;
 }
 
 .avatar-option-card:hover .avatar-img-wrapper {
-    border-color: #c8a000;
-    transform: scale(1.05);
+    border-color: rgba(200, 160, 0, 0.4);
+    transform: scale(1.04);
 }
 
 .avatar-option-card.selected .avatar-img-wrapper {
@@ -683,11 +786,13 @@
 }
 
 .avatar-option-name {
-    font-size: 12.5px;
+    font-size: 11.5px; /* slightly smaller to fit Lego Spider-Man and Lego Harry Potter comfortably */
     font-weight: 600;
     color: var(--text-dark);
     text-align: center;
     transition: color 0.2s ease;
+    line-height: 1.25;
+    margin-top: auto;
 }
 
 .avatar-option-card:hover .avatar-option-name {
