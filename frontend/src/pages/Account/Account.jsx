@@ -321,31 +321,38 @@ function PurchaseCard({ compra, isActive }) {
     const normalizedState = compra.estado ? compra.estado.trim() : '';
 
     switch (normalizedState) {
+        case 'Pendiente':
         case 'Esperando Pago':
             progressWidth = '0%';
             currentStepIndex = 0;
             break;
+        case 'Pago aprobado':
+        case 'pago aprobado':
         case 'Pago confirmado':
             progressWidth = '33%';
             currentStepIndex = 1;
             break;
+        case 'En proceso':
         case 'Preparando Pedido':
-        case 'Pendiente':
             progressWidth = '50%';
             currentStepIndex = 1;
             break;
+        case 'Pedido despachado':
+        case 'pedido despachado':
         case 'En Camino':
         case 'Pedido Despachado':
         case 'En manos del correo':
             progressWidth = '83%';
             currentStepIndex = 2;
             break;
-        case 'Entregado':
         case 'Finalizado':
+        case 'finalizado':
+        case 'Entregado':
             progressWidth = '100%';
             currentStepIndex = 3;
             break;
         case 'Cancelado':
+        case 'cancelado':
             progressWidth = '0%';
             currentStepIndex = -1; // -1 oculta el flujo positivo
             break;
@@ -371,7 +378,7 @@ function PurchaseCard({ compra, isActive }) {
 
             <div className="purchase-items-list">
                 {compra.lineas && compra.lineas.map((linea, index) => (
-                    <div className="purchase-item-row" key={index}>
+                    <Link to={`/producto/${linea.id_producto}`} className="purchase-item-row" key={index}>
                         <div className="purchase-item-img-wrapper">
                             <img
                                 src={linea.imagen_url || placeholderImg}
@@ -389,7 +396,7 @@ function PurchaseCard({ compra, isActive }) {
                                 ${parseFloat(linea.precio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 

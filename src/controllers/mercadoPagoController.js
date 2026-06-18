@@ -276,7 +276,7 @@ const receiveWebhook = async (req, res) => {
                             const Compra = require('../models/compraModel');
                             const total_descuento = Math.max(0, originalSubtotal - subtotal);
                             const total = subtotal;
-                            const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Pago confirmado', String(paymentId));
+                            const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Pago aprobado', String(paymentId));
                             console.log(`Compra registrada con éxito para el usuario ${idUsuario}: ID ${resultCompra.id_compra}`);
 
                             // Enviar comprobante por email

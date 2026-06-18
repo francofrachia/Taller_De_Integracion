@@ -1019,6 +1019,7 @@
     letter-spacing: 0.03em;
 }
 
+.purchase-status-badge.pago-aprobado,
 .purchase-status-badge.pago-confirmado {
     color: #2e7d32;
     background-color: #e8f5e9;
@@ -1031,6 +1032,7 @@
     border: 1px solid #ffe0b2;
 }
 
+.purchase-status-badge.en-proceso,
 .purchase-status-badge.preparando-pedido {
     color: #0d47a1;
     background-color: #e3f2fd;
@@ -1080,6 +1082,21 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.purchase-item-row:hover {
+    background-color: rgba(255, 215, 0, 0.06);
+    transform: translateX(4px);
+}
+
+.purchase-item-row:hover .purchase-item-name {
+    color: #9a7800;
 }
 
 .purchase-item-img-wrapper {

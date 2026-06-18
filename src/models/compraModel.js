@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 const Compra = {
-    create: async (id_usuario, items, subtotal, total_descuento, total, metodo_pago = 'mercado_pago', estado = 'Pago confirmado', id_pago_mp = null) => {
+    create: async (id_usuario, items, subtotal, total_descuento, total, metodo_pago = 'mercado_pago', estado = 'Pago aprobado', id_pago_mp = null) => {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import ServerError from '../../components/ServerError/ServerError';
 import { AppContext } from '../../context/AppContext';
 import { displayCategoryName, getCategoryVisuals } from '../../utils/categoryHelpers';
 import './Catalog.css';
@@ -398,21 +399,7 @@ const Catalog = () => {
       <main className="catalog-main container">
 
         {serverError ? (
-          /* ── Error state ── */
-          <div className="server-error-container">
-            <div className="error-card-glass animate-fade-in">
-              <div className="error-icon-wrapper">
-                <div className="floating-brick-error red"></div>
-                <div className="floating-brick-error yellow"></div>
-                <span className="error-plug-emoji">🔌</span>
-              </div>
-              <h2>¡Problemas de conexión!</h2>
-              <p>No pudimos conectarnos con nuestro catálogo. El servidor de base de datos está en mantenimiento o no se encuentra disponible.</p>
-              <button className="error-retry-btn" onClick={() => window.location.reload()}>
-                Reintentar Conexión
-              </button>
-            </div>
-          </div>
+          <ServerError />
         ) : (
           <>
             {/* ── Hero strip ── */}
