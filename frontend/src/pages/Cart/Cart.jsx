@@ -7,13 +7,10 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Cart.css';
 
+import { getRealStock } from '../../utils/stockHelpers';
+
 const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(price);
-};
-
-const getRealStock = (item, productos) => {
-    const productData = productos ? productos.find(p => p.id_producto === item.id_producto) : null;
-    return productData ? productData.stock : (item.stock !== undefined ? item.stock : 0);
 };
 
 const isProductActive = (item, productos) => {
@@ -22,20 +19,21 @@ const isProductActive = (item, productos) => {
 };
 
 // Componente extraído para adherirse a Single Responsibility Principle
-const CartItemComponent = React.memo(({ 
-    item, 
+const CartItemComponent = React.memo(({
+    item,
     productos,
-    selected, 
-    qty, 
-    localQtyStr, 
-    onToggleSelection, 
-    onRemove, 
-    onQuantityChange, 
-    onLocalQtyChange, 
-    onQuantityBlur 
+    selected,
+    qty,
+    localQtyStr,
+    onToggleSelection,
+    onRemove,
+    onQuantityChange,
+    onLocalQtyChange,
+    onQuantityBlur,
+    cart
 }) => {
     const isActive = isProductActive(item, productos);
-    const itemStock = getRealStock(item, productos);
+    const itemStock = getRealStock(item, productos, cart);
     const outOfStock = itemStock === 0;
     const isInvalidQty = qty !== '' && itemStock !== undefined && parseInt(qty, 10) > itemStock;
 
@@ -91,8 +89,8 @@ const CartItemComponent = React.memo(({
                 {(outOfStock || !isActive) ? '-' : formatPrice(item.precio * (qty !== '' ? (parseInt(qty, 10) || 0) : item.cantidad))}
             </div>
             <div className="item-select" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <button 
-                    className="select-btn" 
+                <button
+                    className="select-btn"
                     style={{ background: 'none', border: 'none', cursor: (isActive && itemStock > 0) ? 'pointer' : 'not-allowed', fontSize: '24px', color: (isActive && itemStock > 0 && selected) ? 'var(--primary-yellow)' : '#ccc' }}
                     onClick={() => isActive && itemStock > 0 && onToggleSelection(item.id_producto)}
                 >
@@ -107,7 +105,7 @@ export default function Cart() {
     const { cart, actualizarCantidadCarrito, removerDelCarrito, usuario, productos, isInitialized, mostrarNotificacion } = useContext(AppContext);
     const navigate = useNavigate();
     const toast = useToast();
-    
+
     // UI Local State
     const [localQuantities, setLocalQuantities] = useState({});
     const [selectedItems, setSelectedItems] = useState({});
@@ -120,8 +118,8 @@ export default function Cart() {
                 const newSel = { ...prev };
                 let hasChanges = false;
                 cart.items.forEach(item => {
-                    const itemStock = getRealStock(item, productos);
-                    
+                    const itemStock = getRealStock(item, productos, cart);
+
                     if (newSel[item.id_producto] === undefined) {
                         newSel[item.id_producto] = itemStock > 0;
                         hasChanges = true;
@@ -145,9 +143,9 @@ export default function Cart() {
     // Memoizaciones (Rendimiento)
     const itemsConStock = useMemo(() => {
         if (!cart?.items || !productos) return [];
-        return cart.items.filter(item => getRealStock(item, productos) > 0);
+        return cart.items.filter(item => getRealStock(item, productos, cart) > 0);
     }, [cart, productos]);
-    
+
     const allSelected = useMemo(() => {
         return itemsConStock.length > 0 && itemsConStock.every(item => selectedItems[item.id_producto]);
     }, [itemsConStock, selectedItems]);
@@ -168,17 +166,15 @@ export default function Cart() {
             ? (parseInt(localQuantities[id_producto], 10) || 1)
             : currentQty;
         const newQty = baseQty + change;
-        
-        if (newQty > 0) {
+
+        if (newQty > 0 && (!stock || newQty <= stock)) {
             setLocalQuantities(prev => ({ ...prev, [id_producto]: newQty }));
-            if (!stock || newQty <= stock) {
-                try {
-                    await actualizarCantidadCarrito(id_producto, newQty);
-                } catch (error) {
-                    console.error("Error updating quantity:", error);
-                    toast.error("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
-                    setLocalQuantities(prev => ({ ...prev, [id_producto]: baseQty })); // Rollback UX
-                }
+            try {
+                await actualizarCantidadCarrito(id_producto, newQty);
+            } catch (error) {
+                console.error("Error updating quantity:", error);
+                toast.error("No se pudo actualizar la cantidad. Por favor, intenta de nuevo.");
+                setLocalQuantities(prev => ({ ...prev, [id_producto]: baseQty })); // Rollback UX
             }
         }
     };
@@ -196,7 +192,7 @@ export default function Cart() {
 
     const handleQuantityBlur = async (id_producto, currentQty, stock, inputVal) => {
         let val = parseInt(inputVal, 10);
-        
+
         if (isNaN(val) || val < 1) {
             setLocalQuantities(prev => ({ ...prev, [id_producto]: 1 }));
             if (currentQty !== 1) {
@@ -209,17 +205,19 @@ export default function Cart() {
             return;
         }
 
+        if (stock !== undefined && val > stock) {
+            val = stock;
+        }
+
         setLocalQuantities(prev => ({ ...prev, [id_producto]: val }));
-        
-        if (!stock || val <= stock) {
-            if (val !== currentQty) {
-                try {
-                    await actualizarCantidadCarrito(id_producto, val);
-                } catch (error) {
-                    console.error("Error updating quantity on blur:", error);
-                    toast.error("No se pudo actualizar la cantidad.");
-                    setLocalQuantities(prev => ({ ...prev, [id_producto]: currentQty })); // Rollback UX
-                }
+
+        if (val !== currentQty) {
+            try {
+                await actualizarCantidadCarrito(id_producto, val);
+            } catch (error) {
+                console.error("Error updating quantity on blur:", error);
+                toast.error("No se pudo actualizar la cantidad.");
+                setLocalQuantities(prev => ({ ...prev, [id_producto]: currentQty })); // Rollback UX
             }
         }
     };
@@ -243,7 +241,7 @@ export default function Cart() {
             if (qty === '' || isNaN(parseInt(qty, 10)) || parseInt(qty, 10) < 1) {
                 return true;
             }
-            const itemStock = getRealStock(item, productos);
+            const itemStock = getRealStock(item, productos, cart);
             return itemStock !== undefined && parseInt(qty, 10) > itemStock;
         });
     }, [cart, productos, selectedItems, localQuantities]);
@@ -252,7 +250,7 @@ export default function Cart() {
         if (!cart?.items || !productos) return [];
         return cart.items.filter(item => {
             if (!selectedItems[item.id_producto]) return false;
-            const itemStock = getRealStock(item, productos);
+            const itemStock = getRealStock(item, productos, cart);
             return itemStock !== undefined && item.cantidad > itemStock;
         });
     }, [cart, productos, selectedItems]);
@@ -269,17 +267,17 @@ export default function Cart() {
         }
 
         const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
-        
+
         if (selectedIds.length === 0) {
             toast.error('Debes seleccionar al menos un producto para proceder con la compra.');
             return;
         }
-        
+
         if (hasAnyQtyError) {
             toast.error('Hay productos con cantidades inválidas o que superan el stock disponible. Por favor, ajusta tu carrito.');
             return;
         }
-        
+
         if (!cart?.items || cart.items.length === 0) return;
         navigate('/checkout', { state: { selectedItems: selectedIds } });
     };
@@ -288,7 +286,7 @@ export default function Cart() {
         if (!cart?.items || !productos) return 0;
         return cart.items.reduce((sum, item) => {
             if (!selectedItems[item.id_producto]) return sum;
-            const itemStock = getRealStock(item, productos);
+            const itemStock = getRealStock(item, productos, cart);
             if (itemStock === 0) return sum;
 
             const qty = localQuantities[item.id_producto] !== undefined
@@ -367,8 +365,8 @@ export default function Cart() {
                                     <span>Cantidad</span>
                                     <span>Total</span>
                                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                        <button 
-                                            className="select-btn" 
+                                        <button
+                                            className="select-btn"
                                             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: allSelected ? 'var(--primary-yellow)' : '#ccc' }}
                                             onClick={handleSelectAll}
                                         >
@@ -391,6 +389,7 @@ export default function Cart() {
                                             onQuantityChange={handleQuantityChange}
                                             onLocalQtyChange={handleLocalQtyChange}
                                             onQuantityBlur={handleQuantityBlur}
+                                            cart={cart}
                                         />
                                     ))}
                                 </div>
@@ -421,10 +420,10 @@ export default function Cart() {
                                     {itemsConProblemasStock.length > 0 && (
                                         <div className="cart-stock-warning-simple">
                                             {itemsConProblemasStock.map(item => {
-                                                const itemStock = getRealStock(item, productos);
+                                                const itemStock = getRealStock(item, productos, cart);
                                                 return (
                                                     <p className="stock-warning-item" key={item.id_producto}>
-                                                        <strong>{item.nombre}</strong> {itemStock === 0 ? 'está agotado' : `supera el stock disponible (máx: ${itemStock} u.)`}
+                                                        <strong>{item.nombre}</strong> {itemStock === 0 ? 'está agotado' : `supera el stock disponible (máx: ${itemStock}u.)`}
                                                     </p>
                                                 );
                                             })}

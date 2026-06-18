@@ -456,65 +456,7 @@
   overflow: hidden;
 }
 
-.checkout-form-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-radius: 8px;
-}
-
-.overlay-content {
-  text-align: center;
-  padding: 40px 30px;
-  max-width: 360px;
-}
-
-.overlay-icon {
-  font-size: 48px;
-  display: block;
-  margin-bottom: 16px;
-}
-
-.overlay-content h3 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #222;
-}
-
-.overlay-content p {
-  margin: 0 0 22px 0;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.overlay-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.overlay-actions .btn-yellow {
-  font-size: 13.5px;
-  font-weight: 700;
-  padding: 10px 20px;
-  border-radius: 6px;
-}
-
-.overlay-actions .btn-outline {
-  font-size: 13.5px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 6px;
-}
+/* Removed overlay CSS */
 
 /* --- ALERTA INLINE DE STOCK (dentro del summary del checkout) --- */
 .checkout-stock-inline-alert {

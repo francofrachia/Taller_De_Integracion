@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { AppContext } from '../../context/AppContext';
+import { getRealStock as getRealStockHelper } from '../../utils/stockHelpers';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -16,7 +17,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { agregarAlCarrito, usuario, favoritos, toggleFavorito, token } = React.useContext(AppContext);
+  const { agregarAlCarrito, usuario, favoritos, toggleFavorito, token, cart, obtenerCarrito } = React.useContext(AppContext);
   const [quantity, setQuantity] = useState(1);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const navigate = useNavigate();
@@ -28,6 +29,10 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+
+  const getRealStock = () => {
+    return getRealStockHelper(product, null, cart);
+  };
 
   // Estados para reseña y calificación
   const [userRating, setUserRating] = useState(0);
@@ -69,14 +74,15 @@ const ProductDetail = () => {
       return;
     }
 
-    if (!product || product.stock <= 0) return;
+    if (!product || getRealStock() <= 0) return;
 
     setIsProcessingPayment(true);
     setPaymentError(null);
 
     let qty = parseInt(quantity, 10);
     if (isNaN(qty) || qty < 1) qty = 1;
-    if (product && qty > product.stock) qty = product.stock;
+    const realStock = getRealStock();
+    if (product && qty > realStock) qty = realStock;
 
     try {
       // Navegar a checkout indicando que es una compra directa
@@ -87,7 +93,7 @@ const ProductDetail = () => {
             nombre: product.title,
             precio: product.price,
             cantidad: qty,
-            stock: product.stock
+            stock: product.stock // pasamos el stock fisico original al state si se necesita, aunque backend revalida
           } 
         } 
       });
@@ -150,12 +156,8 @@ const ProductDetail = () => {
     }
   };
 
-  useEffect(() => {
-    // Scroll to top on load
-    window.scrollTo(0, 0);
-    setLoading(true);
-
-    // Fetch product detail
+  const fetchProductDetails = React.useCallback((showLoading = false) => {
+    if (showLoading) setLoading(true);
     fetch(`${API_URL}/productos/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('Producto no encontrado');
@@ -232,7 +234,40 @@ const ProductDetail = () => {
         setError(err.message);
         setLoading(false);
       });
-  }, [id]);
+  }, [id, API_URL]);
+
+  useEffect(() => {
+    // Scroll to top on load
+    window.scrollTo(0, 0);
+    fetchProductDetails(true);
+    if (token) {
+      obtenerCarrito(token);
+    }
+  }, [id, token, fetchProductDetails, obtenerCarrito]);
+
+  // Sincronizar catálogo y detalles al recuperar el foco de la pestaña, cambiar visibilidad o regresar de Mercado Pago
+  useEffect(() => {
+    const handleSync = () => {
+      console.log("[ProductDetail] Detectado foco/visibilidad/pageshow. Sincronizando detalle del producto...");
+      fetchProductDetails(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleSync();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('pageshow', handleSync);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('pageshow', handleSync);
+    };
+  }, [fetchProductDetails]);
 
   const handleQuantityChange = (change) => {
     let currentQty = parseInt(quantity, 10);
@@ -240,7 +275,7 @@ const ProductDetail = () => {
       currentQty = 1;
     }
     const newQuantity = currentQty + change;
-    const maxStock = product?.stock || 1;
+    const maxStock = getRealStock() || 1;
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       setQuantity(newQuantity);
     }
@@ -376,7 +411,7 @@ const ProductDetail = () => {
                   <img
                     src={(!img || img.includes('legostore.com')) ? placeholderProduct : img}
                     alt={`Miniatura ${index + 1}`}
-                    style={product.stock <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
+                    style={getRealStock() <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = placeholderProduct;
@@ -407,7 +442,7 @@ const ProductDetail = () => {
                 src={(!product.images[mainImageIndex] || product.images[mainImageIndex].includes('legostore.com')) ? placeholderProduct : product.images[mainImageIndex]}
                 alt={product.title}
                 className="main-image"
-                style={product.stock <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
+                style={getRealStock() <= 0 ? { filter: 'grayscale(1) opacity(0.5)' } : {}}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = placeholderProduct;
@@ -441,12 +476,12 @@ const ProductDetail = () => {
               )}
               <span className="meta-divider" style={{ verticalAlign: 'middle' }}>|</span>
               <span className="stock-status" style={{ verticalAlign: 'middle' }}>
-                {product.stock > 10 ? (
+                {getRealStock() > 10 ? (
                   <span style={{ color: '#2e7d32' }}>En stock</span>
-                ) : product.stock > 5 ? (
+                ) : getRealStock() > 5 ? (
                   <span style={{ color: '#f57c00' }}>Últimas unidades</span>
-                ) : product.stock > 0 ? (
-                  <span style={{ color: '#d32f2f' }}>¡Últimas {product.stock} unidades!</span>
+                ) : getRealStock() > 0 ? (
+                  <span style={{ color: '#d32f2f' }}>¡Últimas {getRealStock()} unidades!</span>
                 ) : (
                   <span style={{ color: '#d32f2f' }}>Agotado</span>
                 )}
@@ -486,7 +521,7 @@ const ProductDetail = () => {
             <div className="product-actions">
               <p className="quantity-label">Cantidad:</p>
               <div className="action-row" style={{ flexWrap: 'wrap' }}>
-                <div className={`quantity-selector ${product.stock > 0 && quantity > product.stock ? "qty-selector-error" : ""}`}>
+                <div className={`quantity-selector ${getRealStock() > 0 && quantity > getRealStock() ? "qty-selector-error" : ""}`}>
                   <button onClick={() => handleQuantityChange(-1)} disabled={isProcessingPayment || product.activo === false}>-</button>
                   <input
                     type="number"
@@ -502,29 +537,29 @@ const ProductDetail = () => {
                 <button
                   className="buy-now-btn"
                   onClick={handleBuyNow}
-                  disabled={isProcessingPayment || product.stock <= 0 || quantity > product.stock || product.activo === false}
+                  disabled={isProcessingPayment || getRealStock() <= 0 || quantity > getRealStock() || product.activo === false}
                 >
-                  {isProcessingPayment ? 'Procesando...' : product.activo === false ? 'No disponible' : product.stock <= 0 ? 'Sin stock' : 'Comprar ahora'}
+                  {isProcessingPayment ? 'Procesando...' : product.activo === false ? 'No disponible' : getRealStock() <= 0 ? 'Sin stock' : 'Comprar ahora'}
                 </button>
                   <button
                   className="add-to-cart-btn"
                   onClick={async () => {
                     let qty = parseInt(quantity, 10);
                     if (isNaN(qty) || qty < 1) qty = 1;
-                    if (product && product.stock > 0 && qty > product.stock) return;
+                    if (product && getRealStock() > 0 && qty > getRealStock()) return;
                     const res = await agregarAlCarrito(product.id, qty);
                     if (res && res.requireLogin) {
                       navigate('/login');
                     }
                   }}
-                  disabled={product.activo === false || (product.stock > 0 && quantity > product.stock)}
+                  disabled={product.activo === false || (getRealStock() > 0 && quantity > getRealStock())}
                 >
                   Agregar al Carrito
                 </button>
               </div>
-              {product.stock > 0 && quantity > product.stock && (
+              {getRealStock() > 0 && quantity > getRealStock() && (
                 <p className="stock-warning-msg" style={{ color: '#d32f2f', fontSize: '14px', marginTop: '-5px', fontWeight: '500' }}>
-                   No hay suficiente stock. El máximo es {product.stock} unidades.
+                   No hay suficiente stock. El máximo es {getRealStock()} unidades.
                 </p>
               )}
               {paymentError && (

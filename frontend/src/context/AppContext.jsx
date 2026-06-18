@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { getRealStock } from '../utils/stockHelpers';
 
 export const AppContext = createContext();
 
@@ -67,51 +68,118 @@ export function AppProvider({ children }) {
     // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
         const init = async () => {
-            let tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
-            const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
-            
-            // Sanitización extrema (Legado): Si existiera el string 'null', lo limpiamos
-            if (tokenGuardado === 'null' || tokenGuardado === 'undefined') {
-                tokenGuardado = null;
-                localStorage.removeItem('token_bloquemundo');
-                sessionStorage.removeItem('token_bloquemundo');
-            }
-
-            let loadedToken = null;
-            if (tokenGuardado) {
-                loadedToken = tokenGuardado;
-                setToken(tokenGuardado);
-            }
-
-            if (usuarioGuardado) {
-                try {
-                    const user = JSON.parse(usuarioGuardado);
-                    setUsuario(user);
-                    // Esperamos tanto productos como carrito antes de marcar como inicializado
-                    await Promise.all([
-                        obtenerProductos(),
-                        obtenerPromociones(),
-                        obtenerCarrito(loadedToken),
-                        obtenerFavoritos(loadedToken)
-                    ]);
-                } catch (e) {
-                    console.error("Error al parsear el usuario guardado:", e);
-                    await Promise.all([obtenerProductos(), obtenerPromociones()]);
+            try {
+                let tokenGuardado = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
+                const usuarioGuardado = localStorage.getItem('usuario_bloquemundo') || sessionStorage.getItem('usuario_bloquemundo');
+                
+                // Sanitización extrema (Legado): Si existiera el string 'null', lo limpiamos
+                if (tokenGuardado === 'null' || tokenGuardado === 'undefined') {
+                    tokenGuardado = null;
+                    localStorage.removeItem('token_bloquemundo');
+                    sessionStorage.removeItem('token_bloquemundo');
                 }
-            } else {
-                // Si no hay usuario, no cargamos carrito (limpiar estado)
-                setCart(null);
-                setCartCount(0);
-                setFavoritos([]);
-                await Promise.all([obtenerProductos(), obtenerPromociones()]);
+
+                let loadedToken = null;
+                if (tokenGuardado) {
+                    loadedToken = tokenGuardado;
+                    setToken(tokenGuardado);
+                }
+
+                if (usuarioGuardado) {
+                    try {
+                        const user = JSON.parse(usuarioGuardado);
+                        setUsuario(user);
+                        // Esperamos tanto productos como carrito antes de marcar como inicializado
+                        await Promise.all([
+                            obtenerProductos().catch(err => console.error("Error init productos:", err)),
+                            obtenerPromociones().catch(err => console.error("Error init promos:", err)),
+                            obtenerCarrito(loadedToken).catch(err => console.error("Error init carrito:", err)),
+                            obtenerFavoritos(loadedToken).catch(err => console.error("Error init favoritos:", err))
+                        ]);
+                    } catch (e) {
+                        console.error("Error al parsear el usuario guardado:", e);
+                        await Promise.all([
+                            obtenerProductos().catch(err => console.error("Error init productos fallback:", err)),
+                            obtenerPromociones().catch(err => console.error("Error init promos fallback:", err))
+                        ]);
+                    }
+                } else {
+                    // Si no hay usuario, no cargamos carrito (limpiar estado)
+                    setCart(null);
+                    setCartCount(0);
+                    setFavoritos([]);
+                    await Promise.all([
+                        obtenerProductos().catch(err => console.error("Error init productos guest:", err)),
+                        obtenerPromociones().catch(err => console.error("Error init promos guest:", err))
+                    ]);
+                }
+            } catch (err) {
+                console.error("Error crítico en inicialización de AppContext:", err);
+            } finally {
+                setIsInitialized(true);
             }
-            setIsInitialized(true);
         };
         init();
     }, []);
 
+    // 1.5 Conexión SSE para recibir actualizaciones en tiempo real del stock
+    useEffect(() => {
+        const evtSource = new EventSource(`${API_URL}/stream/stock`);
+
+        evtSource.addEventListener('stock_update', (e) => {
+            console.log('SSE: Actualización de stock recibida, sincronizando catálogo...');
+            fetch(`${API_URL}/productos`)
+                .then(res => res.json())
+                .then(data => setProductos(data))
+                .catch(err => console.error("Error sincronizando catálogo:", err));
+        });
+
+        evtSource.onerror = () => {
+            console.warn("SSE: Error de conexión, intentando reconectar...");
+        };
+
+        return () => {
+            evtSource.close();
+        };
+    }, [API_URL]);
+
+    // Sincronizar catálogo y carrito/reservas al recuperar el foco de la pestaña, cambiar visibilidad o regresar de páginas externas
+    useEffect(() => {
+        let lastSync = 0;
+        const handleSync = () => {
+            const now = Date.now();
+            // Evitar spam de peticiones (cooldown de 1.5s)
+            if (now - lastSync < 1500) return;
+            lastSync = now;
+
+            console.log("[AppContext] Detectado foco/visibilidad/pageshow. Sincronizando stock y carrito con el servidor...");
+            obtenerProductos();
+            
+            const currentToken = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo') || token;
+            if (currentToken && currentToken !== 'null' && currentToken !== 'undefined') {
+                obtenerCarrito(currentToken);
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                handleSync();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleSync);
+        window.addEventListener('pageshow', handleSync);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleSync);
+            window.removeEventListener('pageshow', handleSync);
+        };
+    }, [token]);
+
     // 2. Fetch de productos del backend (público)
-    async function obtenerProductos() {
+    const obtenerProductos = useCallback(async () => {
         setLoading(true);
         try {
             const response = await fetch(`${API_URL}/productos`);
@@ -129,7 +197,7 @@ export function AppProvider({ children }) {
         } finally {
             setLoading(false);
         }
-    }
+    }, [API_URL]);
 
     // 2.5 Fetch promociones del backend
     async function obtenerPromociones() {
@@ -145,7 +213,7 @@ export function AppProvider({ children }) {
     }
 
     // 3. Funciones de carrito conectadas al backend (Protegidas con JWT)
-    async function obtenerCarrito(tokenHeaderVal) {
+    const obtenerCarrito = useCallback(async (tokenHeaderVal) => {
         const currentToken = tokenHeaderVal || token;
         if (!currentToken || currentToken === 'null' || currentToken === 'undefined') return;
 
@@ -173,12 +241,33 @@ export function AppProvider({ children }) {
             console.error("Error obteniendo carrito:", error);
             setCart({ id_carrito: null, total: 0, items: [] });
         }
-    }
+    }, [token, API_URL]);
 
     async function agregarAlCarrito(id_producto, cantidad = 1) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             addToast('Iniciar Sesión', 'Debes iniciar sesión para agregar productos al carrito.', 'warning');
             return { success: false, requireLogin: true };
+        }
+
+        const dbProduct = productos.find(p => p.id_producto === id_producto);
+        if (!dbProduct) {
+            addToast('Error', 'Producto no encontrado.', 'error');
+            return { success: false };
+        }
+
+        if (dbProduct.activo === false) {
+            addToast('No disponible', 'Este producto ha sido descontinuado.', 'warning');
+            return { success: false };
+        }
+
+        const realStock = getRealStock(id_producto, productos, cart);
+        const currentItem = cart?.items?.find(item => item.id_producto === id_producto);
+        const currentQty = currentItem ? currentItem.cantidad : 0;
+        const targetQty = currentQty + cantidad;
+
+        if (targetQty > realStock) {
+            addToast('Stock Insuficiente', `No puedes agregar más unidades. El stock máximo disponible es de ${realStock} unidades.`, 'warning');
+            return { success: false };
         }
 
         // Guardar valores previos por si falla la llamada
@@ -274,6 +363,23 @@ export function AppProvider({ children }) {
     async function actualizarCantidadCarrito(id_producto, cantidad) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
+        }
+
+        const dbProduct = productos.find(p => p.id_producto === id_producto);
+        if (!dbProduct) {
+            addToast('Error', 'Producto no encontrado.', 'error');
+            return { success: false };
+        }
+
+        if (dbProduct.activo === false) {
+            addToast('No disponible', 'Este producto ha sido descontinuado.', 'warning');
+            return { success: false };
+        }
+
+        const realStock = getRealStock(id_producto, productos, cart);
+        if (cantidad > realStock) {
+            addToast('Stock Insuficiente', `No puedes seleccionar esa cantidad. El stock máximo disponible es de ${realStock} unidades.`, 'warning');
+            return { success: false };
         }
 
         const oldCart = cart;
@@ -661,6 +767,7 @@ export function AppProvider({ children }) {
             setLoginTooltipVisible,
             obtenerProductos,
             obtenerPromociones,
+            obtenerCarrito,
             mostrarNotificacion: addToast
         }}>
             {children}

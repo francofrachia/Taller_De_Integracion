@@ -11,10 +11,20 @@ const getCarrito = async (req, res) => {
         // Refrescamos el carrito de nuevo para obtener el total actualizado por los triggers
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
 
+        // Obtener reservas activas del usuario
+        const pool = require('../config/db');
+        const reservasResult = await pool.query(
+            'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
+            [id_usuario]
+        );
+        const misReservas = {};
+        reservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
+
         res.json({
             id_carrito: carritoActualizado.id_carrito,
             total: carritoActualizado.total,
-            items: items
+            items: items,
+            mis_reservas: misReservas
         });
     } catch (error) {
         console.error(error);
@@ -27,29 +37,66 @@ const addProducto = async (req, res) => {
         const id_usuario = req.usuario.id_usuario;
         const { id_producto, cantidad } = req.body;
         
-        if (!id_producto || !cantidad) {
+        if (!id_producto || cantidad === undefined || cantidad === null) {
             return res.status(400).json({ error: 'Faltan datos (id_producto, cantidad)' });
+        }
+
+        const qtyToAdd = parseInt(cantidad, 10);
+        if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
+            return res.status(400).json({ error: 'Cantidad inválida' });
         }
 
         const producto = await Producto.getById(id_producto);
         if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
-        
-        if (producto.stock > 0 && cantidad > producto.stock) {
-            return res.status(400).json({ error: 'Stock insuficiente' });
+
+        if (producto.activo === false) {
+            return res.status(400).json({ error: 'El producto ha sido descontinuado' });
+        }
+
+        const pool = require('../config/db');
+        const carrito = await Carrito.getOrCreateByUserId(id_usuario);
+
+        // Obtener cantidad actual en el carrito
+        const checkCart = await pool.query(
+            'SELECT cantidad FROM linea_carrito WHERE id_carrito = $1 AND id_producto = $2',
+            [carrito.id_carrito, id_producto]
+        );
+        const currentQtyInCart = checkCart.rows.length > 0 ? parseInt(checkCart.rows[0].cantidad, 10) : 0;
+        const targetQty = currentQtyInCart + qtyToAdd;
+
+        // Obtener reservas activas de este usuario para este producto
+        const reservasResult = await pool.query(
+            'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
+            [id_usuario, id_producto]
+        );
+        const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+
+        const availableStock = parseInt(producto.stock, 10) || 0;
+        const realStockLimit = availableStock + userReservations;
+
+        if (targetQty > realStockLimit) {
+            return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
         }
 
         const originalPrice = parseFloat(producto.precio) || 0;
         const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
         const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
 
-        const carrito = await Carrito.getOrCreateByUserId(id_usuario);
-        await Carrito.addItem(carrito.id_carrito, id_producto, cantidad, finalPrice);
+        await Carrito.addItem(carrito.id_carrito, id_producto, qtyToAdd, finalPrice);
         
         // Devolvemos el estado actualizado
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);
         
-        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items });
+        // Obtener reservas activas del usuario
+        const allReservasResult = await pool.query(
+            'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
+            [id_usuario]
+        );
+        const misReservas = {};
+        allReservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
+        
+        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items, mis_reservas: misReservas });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al añadir al carrito' });
@@ -61,13 +108,53 @@ const updateCantidad = async (req, res) => {
         const id_usuario = req.usuario.id_usuario;
         const { id_producto, cantidad } = req.body;
         
+        if (!id_producto || cantidad === undefined || cantidad === null) {
+            return res.status(400).json({ error: 'Faltan datos (id_producto, cantidad)' });
+        }
+
+        const newQty = parseInt(cantidad, 10);
+        if (isNaN(newQty) || newQty <= 0) {
+            return res.status(400).json({ error: 'Cantidad inválida' });
+        }
+
+        const producto = await Producto.getById(id_producto);
+        if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
+
+        if (producto.activo === false) {
+            return res.status(400).json({ error: 'El producto ha sido descontinuado' });
+        }
+
+        const pool = require('../config/db');
+
+        // Obtener reservas activas de este usuario para este producto
+        const reservasResult = await pool.query(
+            'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
+            [id_usuario, id_producto]
+        );
+        const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+
+        const availableStock = parseInt(producto.stock, 10) || 0;
+        const realStockLimit = availableStock + userReservations;
+
+        if (newQty > realStockLimit) {
+            return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
+        }
+
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
-        await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, cantidad);
+        await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, newQty);
         
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);
         
-        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items });
+        // Obtener reservas activas del usuario
+        const allReservasResult = await pool.query(
+            'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
+            [id_usuario]
+        );
+        const misReservas = {};
+        allReservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
+        
+        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items, mis_reservas: misReservas });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar cantidad' });
@@ -85,7 +172,16 @@ const removeProducto = async (req, res) => {
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);
         
-        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items });
+        // Obtener reservas activas del usuario
+        const pool = require('../config/db');
+        const reservasResult = await pool.query(
+            'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
+            [id_usuario]
+        );
+        const misReservas = {};
+        reservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
+        
+        res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items, mis_reservas: misReservas });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al eliminar producto' });

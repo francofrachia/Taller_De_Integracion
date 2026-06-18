@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useContext, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home/Home';
 import Catalog from './pages/Catalog/Catalog';
@@ -15,11 +15,29 @@ import About from './pages/About/About';
 import NotFound from './pages/NotFound/NotFound';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute/AdminRoute';
+import { AppContext } from './context/AppContext';
+
+// Sincronizador de ruta para mantener siempre el stock y carrito actualizados en cada navegación
+function RouteSync() {
+  const location = useLocation();
+  const { obtenerCarrito, token } = useContext(AppContext);
+
+  useEffect(() => {
+    console.log(`[RouteSync] Navegación detectada a: ${location.pathname}. Sincronizando datos del carrito...`);
+    const currentToken = token || localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo');
+    if (currentToken && currentToken !== 'null' && currentToken !== 'undefined') {
+        obtenerCarrito(currentToken);
+    }
+  }, [location.pathname, token, obtenerCarrito]);
+
+  return null;
+}
 
 function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <RouteSync />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Catalog />} />

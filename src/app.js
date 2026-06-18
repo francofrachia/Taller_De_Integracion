@@ -12,6 +12,8 @@ const direccionRoutes = require('./routes/direccionRoutes');
 const favoritoRoutes = require('./routes/favoritoRoutes');
 const compraRoutes = require('./routes/compraRoutes');
 const promocionRoutes = require('./routes/promocionRoutes');
+const sseController = require('./utils/sseController');
+const Reserva = require('./models/reservaModel');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,6 +69,23 @@ app.use('/api/direccion', direccionRoutes);
 app.use('/api/favoritos', favoritoRoutes);
 app.use('/api/compras', compraRoutes);
 app.use('/api/promociones', promocionRoutes);
+
+// Endpoint de SSE
+app.get('/api/stream/stock', sseController.subscribe);
+
+// Limpieza periódica de reservas expiradas
+setInterval(async () => {
+    try {
+        const reservasBorradas = await Reserva.limpiarReservasExpiradas();
+        if (reservasBorradas && reservasBorradas.length > 0) {
+            console.log(`[Cron] Se liberaron ${reservasBorradas.length} reservas expiradas.`);
+            const idsUnicos = [...new Set(reservasBorradas.map(r => r.id_producto))];
+            idsUnicos.forEach(id => sseController.broadcastStockUpdate(id));
+        }
+    } catch (e) {
+        console.error('[Cron] Error limpiando reservas', e);
+    }
+}, 60 * 1000); // cada minuto
 
 // Ruta de prueba para verificar que el servidor se lanzo
 app.get('/', (req, res) => {
