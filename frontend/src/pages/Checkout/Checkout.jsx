@@ -29,6 +29,15 @@ export default function Checkout() {
         ? [directPurchase]
         : (cart && cart.items ? (selectedItemIds ? cart.items.filter(i => selectedItemIds.includes(String(i.id_producto))) : cart.items) : []);
 
+    const getCartItemCurrentPrice = (item) => {
+        if (directPurchase) return parseFloat(item.precio);
+        const dbProduct = productos?.find(p => p.id_producto === item.id_producto);
+        if (!dbProduct) return parseFloat(item.precio);
+        const originalPrice = parseFloat(dbProduct.precio) || 0;
+        const discountPct = dbProduct.descuento ? parseFloat(dbProduct.descuento) : null;
+        return discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
+    };
+
     const [formData, setFormData] = useState(() => {
         const savedData = sessionStorage.getItem('checkout_form_data');
         if (savedData) {
@@ -231,6 +240,14 @@ export default function Checkout() {
     }) : [];
 
     const handleAutoAdjustCheckout = async () => {
+        // Compute how many items will remain after auto-adjustment
+        const remainingItems = checkoutItems.filter(item => {
+            const problemItem = itemsConProblemasStock.find(p => p.id_producto === item.id_producto);
+            if (!problemItem) return true;
+            const itemStock = getRealStock(item, productos, cart);
+            return itemStock > 0;
+        });
+
         for (const item of itemsConProblemasStock) {
             const itemStock = getRealStock(item, productos, cart);
             if (itemStock === 0) {
@@ -239,8 +256,8 @@ export default function Checkout() {
                 await actualizarCantidadCarrito(item.id_producto, itemStock);
             }
         }
-        // Si el carrito se vacía o se limpia, redirigir
-        if (cart && cart.items && (cart.items.length <= itemsConProblemasStock.length)) {
+
+        if (remainingItems.length === 0) {
             navigate('/carrito');
         }
     };
@@ -352,7 +369,7 @@ export default function Checkout() {
         }
     };
 
-    const subtotal = checkoutItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+    const subtotal = checkoutItems.reduce((sum, item) => sum + (getCartItemCurrentPrice(item) * item.cantidad), 0);
     const shipping = 0; // Envío gratis
     const total = subtotal + shipping;
 
@@ -517,7 +534,7 @@ export default function Checkout() {
                                                 {isOverStock && <span className="summary-item-warning"> </span>}
                                                 {item.nombre} x {item.cantidad}
                                             </span>
-                                            <span className="summary-item-total">${(parseFloat(item.precio) * item.cantidad).toFixed(2)}</span>
+                                            <span className="summary-item-total">${(getCartItemCurrentPrice(item) * item.cantidad).toFixed(2)}</span>
                                         </div>
                                     );
                                 })}

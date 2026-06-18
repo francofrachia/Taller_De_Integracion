@@ -482,9 +482,14 @@ export function AppProvider({ children }) {
         }
     }
 
-    async function vaciarCarrito() {
+    async function vaciarCarrito(localOnly = false) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
+        }
+        if (localOnly) {
+            setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
+            setCartCount(0);
+            return { success: true };
         }
         try {
             const response = await fetch(`${API_URL}/carrito/clear`, {

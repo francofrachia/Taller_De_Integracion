@@ -140,8 +140,12 @@ const updateCantidad = async (req, res) => {
             return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
         }
 
+        const originalPrice = parseFloat(producto.precio) || 0;
+        const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
+        const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
+
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
-        await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, newQty);
+        await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, newQty, finalPrice);
         
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);

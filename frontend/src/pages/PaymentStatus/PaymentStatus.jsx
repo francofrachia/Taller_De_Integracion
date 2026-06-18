@@ -28,8 +28,8 @@ const PaymentStatus = ({ type }) => {
       if (usuario && usuario.id_usuario) {
         const isDirectPurchase = searchParams.get('direct_purchase') === 'true';
         if (!isDirectPurchase) {
-          console.log("[PaymentStatus] User session loaded. Clearing cart for user:", usuario.id_usuario);
-          vaciarCarrito();
+          console.log("[PaymentStatus] User session loaded. Clearing cart locally for user:", usuario.id_usuario);
+          vaciarCarrito(true);
         } else {
           console.log("[PaymentStatus] User session loaded. Direct purchase detected, not clearing cart.");
         }

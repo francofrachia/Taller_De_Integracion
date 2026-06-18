@@ -6,7 +6,7 @@ const crypto = require('crypto');
 
 // Configuración de Mercado Pago
 const client = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN || 'TEST-3392476566418854-052018-971c261e47963df50d890d2354c4d7e9-1823758368'
+    accessToken: process.env.MP_ACCESS_TOKEN
 });
 
 const createPreference = async (req, res) => {
@@ -69,18 +69,23 @@ const createPreference = async (req, res) => {
                 [id_usuario, item.id_producto, item.cantidad, tempRef]
             );
 
+            const originalPrice = parseFloat(producto.precio) || 0;
+            const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
+            const finalPrice = discountPct ? parseFloat((originalPrice * (1 - discountPct / 100)).toFixed(2)) : originalPrice;
+
             itemsPreference.push({
                 id: String(producto.id_producto),
                 title: producto.nombre,
                 quantity: Number(item.cantidad),
-                unit_price: Number(producto.precio),
+                unit_price: Number(finalPrice),
                 currency_id: 'ARS',
                 picture_url: producto.imagenes && producto.imagenes[0] ? producto.imagenes[0] : ''
             });
 
             metadataItems.push({
                 product_id: producto.id_producto,
-                quantity: Number(item.cantidad)
+                quantity: Number(item.cantidad),
+                price: Number(finalPrice)
             });
         }
 
@@ -235,6 +240,7 @@ const receiveWebhook = async (req, res) => {
                         console.log(`Pago aprobado. Actualizando stock de ${items.length} productos y registrando compra.`);
                         
                         const itemsConPrecio = [];
+                        let originalSubtotal = 0;
                         let subtotal = 0;
 
                         // Intentar obtener el preference_id original (en metadata enviamos el temp_ref pero la preference es paymentData.order?.id o algo así, borraremos por id_usuario y producto)
@@ -243,14 +249,16 @@ const receiveWebhook = async (req, res) => {
                         for (const item of items) {
                             const producto = await Producto.getById(item.product_id);
                             if (producto) {
-                                const precioNum = parseFloat(producto.precio) || 0;
+                                const originalPrice = parseFloat(producto.precio) || 0;
+                                const finalPrice = item.price !== undefined ? parseFloat(item.price) : originalPrice;
                                 itemsConPrecio.push({
                                     id_producto: item.product_id,
                                     cantidad: item.quantity,
-                                    precio: precioNum,
+                                    precio: finalPrice,
                                     nombre: producto.nombre
                                 });
-                                subtotal += precioNum * item.quantity;
+                                originalSubtotal += originalPrice * item.quantity;
+                                subtotal += finalPrice * item.quantity;
                             }
 
                             // NOTA: No descontamos el stock físico manualmente porque la BD tiene 
@@ -266,8 +274,9 @@ const receiveWebhook = async (req, res) => {
                         // Registrar la compra en la base de datos
                         if (itemsConPrecio.length > 0) {
                             const Compra = require('../models/compraModel');
-                            const total = subtotal; // total es el subtotal si no hay descuentos en metadata
-                            const resultCompra = await Compra.create(idUsuario, itemsConPrecio, subtotal, 0, total, 'mercado_pago', 'Pago confirmado', String(paymentId));
+                            const total_descuento = Math.max(0, originalSubtotal - subtotal);
+                            const total = subtotal;
+                            const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Pago confirmado', String(paymentId));
                             console.log(`Compra registrada con éxito para el usuario ${idUsuario}: ID ${resultCompra.id_compra}`);
 
                             // Enviar comprobante por email
