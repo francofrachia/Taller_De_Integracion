@@ -31,7 +31,21 @@ const updateCompraEstado = async (req, res) => {
             return res.status(400).json({ error: 'El estado es requerido' });
         }
 
-        const validStates = ['Pago confirmado', 'Enviado', 'Entregado', 'Cancelado'];
+        const validStates = [
+            'Pendiente',
+            'Pago aprobado',
+            'En proceso',
+            'Pedido despachado',
+            'Finalizado',
+            'Cancelado',
+            // Legacy / alternate statuses support
+            'Esperando Pago',
+            'Pago confirmado',
+            'Preparando Pedido',
+            'En manos del correo',
+            'Enviado',
+            'Entregado'
+        ];
         if (!validStates.includes(estado)) {
             return res.status(400).json({ error: `Estado inválido. Valores permitidos: ${validStates.join(', ')}` });
         }

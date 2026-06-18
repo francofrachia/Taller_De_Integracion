@@ -8,6 +8,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
+import ServerError from '../../components/ServerError/ServerError';
 import { AppContext } from '../../context/AppContext';
 import { displayCategoryName, getCategoryClass, getCategoryVisuals } from '../../utils/categoryHelpers';
 import './Home.css';
@@ -265,8 +266,12 @@ const Home = () => {
       <Navbar />
 
       <main className="home-main">
-        {/* Nuevo Hero Section Moderno */}
-        <section className="hero-section-custom">
+        {serverError ? (
+          <ServerError />
+        ) : (
+          <>
+            {/* Nuevo Hero Section Moderno */}
+            <section className="hero-section-custom">
           {/* Fondo usando la imagen original sin el gradiente blanco */}
           <div className="hero-custom-bg" style={{ backgroundImage: `url(${newHeroBanner})` }}></div>
 
@@ -366,17 +371,6 @@ const Home = () => {
           </div>
         </section>
 
-        {serverError ? (
-          <div className="container">
-            <div className="server-error-state animate-fade-in">
-              <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔌</div>
-              <h2>¡Problemas de conexión!</h2>
-              <p>No pudimos conectarnos con nuestro catálogo en este momento.</p>
-              <button className="btn-primary-custom" onClick={() => window.location.reload()}>Reintentar Conexión</button>
-            </div>
-          </div>
-        ) : (
-          <>
             <div style={{ height: '40px' }}></div> {/* Espaciador reducido */}
 
             {/* Ofertas Relámpago con Glassmorphism */}

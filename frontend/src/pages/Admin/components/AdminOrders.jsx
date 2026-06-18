@@ -161,10 +161,10 @@ const AdminOrders = () => {
                                                 textAlign: 'center'
                                             }}
                                         >
-                                            <option value="Esperando Pago">Esperando Pago</option>
-                                            <option value="Pago confirmado">Pago confirmado</option>
-                                            <option value="Preparando Pedido">Preparando Pedido</option>
-                                            <option value="En manos del correo">En manos del correo</option>
+                                            <option value="Pendiente">Pendiente</option>
+                                            <option value="Pago aprobado">Pago aprobado</option>
+                                            <option value="En proceso">En proceso</option>
+                                            <option value="Pedido despachado">Pedido despachado</option>
                                             <option value="Finalizado">Finalizado</option>
                                             <option value="Cancelado">Cancelado</option>
                                         </select>
