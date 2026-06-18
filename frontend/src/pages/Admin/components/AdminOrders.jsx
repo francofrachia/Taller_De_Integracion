@@ -135,7 +135,7 @@ const AdminOrders = () => {
                                 <td>{o.id_compra}</td>
                                 <td>{new Date(o.fecha).toLocaleDateString()}</td>
                                 <td>{o.usuario_email}</td>
-                                <td>${o.total}</td>
+                                <td>${parseFloat(o.total)}</td>
                                 <td>
                                     {editingOrderId === o.id_compra ? (
                                         <select 
@@ -250,7 +250,7 @@ const AdminOrders = () => {
                                                             <span style={{ color: '#4b5563' }}>{linea.nombre}</span>
                                                         </div>
                                                         <div style={{ fontWeight: '600', color: '#111827' }}>
-                                                            ${parseFloat(linea.precio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} c/u
+                                                            ${parseFloat(linea.precio)} c/u
                                                         </div>
                                                     </div>
                                                 ))}

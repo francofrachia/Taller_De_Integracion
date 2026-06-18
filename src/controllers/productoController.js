@@ -135,6 +135,8 @@ const createProducto = async (req, res) => {
         }
 
         const nuevoProducto = await Producto.create(data, urlsImagenes);
+        const sseController = require('../utils/sseController');
+        sseController.broadcastStockUpdate(nuevoProducto.id_producto);
         res.status(201).json({ mensaje: 'Producto creado', producto: nuevoProducto });
     } catch (error) {
         console.error('Error en createProducto:', error);
@@ -187,6 +189,8 @@ const updateProducto = async (req, res) => {
         if (!productoActualizado) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
+        const sseController = require('../utils/sseController');
+        sseController.broadcastStockUpdate(id);
         res.json({ mensaje: 'Producto actualizado', producto: productoActualizado });
     } catch (error) {
         console.error('Error en updateProducto:', error);
@@ -202,6 +206,8 @@ const deleteProducto = async (req, res) => {
         if (!result) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
+        const sseController = require('../utils/sseController');
+        sseController.broadcastStockUpdate(id);
         res.json({ mensaje: 'Producto eliminado correctamente' });
     } catch (error) {
         console.error('Error en deleteProducto:', error);

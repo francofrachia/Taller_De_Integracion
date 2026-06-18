@@ -39,11 +39,11 @@ class Carrito {
         );
 
         if (check.rows.length > 0) {
-            // Si ya existe, actualizar la cantidad
+            // Si ya existe, actualizar la cantidad y el precio
             const newCantidad = check.rows[0].cantidad + cantidad;
             const result = await pool.query(
-                'UPDATE linea_carrito SET cantidad = $1 WHERE id_carrito = $2 AND id_producto = $3 RETURNING *',
-                [newCantidad, id_carrito, id_producto]
+                'UPDATE linea_carrito SET cantidad = $1, precio = $2 WHERE id_carrito = $3 AND id_producto = $4 RETURNING *',
+                [newCantidad, precio, id_carrito, id_producto]
             );
             return result.rows[0];
         } else {
@@ -56,11 +56,11 @@ class Carrito {
         }
     }
 
-    // Actualizar cantidad de un item
-    static async updateItemQuantity(id_producto, id_carrito, cantidad) {
+    // Actualizar cantidad de un item y su precio
+    static async updateItemQuantity(id_producto, id_carrito, cantidad, precio) {
         const result = await pool.query(
-            'UPDATE linea_carrito SET cantidad = $1 WHERE id_producto = $2 AND id_carrito = $3 RETURNING *',
-            [cantidad, id_producto, id_carrito]
+            'UPDATE linea_carrito SET cantidad = $1, precio = $2 WHERE id_producto = $3 AND id_carrito = $4 RETURNING *',
+            [cantidad, precio, id_producto, id_carrito]
         );
         return result.rows[0];
     }

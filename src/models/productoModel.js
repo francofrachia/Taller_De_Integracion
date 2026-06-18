@@ -5,7 +5,8 @@ const Producto = {
     getAll: async () => {
         const query = `
             SELECT DISTINCT ON (p.id_producto) 
-                p.*, 
+                p.id_producto, p.nombre, p.descripcion, p.precio, p.id_categoria, p.activo, p.edad_recomendada, p.ultimo_lanzamiento,
+                GREATEST(0, p.stock - COALESCE((SELECT SUM(cantidad) FROM reserva_stock WHERE id_producto = p.id_producto AND fecha_expiracion > NOW()), 0)) AS stock,
                 c.nombre AS categoria_nombre, 
                 i.url AS imagen_url,
                 (
@@ -39,7 +40,8 @@ const Producto = {
     getById: async (id) => {
         const query = `
             SELECT 
-                p.*, 
+                p.id_producto, p.nombre, p.descripcion, p.precio, p.id_categoria, p.activo, p.edad_recomendada, p.ultimo_lanzamiento,
+                GREATEST(0, p.stock - COALESCE((SELECT SUM(cantidad) FROM reserva_stock WHERE id_producto = p.id_producto AND fecha_expiracion > NOW()), 0)) AS stock,
                 c.nombre AS categoria_nombre, 
                 array_remove(array_agg(i.url), NULL) AS imagenes,
                 (
@@ -303,7 +305,8 @@ const Producto = {
     getAllAdmin: async () => {
         const query = `
             SELECT DISTINCT ON (p.id_producto) 
-                p.*, 
+                p.id_producto, p.nombre, p.descripcion, p.precio, p.id_categoria, p.activo, p.edad_recomendada, p.ultimo_lanzamiento,
+                GREATEST(0, p.stock - COALESCE((SELECT SUM(cantidad) FROM reserva_stock WHERE id_producto = p.id_producto AND fecha_expiracion > NOW()), 0)) AS stock,
                 c.nombre AS categoria_nombre, 
                 i.url AS imagen_url,
                 (

@@ -1,15 +1,15 @@
 const pool = require('../config/db');
 
 const Compra = {
-    create: async (id_usuario, items, subtotal, total_descuento, total, metodo_pago = 'mercado_pago', estado = 'Pago confirmado') => {
+    create: async (id_usuario, items, subtotal, total_descuento, total, metodo_pago = 'mercado_pago', estado = 'Pago confirmado', id_pago_mp = null) => {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             // 1. Insert into compra
             const insertCompraQuery = `
-                INSERT INTO compra (id_usuario, fecha, metodo_pago, estado, subtotal, total_descuento, total)
-                VALUES ($1, CURRENT_TIMESTAMP, $2, $3, $4, $5, $6)
+                INSERT INTO compra (id_usuario, fecha, metodo_pago, estado, subtotal, total_descuento, total, id_pago_mp)
+                VALUES ($1, CURRENT_TIMESTAMP, $2, $3, $4, $5, $6, $7)
                 RETURNING id_compra, fecha
             `;
             const resCompra = await client.query(insertCompraQuery, [
@@ -18,7 +18,8 @@ const Compra = {
                 estado,
                 subtotal,
                 total_descuento,
-                total
+                total,
+                id_pago_mp
             ]);
             const id_compra = resCompra.rows[0].id_compra;
             const fecha = resCompra.rows[0].fecha;

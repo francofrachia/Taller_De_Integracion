@@ -1,0 +1,1216 @@
+{
+  "calificacion": {
+    "columns": [
+      {
+        "name": "id_calificacion",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('calificacion_id_calificacion_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "puntaje",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha",
+        "type": "date",
+        "nullable": "NO",
+        "default_val": "CURRENT_DATE",
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_calificacion",
+        "ref_table": "calificacion",
+        "ref_column": "id_calificacion",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "carrito": {
+    "columns": [
+      {
+        "name": "id_carrito",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('carrito_id_carrito_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "total",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": "0.00",
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "carrito",
+        "ref_column": "id_usuario",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_carrito",
+        "ref_table": "carrito",
+        "ref_column": "id_carrito",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "categoria": {
+    "columns": [
+      {
+        "name": "id_categoria",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('categoria_id_categoria_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "nombre",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 50
+      }
+    ],
+    "constraints": [
+      {
+        "column": "nombre",
+        "ref_table": "categoria",
+        "ref_column": "nombre",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_categoria",
+        "ref_table": "categoria",
+        "ref_column": "id_categoria",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "comentario": {
+    "columns": [
+      {
+        "name": "id_comentario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('comentario_id_comentario_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "texto",
+        "type": "text",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha",
+        "type": "date",
+        "nullable": "NO",
+        "default_val": "CURRENT_DATE",
+        "max_len": null
+      },
+      {
+        "name": "anonimo",
+        "type": "boolean",
+        "nullable": "NO",
+        "default_val": "false",
+        "max_len": null
+      },
+      {
+        "name": "respuesta_adm",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_calificacion",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_calificacion",
+        "ref_table": "calificacion",
+        "ref_column": "id_calificacion",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_comentario",
+        "ref_table": "comentario",
+        "ref_column": "id_comentario",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "compra": {
+    "columns": [
+      {
+        "name": "id_compra",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('compra_id_compra_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default_val": "now()",
+        "max_len": null
+      },
+      {
+        "name": "metodo_pago",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default_val": "'mercado_pago'::metodo_pago",
+        "max_len": null
+      },
+      {
+        "name": "estado",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default_val": "'Esperando Pago'::estado_compra",
+        "max_len": null
+      },
+      {
+        "name": "subtotal",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": "0.00",
+        "max_len": null
+      },
+      {
+        "name": "total_descuento",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": "0.00",
+        "max_len": null
+      },
+      {
+        "name": "total",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_pago_mp",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 100
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_pago_mp",
+        "ref_table": "compra",
+        "ref_column": "id_pago_mp",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_compra",
+        "ref_table": "compra",
+        "ref_column": "id_compra",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "direccion": {
+    "columns": [
+      {
+        "name": "id_direccion",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('direccion_id_direccion_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "calle",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 150
+      },
+      {
+        "name": "numero",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_localidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_localidad",
+        "ref_table": "localidad",
+        "ref_column": "id_localidad",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_direccion",
+        "ref_table": "direccion",
+        "ref_column": "id_direccion",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "envio": {
+    "columns": [
+      {
+        "name": "id_envio",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('envio_id_envio_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_compra",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "codigo_seguimiento",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 80
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_compra",
+        "ref_table": "compra",
+        "ref_column": "id_compra",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_compra",
+        "ref_table": "envio",
+        "ref_column": "id_compra",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_envio",
+        "ref_table": "envio",
+        "ref_column": "id_envio",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "favorito": {
+    "columns": [
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "favorito",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "favorito",
+        "ref_column": "id_usuario",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "favorito",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "favorito",
+        "ref_column": "id_usuario",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "imagen": {
+    "columns": [
+      {
+        "name": "id_imagen",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('imagen_id_imagen_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "url",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 500
+      },
+      {
+        "name": "descripcion",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 255
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_imagen",
+        "ref_table": "imagen",
+        "ref_column": "id_imagen",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "ingreso_producto": {
+    "columns": [
+      {
+        "name": "id_ingreso",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('ingreso_producto_id_ingreso_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "cantidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha",
+        "type": "date",
+        "nullable": "NO",
+        "default_val": "CURRENT_DATE",
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_ingreso",
+        "ref_table": "ingreso_producto",
+        "ref_column": "id_ingreso",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "linea_carrito": {
+    "columns": [
+      {
+        "name": "id_carrito",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "cantidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "precio",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_carrito",
+        "ref_table": "carrito",
+        "ref_column": "id_carrito",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_carrito",
+        "ref_table": "linea_carrito",
+        "ref_column": "id_carrito",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_carrito",
+        "ref_table": "linea_carrito",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "linea_carrito",
+        "ref_column": "id_carrito",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "linea_carrito",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "linea_compra": {
+    "columns": [
+      {
+        "name": "id_compra",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "cantidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "precio",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_promo",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_compra",
+        "ref_table": "compra",
+        "ref_column": "id_compra",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_promo",
+        "ref_table": "promocion",
+        "ref_column": "id_promo",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_compra",
+        "ref_table": "linea_compra",
+        "ref_column": "id_compra",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_compra",
+        "ref_table": "linea_compra",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "linea_compra",
+        "ref_column": "id_compra",
+        "type": "PRIMARY KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "linea_compra",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "localidad": {
+    "columns": [
+      {
+        "name": "id_localidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('localidad_id_localidad_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "nombre",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "cp",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 10
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_localidad",
+        "ref_table": "localidad",
+        "ref_column": "id_localidad",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "producto": {
+    "columns": [
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('producto_id_producto_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "nombre",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "descripcion",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_categoria",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "edad_recomendada",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "precio",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "activo",
+        "type": "boolean",
+        "nullable": "NO",
+        "default_val": "true",
+        "max_len": null
+      },
+      {
+        "name": "stock",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "0",
+        "max_len": null
+      },
+      {
+        "name": "ultimo_lanzamiento",
+        "type": "boolean",
+        "nullable": "YES",
+        "default_val": "false",
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_categoria",
+        "ref_table": "categoria",
+        "ref_column": "id_categoria",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "promocion": {
+    "columns": [
+      {
+        "name": "id_promo",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('promocion_id_promo_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "descripcion",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 200
+      },
+      {
+        "name": "fecha_inicio",
+        "type": "date",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha_fin",
+        "type": "date",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "porcentaje",
+        "type": "numeric",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_categoria",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_categoria",
+        "ref_table": "categoria",
+        "ref_column": "id_categoria",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_promo",
+        "ref_table": "promocion",
+        "ref_column": "id_promo",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "reserva_stock": {
+    "columns": [
+      {
+        "name": "id_reserva",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('reserva_stock_id_reserva_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "cantidad",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha_creacion",
+        "type": "timestamp with time zone",
+        "nullable": "YES",
+        "default_val": "now()",
+        "max_len": null
+      },
+      {
+        "name": "fecha_expiracion",
+        "type": "timestamp with time zone",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "mp_preference_id",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 255
+      }
+    ],
+    "constraints": [
+      {
+        "column": "id_producto",
+        "ref_table": "producto",
+        "ref_column": "id_producto",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_reserva",
+        "ref_table": "reserva_stock",
+        "ref_column": "id_reserva",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "usuario": {
+    "columns": [
+      {
+        "name": "id_usuario",
+        "type": "integer",
+        "nullable": "NO",
+        "default_val": "nextval('usuario_id_usuario_seq'::regclass)",
+        "max_len": null
+      },
+      {
+        "name": "nombre",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 50
+      },
+      {
+        "name": "apellido",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 50
+      },
+      {
+        "name": "email",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 255
+      },
+      {
+        "name": "contrasena",
+        "type": "character varying",
+        "nullable": "NO",
+        "default_val": null,
+        "max_len": 255
+      },
+      {
+        "name": "telefono",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 20
+      },
+      {
+        "name": "rol",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default_val": "'usuario'::usuario_rol",
+        "max_len": null
+      },
+      {
+        "name": "id_direccion",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "fecha_registro",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default_val": "now()",
+        "max_len": null
+      },
+      {
+        "name": "avatar_url",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": "'/images/logo mario.png'::character varying",
+        "max_len": 255
+      }
+    ],
+    "constraints": [
+      {
+        "column": "email",
+        "ref_table": "usuario",
+        "ref_column": "email",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_direccion",
+        "ref_table": "direccion",
+        "ref_column": "id_direccion",
+        "type": "FOREIGN KEY"
+      },
+      {
+        "column": "id_direccion",
+        "ref_table": "usuario",
+        "ref_column": "id_direccion",
+        "type": "UNIQUE"
+      },
+      {
+        "column": "id_usuario",
+        "ref_table": "usuario",
+        "ref_column": "id_usuario",
+        "type": "PRIMARY KEY"
+      }
+    ]
+  },
+  "vista_catalogo": {
+    "columns": [
+      {
+        "name": "id_producto",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "producto",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "categoria",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 50
+      },
+      {
+        "name": "precio",
+        "type": "numeric",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "stock",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "imagen_url",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 500
+      }
+    ],
+    "constraints": []
+  },
+  "vista_ranking_ventas": {
+    "columns": [
+      {
+        "name": "producto",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "unidades_vendidas",
+        "type": "bigint",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "recaudacion_total",
+        "type": "numeric",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": []
+  },
+  "vista_resenas_usuarios": {
+    "columns": [
+      {
+        "name": "producto",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "usuario",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 50
+      },
+      {
+        "name": "puntaje",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "comentario",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "respuesta_admin",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": []
+  },
+  "vista_reseñas_usuarios": {
+    "columns": [
+      {
+        "name": "producto",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 100
+      },
+      {
+        "name": "usuario",
+        "type": "character varying",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": 50
+      },
+      {
+        "name": "puntaje",
+        "type": "integer",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "comentario",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      },
+      {
+        "name": "respuesta_admin",
+        "type": "text",
+        "nullable": "YES",
+        "default_val": null,
+        "max_len": null
+      }
+    ],
+    "constraints": []
+  }
+}

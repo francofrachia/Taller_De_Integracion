@@ -31,6 +31,11 @@ const updateCompraEstado = async (req, res) => {
             return res.status(400).json({ error: 'El estado es requerido' });
         }
 
+        const validStates = ['Pago confirmado', 'Enviado', 'Entregado', 'Cancelado'];
+        if (!validStates.includes(estado)) {
+            return res.status(400).json({ error: `Estado inválido. Valores permitidos: ${validStates.join(', ')}` });
+        }
+
         const compraActualizada = await Compra.updateEstado(id_compra, estado);
         if (!compraActualizada) {
             return res.status(404).json({ error: 'Compra no encontrada' });
