@@ -311,10 +311,6 @@ export function AppProvider({ children }) {
         setCart(newCart);
         setCartCount(newItems.reduce((acc, item) => acc + item.cantidad, 0));
 
-        // Mostrar notificación de éxito instantánea / optimista
-        const producto = productos.find(p => p.id_producto === id_producto);
-        const nombreProd = producto ? producto.nombre : 'Producto';
-        addToast('¡Agregado al Carrito!', `${nombreProd} se añadió correctamente.`, 'success');
 
         try {
             const response = await fetch(`${API_URL}/carrito/add`, {
