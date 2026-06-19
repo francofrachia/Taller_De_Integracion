@@ -15,19 +15,16 @@ async function main() {
             console.log("Funcion fn_restar_stock_compra no encontrada.");
         }
 
-        console.log("\n=== DEFINICION DE fn_validar_stock (si existe) ===");
+        console.log("=== DEFINICION DE fn_validar_stock_antes_compra ===");
         const { rows: functionDef2 } = await pool.query(`
             SELECT prosrc 
             FROM pg_proc 
-            WHERE proname = 'fn_validar_stock'
+            WHERE proname = 'fn_validar_stock_antes_compra'
         `);
         if (functionDef2.length > 0) {
             console.log(functionDef2[0].prosrc);
         } else {
-            const { rows: functions } = await pool.query(`
-                SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace
-            `);
-            console.log("Todas las funciones en public:", functions.map(f => f.proname));
+            console.log("Funcion fn_validar_stock_antes_compra no encontrada.");
         }
 
     } catch (e) {
