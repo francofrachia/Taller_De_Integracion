@@ -1150,7 +1150,8 @@
     border: 1px solid #e1bee7;
 }
 
-.purchase-status-badge.cancelado {
+.purchase-status-badge.cancelado,
+.purchase-status-badge.rechazado {
     color: #c62828;
     background-color: #ffebee;
     border: 1px solid #ef9a9a;

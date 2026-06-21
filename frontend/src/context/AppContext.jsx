@@ -153,7 +153,7 @@ export function AppProvider({ children }) {
             lastSync = now;
 
             console.log("[AppContext] Detectado foco/visibilidad/pageshow. Sincronizando stock y carrito con el servidor...");
-            obtenerProductos();
+            obtenerProductos(true);
             
             const currentToken = localStorage.getItem('token_bloquemundo') || sessionStorage.getItem('token_bloquemundo') || token;
             if (currentToken && currentToken !== 'null' && currentToken !== 'undefined') {
@@ -179,8 +179,8 @@ export function AppProvider({ children }) {
     }, [token]);
 
     // 2. Fetch de productos del backend (público)
-    const obtenerProductos = useCallback(async () => {
-        setLoading(true);
+    const obtenerProductos = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const response = await fetch(`${API_URL}/productos`);
             if (response.ok) {
@@ -195,7 +195,7 @@ export function AppProvider({ children }) {
             console.error("Error conectando con la API:", error);
             setFetchError(true);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }, [API_URL]);
 
@@ -478,13 +478,20 @@ export function AppProvider({ children }) {
         }
     }
 
-    async function vaciarCarrito(localOnly = false) {
+    async function vaciarCarrito(localOnly = false, productIds = null) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
         }
         if (localOnly) {
-            setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
-            setCartCount(0);
+            if (productIds && Array.isArray(productIds) && cart && cart.items) {
+                const remainingItems = cart.items.filter(item => !productIds.includes(String(item.id_producto)));
+                const newTotal = remainingItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+                setCart({ ...cart, total: newTotal, items: remainingItems });
+                setCartCount(remainingItems.reduce((acc, item) => acc + item.cantidad, 0));
+            } else {
+                setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
+                setCartCount(0);
+            }
             return { success: true };
         }
         try {

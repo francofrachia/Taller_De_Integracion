@@ -35,9 +35,9 @@ const AdminOrders = () => {
     const handleStatusChange = async (id_compra, newStatus, currentStatus) => {
         if (!newStatus || newStatus === currentStatus) return;
 
-        if (newStatus === 'Cancelado') {
-            const isConfirmed = await confirm("¿Estás seguro de cancelar esta compra? Esto restaurará el stock de los productos involucrados.");
-            if (!isConfirmed) return;
+        if (newStatus === 'Cancelado' || newStatus === 'Rechazado') {
+            toast.error('No está permitido cancelar ni rechazar compras.');
+            return;
         }
 
         try {
@@ -166,54 +166,55 @@ const AdminOrders = () => {
                                             <option value="En proceso">En proceso</option>
                                             <option value="Pedido despachado">Pedido despachado</option>
                                             <option value="Finalizado">Finalizado</option>
-                                            <option value="Cancelado">Cancelado</option>
                                         </select>
                                     ) : (
                                         <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <span style={{ 
                                                 padding: '0.25rem 0.5rem', 
                                                 borderRadius: '4px',
-                                                backgroundColor: o.estado === 'Cancelado' ? '#fee2e2' : '#dcfce7',
-                                                color: o.estado === 'Cancelado' ? '#991b1b' : '#166534',
+                                                backgroundColor: (o.estado === 'Cancelado' || o.estado === 'Rechazado') ? '#fee2e2' : '#dcfce7',
+                                                color: (o.estado === 'Cancelado' || o.estado === 'Rechazado') ? '#991b1b' : '#166534',
                                                 fontSize: '0.85rem',
                                                 minWidth: '150px',
                                                 display: 'inline-block',
                                                 textAlign: 'center'
                                             }}>
-                                                {o.estado}
+                                                {o.estado === 'Cancelado' || o.estado === 'cancelado' ? 'Rechazado' : o.estado}
                                             </span>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingOrderId(o.id_compra);
-                                                }}
-                                                style={{
-                                                    position: 'absolute',
-                                                    left: '100%',
-                                                    marginLeft: '12px',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    color: '#9ca3af',
-                                                    padding: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    borderRadius: '50%',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.color = '#1a1a1a';
-                                                    e.currentTarget.style.backgroundColor = '#f3f4f6';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.color = '#9ca3af';
-                                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                                }}
-                                                title="Editar Estado"
-                                            >
-                                                <FiEdit2 size={15} />
-                                            </button>
+                                            {o.estado !== 'Cancelado' && o.estado !== 'Rechazado' && (
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingOrderId(o.id_compra);
+                                                    }}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        left: '100%',
+                                                        marginLeft: '12px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        color: '#9ca3af',
+                                                        padding: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        borderRadius: '50%',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.color = '#1a1a1a';
+                                                        e.currentTarget.style.backgroundColor = '#f3f4f6';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.color = '#9ca3af';
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                    }}
+                                                    title="Editar Estado"
+                                                >
+                                                    <FiEdit2 size={15} />
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </td>

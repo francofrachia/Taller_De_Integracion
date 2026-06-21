@@ -189,6 +189,80 @@ const createPreference = async (req, res) => {
     }
 };
 
+const procesarPagoFallido = async (paymentId) => {
+    const sseController = require('../utils/sseController');
+    const Compra = require('../models/compraModel');
+
+    try {
+        // Verificar si ya registramos una compra con este id_pago_mp (idempotencia)
+        const { rows: existingCompra } = await pool.query(
+            'SELECT id_compra FROM compra WHERE id_pago_mp = $1',
+            [String(paymentId)]
+        );
+        if (existingCompra.length > 0) {
+            console.log(`Pago fallido/rechazado ${paymentId} ya procesado anteriormente. Ignorando.`);
+            return { success: true, alreadyProcessed: true };
+        }
+
+        const payment = new Payment(client);
+        const paymentData = await payment.get({ id: paymentId });
+
+        console.log(`[Pago Fallido] Detalles del pago ${paymentId}: Estado = ${paymentData.status}`);
+
+        // Solo procesar si el estado es rechazado o cancelado
+        if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
+            const cartMetadataStr = paymentData.metadata.cart;
+            const idUsuario = paymentData.metadata.id_usuario;
+
+            if (cartMetadataStr && idUsuario) {
+                const items = JSON.parse(cartMetadataStr);
+                console.log(`Registrando compra fallida/rechazada para el usuario ${idUsuario} (Pago ID: ${paymentId})`);
+                
+                const itemsConPrecio = [];
+                let originalSubtotal = 0;
+                let subtotal = 0;
+
+                for (const item of items) {
+                    const producto = await Producto.getById(item.product_id);
+                    if (producto) {
+                        const originalPrice = parseFloat(producto.precio) || 0;
+                        const finalPrice = item.price !== undefined ? parseFloat(item.price) : originalPrice;
+                        itemsConPrecio.push({
+                            id_producto: item.product_id,
+                            cantidad: item.quantity,
+                            precio: finalPrice,
+                            nombre: producto.nombre
+                        });
+                        originalSubtotal += originalPrice * item.quantity;
+                        subtotal += finalPrice * item.quantity;
+                    }
+
+                    // Borrar la reserva temporal ya que el pago falló y la reserva ya no sirve
+                    await pool.query('DELETE FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2', [idUsuario, item.product_id]);
+                    sseController.broadcastStockUpdate(item.product_id);
+                }
+
+                if (itemsConPrecio.length > 0) {
+                    const total_descuento = Math.max(0, originalSubtotal - subtotal);
+                    const total = subtotal;
+                    
+                    // Creamos la compra en 'Esperando Pago' (que descuenta el stock físico) 
+                    // e inmediatamente la cancelamos (que devuelve el stock y la deja marcada como Cancelado en la BD)
+                    const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Esperando Pago', String(paymentId));
+                    if (resultCompra.success) {
+                        await Compra.updateEstado(resultCompra.id_compra, 'Cancelado');
+                        console.log(`Compra fallida registrada correctamente (ID compra: ${resultCompra.id_compra}, estado: Cancelado/Rechazado)`);
+                    }
+                }
+            }
+        }
+        return { success: true };
+    } catch (e) {
+        console.error('Error en procesarPagoFallido:', e);
+        throw e;
+    }
+};
+
 const receiveWebhook = async (req, res) => {
     const sseController = require('../utils/sseController');
     try {
@@ -220,14 +294,17 @@ const receiveWebhook = async (req, res) => {
                 }
 
                 // 1. Vaciar el carrito en la base de datos solo si no es compra directa
-                if (idUsuario && !isDirectPurchase) {
+                if (idUsuario && !isDirectPurchase && cartMetadataStr) {
                     try {
                         const Carrito = require('../models/carritoModel');
                         const carrito = await Carrito.getOrCreateByUserId(idUsuario);
-                        await Carrito.clearCart(carrito.id_carrito);
-                        console.log(`Pago aprobado: Carrito vaciado para el usuario ${idUsuario}`);
+                        const purchasedItems = JSON.parse(cartMetadataStr);
+                        for (const item of purchasedItems) {
+                            await Carrito.removeItem(item.product_id, carrito.id_carrito);
+                        }
+                        console.log(`Pago aprobado: Productos comprados removidos del carrito para el usuario ${idUsuario}`);
                     } catch (err) {
-                        console.error('Error al vaciar el carrito en el webhook:', err);
+                        console.error('Error al remover productos comprados del carrito en el webhook:', err);
                     }
                 } else if (isDirectPurchase) {
                     console.log(`Pago aprobado: Compra directa para el usuario ${idUsuario}, el carrito no se vaciará.`);
@@ -295,6 +372,9 @@ const receiveWebhook = async (req, res) => {
                         console.error('Error al actualizar stock o registrar la compra:', e);
                     }
                 }
+            } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
+                console.log(`Webhook de pago fallido/cancelado recibido para el pago ${paymentId}`);
+                await procesarPagoFallido(paymentId);
             }
         }
 
@@ -312,7 +392,19 @@ const successRedirect = (req, res) => {
     res.redirect(`${frontendUrl}/payment-success?${queryParams}`);
 };
 
-const failureRedirect = (req, res) => {
+const failureRedirect = async (req, res) => {
+    try {
+        const paymentId = req.query.payment_id;
+        const status = req.query.status;
+        
+        if (paymentId && (status === 'rejected' || status === 'cancelled')) {
+            console.log(`Redirección de fallo recibida con payment_id: ${paymentId}. Procesando pago fallido de forma síncrona.`);
+            await procesarPagoFallido(paymentId);
+        }
+    } catch (e) {
+        console.error('Error al procesar redirección de fallo:', e);
+    }
+
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
     const queryParams = new URLSearchParams(req.query).toString();
     res.redirect(`${frontendUrl}/payment-failure?${queryParams}`);
@@ -324,10 +416,25 @@ const pendingRedirect = (req, res) => {
     res.redirect(`${frontendUrl}/payment-pending?${queryParams}`);
 };
 
+const procesarPagoFallidoEndpoint = async (req, res) => {
+    try {
+        const { paymentId } = req.body;
+        if (!paymentId) {
+            return res.status(400).json({ error: 'Falta paymentId' });
+        }
+        await procesarPagoFallido(paymentId);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Error en endpoint procesar-pago-fallido:', e);
+        res.status(500).json({ error: 'Error al procesar el pago fallido', details: e.message });
+    }
+};
+
 module.exports = {
     createPreference,
     receiveWebhook,
     successRedirect,
     failureRedirect,
-    pendingRedirect
+    pendingRedirect,
+    procesarPagoFallidoEndpoint
 };

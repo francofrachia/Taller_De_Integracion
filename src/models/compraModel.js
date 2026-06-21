@@ -107,15 +107,21 @@ const Compra = {
         return compras;
     },
 
+    getById: async (id_compra) => {
+        const query = 'SELECT * FROM compra WHERE id_compra = $1';
+        const res = await pool.query(query, [id_compra]);
+        return res.rows[0];
+    },
+
     updateEstado: async (id_compra, estado) => {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
             
-            // Si el estado es Cancelado, deberíamos restaurar el stock
-            if (estado === 'Cancelado') {
+            // Si el estado es Cancelado o Rechazado, deberíamos restaurar el stock
+            if (estado === 'Cancelado' || estado === 'Rechazado') {
                 const checkEstado = await client.query('SELECT estado FROM compra WHERE id_compra = $1', [id_compra]);
-                if (checkEstado.rows.length > 0 && checkEstado.rows[0].estado !== 'Cancelado') {
+                if (checkEstado.rows.length > 0 && checkEstado.rows[0].estado !== 'Cancelado' && checkEstado.rows[0].estado !== 'Rechazado') {
                     // Restaurar stock
                     const lineas = await client.query('SELECT id_producto, cantidad FROM linea_compra WHERE id_compra = $1', [id_compra]);
                     for (const linea of lineas.rows) {

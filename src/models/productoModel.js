@@ -24,7 +24,7 @@ const Producto = {
                     SELECT SUM(lc.cantidad) 
                     FROM linea_compra lc 
                     JOIN compra com ON lc.id_compra = com.id_compra 
-                    WHERE lc.id_producto = p.id_producto AND com.estado NOT IN ('Esperando Pago', 'Cancelado')
+                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
                 ), 0) AS ventas_totales
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
@@ -41,6 +41,7 @@ const Producto = {
         const query = `
             SELECT 
                 p.id_producto, p.nombre, p.descripcion, p.precio, p.id_categoria, p.activo, p.edad_recomendada, p.ultimo_lanzamiento,
+                p.stock AS physical_stock,
                 GREATEST(0, p.stock - COALESCE((SELECT SUM(cantidad) FROM reserva_stock WHERE id_producto = p.id_producto AND fecha_expiracion > NOW()), 0)) AS stock,
                 c.nombre AS categoria_nombre, 
                 array_remove(array_agg(i.url), NULL) AS imagenes,
@@ -120,7 +121,7 @@ const Producto = {
             JOIN linea_compra lc ON c.id_compra = lc.id_compra
             WHERE c.id_usuario = $1 
               AND lc.id_producto = $2
-              AND c.estado NOT IN ('Esperando Pago', 'Cancelado')
+              AND c.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
         `;
         const purchasedRes = await pool.query(purchasedQuery, [id_usuario, id_producto]);
         const totalComprado = parseInt(purchasedRes.rows[0].total_comprado, 10);
@@ -306,7 +307,8 @@ const Producto = {
         const query = `
             SELECT DISTINCT ON (p.id_producto) 
                 p.id_producto, p.nombre, p.descripcion, p.precio, p.id_categoria, p.activo, p.edad_recomendada, p.ultimo_lanzamiento,
-                GREATEST(0, p.stock - COALESCE((SELECT SUM(cantidad) FROM reserva_stock WHERE id_producto = p.id_producto AND fecha_expiracion > NOW()), 0)) AS stock,
+                p.stock AS stock,
+                p.stock AS physical_stock,
                 c.nombre AS categoria_nombre, 
                 i.url AS imagen_url,
                 (
@@ -324,7 +326,7 @@ const Producto = {
                     SELECT SUM(lc.cantidad) 
                     FROM linea_compra lc 
                     JOIN compra com ON lc.id_compra = com.id_compra 
-                    WHERE lc.id_producto = p.id_producto AND com.estado NOT IN ('Esperando Pago', 'Cancelado')
+                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
                 ), 0) AS ventas_totales
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria

@@ -107,7 +107,7 @@ export default function Checkout() {
             setFormData(prev => ({
                 ...prev,
                 nombre: prev.nombre || usuario.nombre || '',
-                correo: prev.correo || usuario.email || usuario.correo || ''
+                correo: usuario.email || usuario.correo || ''
             }));
         }
     }, [usuario]);
@@ -353,6 +353,8 @@ export default function Checkout() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.init_point) {
+                    // Guardar los IDs de los productos comprados para la limpieza selectiva local
+                    sessionStorage.setItem('purchased_item_ids', JSON.stringify(checkoutItems.map(item => String(item.id_producto))));
                     window.location.href = data.init_point;
                 } else {
                     toast.error('Error: No se recibió la URL de pago de Mercado Pago.');
@@ -494,10 +496,14 @@ export default function Checkout() {
                                     id="correo"
                                     name="correo"
                                     value={formData.correo}
-                                    onChange={handleChange}
-                                    className={errors.correo ? 'input-error' : ''}
+                                    disabled
+                                    style={{
+                                        backgroundColor: '#f5f5f5',
+                                        color: '#888',
+                                        cursor: 'not-allowed',
+                                        border: '1px solid #ddd'
+                                    }}
                                     placeholder="Correo Electrónico"
-                                    disabled={hasAnyQtyError}
                                 />
                                 {errors.correo && <span className="error-text">{errors.correo}</span>}
                             </div>
@@ -551,7 +557,7 @@ export default function Checkout() {
 
                             <div className="summary-row">
                                 <span>Envío:</span>
-                                <span>Free</span>
+                                <span>Gratis</span>
                             </div>
 
                             <hr />

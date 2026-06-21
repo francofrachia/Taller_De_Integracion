@@ -130,7 +130,7 @@ const AdminProducts = () => {
                         nombre: detailedProd.nombre,
                         descripcion: detailedProd.descripcion || '',
                         precio: Math.round(parseFloat(detailedProd.precio)),
-                        stock: detailedProd.stock,
+                        stock: detailedProd.physical_stock !== undefined ? detailedProd.physical_stock : detailedProd.stock,
                         id_categoria: detailedProd.id_categoria,
                         edad_recomendada: detailedProd.edad_recomendada || '',
                         ultimo_lanzamiento: detailedProd.ultimo_lanzamiento || false
@@ -314,7 +314,23 @@ const AdminProducts = () => {
                 toast.success(editingProduct ? 'Producto actualizado' : 'Producto creado');
                 setIsModalOpen(false);
                 if (obtenerProductos) await obtenerProductos();
-                await fetchAdminProductos();
+                
+                // Refetch products list and update currently selected product reference if edited
+                const freshRes = await fetch(`${API_URL}/productos/admin`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (freshRes.ok) {
+                    const freshData = await freshRes.json();
+                    setLocalProducts(freshData);
+                    if (selectedProduct && editingProduct) {
+                        const updated = freshData.find(p => p.id_producto === selectedProduct.id_producto);
+                        if (updated) {
+                            setSelectedProduct(updated);
+                        } else {
+                            setSelectedProduct(null);
+                        }
+                    }
+                }
             } else {
                 const data = await res.json();
                 toast.error(data.error || 'Error al guardar');
@@ -418,6 +434,19 @@ const AdminProducts = () => {
                 await fetchAllPromotions();
                 if (obtenerProductos) await obtenerProductos();
                 if (obtenerPromociones) await obtenerPromociones();
+                
+                // Refetch products to display updated promo percentage in table immediately
+                const freshRes = await fetch(`${API_URL}/productos/admin`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (freshRes.ok) {
+                    const freshData = await freshRes.json();
+                    setLocalProducts(freshData);
+                    const updated = freshData.find(p => p.id_producto === selectedProduct.id_producto);
+                    if (updated) {
+                        setSelectedProduct(updated);
+                    }
+                }
             } else {
                 const data = await res.json();
                 toast.error(data.error || 'Error al guardar la oferta');
@@ -451,6 +480,7 @@ const AdminProducts = () => {
                 await fetchAllPromotions();
                 if (obtenerProductos) await obtenerProductos();
                 if (obtenerPromociones) await obtenerPromociones();
+                await fetchAdminProductos();
             } else {
                 toast.error('Error al eliminar la oferta');
             }

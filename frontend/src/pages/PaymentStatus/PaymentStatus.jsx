@@ -7,7 +7,7 @@ import sealLogo from '../../assets/logo_cera_bloque_mundo_removed.webp';
 import './PaymentStatus.css';
 
 const PaymentStatus = ({ type }) => {
-  const { vaciarCarrito, usuario, loading } = useContext(AppContext);
+  const { vaciarCarrito, obtenerCarrito, token, usuario, loading, API_URL } = useContext(AppContext);
   const [searchParams] = useSearchParams();
   const paymentId = searchParams.get('payment_id');
   const status = searchParams.get('status');
@@ -28,8 +28,20 @@ const PaymentStatus = ({ type }) => {
       if (usuario && usuario.id_usuario) {
         const isDirectPurchase = searchParams.get('direct_purchase') === 'true';
         if (!isDirectPurchase) {
-          console.log("[PaymentStatus] User session loaded. Clearing cart locally for user:", usuario.id_usuario);
-          vaciarCarrito(true);
+          console.log("[PaymentStatus] User session loaded. Clearing purchased items locally for user:", usuario.id_usuario);
+          const purchasedIdsStr = sessionStorage.getItem('purchased_item_ids');
+          let purchasedIds = null;
+          if (purchasedIdsStr) {
+            try {
+              purchasedIds = JSON.parse(purchasedIdsStr);
+            } catch (e) {
+              console.error("Error parsing purchased_item_ids:", e);
+            }
+          }
+          vaciarCarrito(true, purchasedIds);
+          // Sincronizar el carrito del backend por si acaso
+          obtenerCarrito(token);
+          sessionStorage.removeItem('purchased_item_ids');
         } else {
           console.log("[PaymentStatus] User session loaded. Direct purchase detected, not clearing cart.");
         }
@@ -37,7 +49,31 @@ const PaymentStatus = ({ type }) => {
         console.warn("[PaymentStatus] Payment success page reached but no logged-in user found.");
       }
     }
-  }, [type, loading, usuario, vaciarCarrito, searchParams]);
+
+    if (type === 'failure') {
+      if (paymentId && token) {
+        console.log("[PaymentStatus] Se detectó un pago fallido/rechazado. Registrando en backend...");
+        fetch(`${API_URL}/mercadopago/procesar-pago-fallido`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ paymentId })
+        })
+        .then(res => {
+          if (res.ok) {
+            console.log("Pago fallido procesado y registrado con éxito.");
+          } else {
+            console.error("Error al procesar el pago fallido en el backend:", res.status);
+          }
+        })
+        .catch(err => {
+          console.error("Error de red al procesar el pago fallido:", err);
+        });
+      }
+    }
+  }, [type, loading, usuario, vaciarCarrito, obtenerCarrito, token, searchParams, paymentId, API_URL]);
 
   const renderContent = () => {
     switch (type) {
