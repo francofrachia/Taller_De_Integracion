@@ -41,9 +41,9 @@ const addProducto = async (req, res) => {
             return res.status(400).json({ error: 'Faltan datos (id_producto, cantidad)' });
         }
 
-        const qtyToAdd = parseInt(cantidad, 10);
-        if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
-            return res.status(400).json({ error: 'Cantidad inválida' });
+        const qtyToAdd = Number(cantidad);
+        if (!Number.isInteger(qtyToAdd) || qtyToAdd <= 0) {
+            return res.status(400).json({ error: 'Cantidad inválida: debe ser un número entero positivo' });
         }
 
         const producto = await Producto.getById(id_producto);
@@ -112,8 +112,8 @@ const updateCantidad = async (req, res) => {
             return res.status(400).json({ error: 'Faltan datos (id_producto, cantidad)' });
         }
 
-        const newQty = parseInt(cantidad, 10);
-        if (isNaN(newQty) || newQty <= 0) {
+        const newQty = Number(cantidad);
+        if (!Number.isInteger(newQty) || newQty <= 0) {
             return res.status(400).json({ error: 'Cantidad inválida' });
         }
 

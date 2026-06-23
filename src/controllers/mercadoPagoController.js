@@ -41,6 +41,12 @@ const createPreference = async (req, res) => {
 
         // Validar stock de todos los productos y reservarlos
         for (const item of cartItems) {
+            const cantidad = Number(item.cantidad);
+            if (!Number.isInteger(cantidad) || cantidad <= 0) {
+                throw new Error(`Cantidad inválida para el producto ${item.id_producto}`);
+            }
+            item.cantidad = cantidad;
+
             // Validar existencia y estado
             const producto = await Producto.getById(item.id_producto);
             if (!producto) {
