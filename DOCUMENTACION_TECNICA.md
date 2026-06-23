@@ -554,8 +554,6 @@ BloqueMundo (Directorio Raíz)
 ├── .env                          # Variables de entorno críticas de backend
 ├── .gitignore                    # Reglas de exclusión de Git
 ├── README.md                     # Guía básica del proyecto
-├── alter.js                      # Script auxiliar de base de datos
-├── alter_producto_activo.js      # Script de alteración para baja lógica de producto
 ├── package.json                  # Dependencias y scripts de backend
 ├── scripts/                      # Scripts para administración y migraciones de BD
 │   ├── alter_compra_idempotencia.js # Script para implementar id_pago_mp UNIQUE
@@ -563,15 +561,7 @@ BloqueMundo (Directorio Raíz)
 │   ├── check_tables.js           # Inspección de tablas en la base de datos
 │   ├── clean_duplicate_purchase.js # Script saneador para revertir compras duplicadas
 │   └── update_real_descriptions.sql # Datos reales e históricos para catálogo
-├── scratch/                      # Scripts e información temporal de desarrollo
-│   ├── dump_schema.js            # Extractor del esquema de tablas en Supabase
-│   ├── schema_dump.json          # Dump de metadatos de la base de datos
-│   ├── alter_enum.js             # Agrega 'Pago aprobado' al enum estado_compra
-│   ├── simulate_failed_payment.js # Simulación y registro de un pago rechazado/cancelado
-│   ├── check_latest_compras.js   # Script para consultar las compras más recientes
-│   ├── check_mp_payments.js      # Script de consulta de pagos en la API de Mercado Pago
-│   ├── query_db.js               # Consultas auxiliares de base de datos
-│   └── test_trigger_locally.js   # Script para probar triggers locales
+
 ├── src/                          # Directorio fuente del Backend
 │   ├── app.js                    # Inicializador de Express, Cron y SSE
 │   ├── config/                   # Parámetros de infraestructura
