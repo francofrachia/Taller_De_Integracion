@@ -20,12 +20,12 @@ El MVP del sistema cubre dos roles principales:
 
 #### Rol Cliente (Frontend de Compra)
 *   **Autenticación federada y local:** Registro tradicional, login con JWT y autenticación mediante Google OAuth.
-*   **Gestión de Perfil:** Modificación de datos personales, carga y redimensionamiento de avatar en servidor y cambio de contraseña.
+*   **Gestión de Perfil:** Modificación de datos personales, selección de avatar a través de un carrusel premium de personajes Lego predefinidos (cuyas rutas se guardan en BD) y cambio de contraseña local (deshabilitado para usuarios federados de Google OAuth).
 *   **Catálogo interactivo:** Filtros alfabéticos, por precio, por rango de edad recomendada, últimos lanzamientos y categorías dinámicas.
 *   **Favoritos y Carrito:** Persistencia de favoritos y carrito de compras en la base de datos sincronizada con el estado local.
 *   **Checkout con Reserva Transaccional:** Al presionar "Comprar", el sistema bloquea los ítems seleccionados en la base de datos por un límite de 10 minutos (TTL), impidiendo que otros usuarios los adquieran mientras se realiza el pago.
 *   **Pasarela de Pago (Mercado Pago):** Redirección transparente al checkout sandbox de Mercado Pago y retorno exitoso, pendiente o fallido.
-*   **Historial de Pedidos:** Listado de compras pasadas, estado (Pago confirmado, Preparando, Enviado, Cancelado) y código de seguimiento.
+*   **Historial de Pedidos:** Listado de compras pasadas organizado en secciones ("Pendientes" para compras en curso y "Compras Anteriores" para compras finalizadas/entregadas/rechazadas), con estados de envío actualizados en tiempo real y código de seguimiento.
 *   **Calificaciones y Reseñas:** Los usuarios pueden calificar con estrellas y comentar productos, siempre y cuando la cantidad de reseñas escritas sea menor o igual al total comprado de ese ítem (Elegibilidad de Reseñas).
 
 #### Rol Administrador (Backoffice del Operador)
@@ -69,7 +69,7 @@ A continuación se detalla la priorización de requerimientos funcionales utiliz
 *   **Arquitectura Desacoplada:** Frontend y Backend deben estar completamente separados físicamente. El Frontend se comunica con el Backend únicamente a través de peticiones HTTP RESTful y conexiones de eventos unidireccionales (SSE).
 *   **Interfaz de Usuario Responsiva (UI/Responsive):** Estética premium utilizando fuentes modernas (Inter/Outfit), microanimaciones e interactividad avanzada. El diseño debe adaptarse a anchos de pantalla desde 320px (móviles) hasta resoluciones de escritorio (UltraWide), garantizando legibilidad y áreas táctiles adecuadas.
 *   **Seguridad:**
-    *   **Autenticación y Autorización:** Implementada mediante tokens JSON Web Tokens (JWT) firmados digitalmente.
+    *   **Autenticación y Autorización:** Implementada mediante tokens JSON Web Tokens (JWT) firmados digitalmente. Adicionalmente, el servidor cuenta con una guardia de arranque fatal que verifica la presencia de la variable `JWT_SECRET` en las variables de entorno, deteniendo el proceso de inicio si no se encuentra configurada.
     *   **Middleware Guards:** Bloqueo de rutas de API en backend (`verificarToken` y `verificarAdmin`) y componentes de enrutamiento en React (`AdminRoute`).
     *   **Prevención de Inyección SQL:** Todas las interacciones con la base de datos se realizan a través del pool de `pg` parametrizando obligatoriamente los argumentos de las consultas SQL (`$1, $2, ...`).
     *   **Rate Limiter:** Limitador de tasa estricto en rutas sensibles (`/api/auth/*` y `/api/mercadopago/create_preference`) permitiendo un máximo de 50 peticiones por ventana de 15 minutos por dirección IP para evitar ataques de fuerza bruta y denegación de servicios.
@@ -105,7 +105,7 @@ A continuación se especifican las interacciones críticas de negocio del sistem
 *   **Actor Principal:** Cliente.
 *   **Precondiciones:** El cliente debe estar autenticado y tener al menos un ítem con stock disponible en su carrito.
 *   **Flujo Principal:**
-    1.  El cliente ingresa a la vista del Carrito y presiona "Iniciar Pago" o realiza una compra directa.
+    1.  El cliente ingresa a la vista del Carrito y presiona "Iniciar Pago" o realiza una compra directa. Su correo electrónico estará bloqueado y no será editable por motivos de consistencia de cuenta.
     2.  El frontend despacha los ítems de compra a `/api/mercadopago/create_preference`.
     3.  El backend inicia una transacción de base de datos (`BEGIN`).
     4.  El backend elimina cualquier reserva activa previa del usuario para esos productos para evitar acumular bloqueos espurios.
@@ -115,7 +115,8 @@ A continuación se especifican las interacciones críticas de negocio del sistem
     8.  El servidor emite un evento SSE informando a todos los clientes conectados que el stock disponible de esos productos ha disminuido.
     9.  El backend crea la preferencia de pago en la API de Mercado Pago inyectando los ítems, datos del cliente y los metadatos de control (`temp_ref`, `id_usuario`, ítems de compra).
     10. El backend actualiza el campo `mp_preference_id` de la reserva en la base de datos con el ID retornado por Mercado Pago.
-    11. El frontend recibe la URL de inicio del pago y redirige al cliente a la pasarela de Mercado Pago.
+    11. El frontend guarda localmente los IDs de los productos de la compra (`purchased_item_ids`) en `sessionStorage` para permitir la posterior limpieza selectiva del carrito local.
+    12. El frontend recibe la URL de inicio del pago y redirige al cliente a la pasarela de Mercado Pago.
 *   **Flujos Alternativos / Excepciones:**
     *   **Stock insuficiente detectado en el backend:** Se ejecuta `ROLLBACK` de la transacción. El backend retorna HTTP 400 con un mensaje detallando el producto que se quedó sin stock. El cliente visualiza un modal advirtiendo del cambio y se cancela la redirección.
 *   **Postcondiciones:** El stock físico se mantiene intacto, pero el stock lógico disminuye temporalmente mediante un bloqueo en `reserva_stock`. Se abre la interfaz de pago de Mercado Pago.
@@ -128,9 +129,9 @@ A continuación se especifican las interacciones críticas de negocio del sistem
     2.  El controlador del backend solicita el detalle del pago a Mercado Pago utilizando el SDK de Payment.
     3.  Al validar que el estado del pago es `approved`, el backend inicia la lógica de confirmación.
     4.  Se comprueba la idempotencia: busca si ya existe el `id_pago_mp` en la tabla `compra`. Si no existe, prosigue.
-    5.  Si la compra no fue directa, vacía el registro de líneas de carrito del usuario.
+    5.  Si la compra no fue directa, vacía el registro de líneas de carrito del usuario de manera selectiva (removiendo solo los productos comprados guardados en `sessionStorage`), sincronizando posteriormente el carrito en el servidor.
     6.  Busca los metadatos del pago, obtiene el listado de productos y cantidades compradas.
-    7.  Elimina los registros en `reserva_stock` asociados al usuario y productos procesados (ya no se requiere la reserva temporal).
+    7.  Elimina los registros en `reserva_stock` asociados al usuario y productos del checkout (ya no se requiere la reserva temporal).
     8.  Inserta la cabecera del pedido en `compra` y sus líneas en `linea_compra` en un bloque transaccional.
     9.  La base de datos ejecuta el trigger `trg_restar_stock` restando de forma física y definitiva el stock del producto físico en la tabla `producto`.
     10. El servidor emite una notificación de actualización de stock a través de Server-Sent Events (SSE) para reflejar el estado final en todos los navegadores activos.
@@ -138,6 +139,11 @@ A continuación se especifican las interacciones críticas de negocio del sistem
     12. El backend responde HTTP 200 a Mercado Pago.
 *   **Flujos Alternativos / Excepciones:**
     *   **Pago ya procesado (Idempotencia):** Si el `id_pago_mp` ya existe en la base de datos, el backend registra el evento en logs, omite duplicar compras u operaciones de stock y retorna HTTP 200 inmediatamente a Mercado Pago.
+    *   **Pago fallido, rechazado o cancelado (Procesamiento de Pago Fallido):** Si el estado del pago reportado por la pasarela es `rejected` o `cancelled` (recibido por webhook o reportado de forma síncrona por el frontend en la redirección de fallo al endpoint `/api/mercadopago/procesar-pago-fallido`):
+        1. Se valida la idempotencia buscando si ya existe el ID de pago en la tabla `compra`.
+        2. El backend obtiene el detalle del pago utilizando la API de Mercado Pago.
+        3. El backend elimina las reservas asociadas en `reserva_stock` para liberar el stock disponible y emite las notificaciones SSE de stock correspondientes.
+        4. Para registrar la transacción en el historial de compras de auditoría, se inserta el pedido con estado `'Esperando Pago'` (descontando el stock físico mediante triggers) y, acto seguido, se actualiza su estado a `'Cancelado'` (provocando la restauración del stock físico en base de datos de manera limpia, dejando el registro como Cancelado/Rechazado).
 *   **Postcondiciones:** La compra se registra en base de datos, el stock físico del producto queda disminuido, la reserva temporal es eliminada de forma limpia y el cliente recibe su comprobante por correo.
 
 ---
@@ -370,7 +376,7 @@ Representa las cuentas registradas en el sistema.
 | `rol` | ENUM ('usuario', 'admin')| No | 'usuario' | - | - | Rol para control de acceso (Guards). |
 | `id_direccion` | INTEGER | Sí | NULL | FK ref `direccion` | FK, UK | Dirección de residencia del usuario. |
 | `fecha_registro`| TIMESTAMP | No | NOW() | - | - | Fecha y hora de creación de la cuenta. |
-| `avatar_url` | VARCHAR(255) | Sí | '/images/logo mario.png'| - | - | URL del avatar subido por el usuario. |
+| `avatar_url` | VARCHAR(255) | Sí | '/images/logo mario.png'| - | - | Ruta o URL del avatar de personaje Lego seleccionado por el usuario. |
 
 #### Tabla: `producto`
 Catálogo físico de sets de construcción en venta.
@@ -433,7 +439,7 @@ Cabecera histórica de pedidos consolidados.
 | `id_usuario` | INTEGER | No | - | FK ref `usuario` | FK | Cliente comprador. |
 | `fecha` | TIMESTAMP | No | NOW() | - | - | Fecha de transacción consolidada. |
 | `metodo_pago` | VARCHAR(50) | No | 'mercado_pago' | - | - | Pasarela seleccionada. |
-| `estado` | VARCHAR(50) | No | 'Esperando Pago' | - | - | Estado (Entregado, Cancelado, etc.). |
+| `estado` | estado_compra (ENUM) | No | 'Esperando Pago' | - | - | Estado del pedido. Valores: 'Pendiente', 'Pago aprobado', 'En proceso', 'Pedido despachado', 'Finalizado', 'Cancelado', 'Rechazado' (y sus equivalentes heredados). |
 | `subtotal` | NUMERIC(10,2) | No | 0.00 | >= 0.00 | - | Suma neta de ítems. |
 | `total_descuento`| NUMERIC(10,2) | No | 0.00 | >= 0.00 | - | Descuento total aplicado. |
 | `total` | NUMERIC(10,2) | No | - | >= 0.00 | - | Pago total del pedido. |
@@ -559,7 +565,13 @@ BloqueMundo (Directorio Raíz)
 │   └── update_real_descriptions.sql # Datos reales e históricos para catálogo
 ├── scratch/                      # Scripts e información temporal de desarrollo
 │   ├── dump_schema.js            # Extractor del esquema de tablas en Supabase
-│   └── schema_dump.json          # Dump de metadatos de la base de datos
+│   ├── schema_dump.json          # Dump de metadatos de la base de datos
+│   ├── alter_enum.js             # Agrega 'Pago aprobado' al enum estado_compra
+│   ├── simulate_failed_payment.js # Simulación y registro de un pago rechazado/cancelado
+│   ├── check_latest_compras.js   # Script para consultar las compras más recientes
+│   ├── check_mp_payments.js      # Script de consulta de pagos en la API de Mercado Pago
+│   ├── query_db.js               # Consultas auxiliares de base de datos
+│   └── test_trigger_locally.js   # Script para probar triggers locales
 ├── src/                          # Directorio fuente del Backend
 │   ├── app.js                    # Inicializador de Express, Cron y SSE
 │   ├── config/                   # Parámetros de infraestructura
@@ -629,7 +641,7 @@ BloqueMundo (Directorio Raíz)
 | **Autenticación** | `POST` | `/api/auth/login` | Loguea usuario localmente. | Público | Sin credenciales. |
 | **Autenticación** | `POST` | `/api/auth/google-login`| Autentica mediante token OAuth de Google. | Público | Sin credenciales. |
 | **Autenticación** | `PUT` | `/api/auth/profile` | Actualiza datos del perfil. | Privado | JWT (`verificarToken`). |
-| **Autenticación** | `PUT` | `/api/auth/avatar` | Carga/edita avatar del usuario. | Privado | JWT (`verificarToken`). |
+| **Autenticación** | `PUT` | `/api/auth/avatar` | Selecciona un avatar predefinido de Lego. | Privado | JWT (`verificarToken`). |
 | **Autenticación** | `PUT` | `/api/auth/password` | Cambia la contraseña cifrada. | Privado | JWT (`verificarToken`). |
 | **Productos** | `GET` | `/api/productos` | Obtiene catálogo activo. | Público | Sin credenciales. |
 | **Productos** | `GET` | `/api/productos/:id` | Detalle del producto e imágenes. | Público | Sin credenciales. |
@@ -665,6 +677,7 @@ BloqueMundo (Directorio Raíz)
 | **Promociones** | `DELETE`| `/api/promociones/:id` | Elimina descuento promocional. | Admin | JWT + Admin Middleware. |
 | **Mercado Pago** | `POST` | `/api/mercadopago/create_preference` | Crea preferencia y reserva stock. | Privado | JWT (`verificarToken`). |
 | **Mercado Pago** | `POST` | `/api/mercadopago/webhook` | Recibe confirmaciones de pago. | Público | Sin credenciales (seguro). |
+| **Mercado Pago** | `POST` | `/api/mercadopago/procesar-pago-fallido` | Registra compra fallida y libera reservas de stock. | Privado | JWT (`verificarToken`). |
 | **Server-Sent Events**| `GET` | `/api/stream/stock` | Flujo de eventos de stock. | Público | Sin credenciales. |
 
 ---
@@ -768,12 +781,14 @@ Experiencia secuencial de navegación para el cliente final de BloqueMundo:
     *   Seleccione la cantidad deseada del set de construcción y presione "Agregar al Carrito".
     *   El icono del carrito en el navbar mostrará un globo con la cantidad de ítems seleccionados.
 4.  **Proceso de Compra (Checkout):**
-    *   Vaya a la página de Carrito e ingrese al Checkout.
+    *   Vaya a la página de Carrito e ingrese al Checkout. Su correo electrónico estará bloqueado y no será editable por motivos de consistencia de cuenta.
     *   El sistema le solicitará completar los datos de entrega: ingrese Calle, Altura y seleccione su Localidad correspondiente.
-    *   Haga click en "Proceder al Pago". Se le redirigirá al formulario seguro de Mercado Pago.
+    *   Haga click en "Proceder al Pago". Se le redirigirá al formulario seguro de Mercado Pago. En este punto, los identificadores de los ítems de compra se almacenan temporalmente en la sesión (`sessionStorage` bajo `purchased_item_ids`) para realizar una limpieza selectiva de los productos comprados de su carrito local una vez confirmado el pago.
     *   Rellene las credenciales de tarjeta de crédito. Al confirmarse el pago, Mercado Pago lo devolverá de forma automática a la pantalla de éxito de BloqueMundo.
 5.  **Post-Venta y Reseñas:**
-    *   Haga click en su nombre en la esquina superior para acceder a "Mi Cuenta". Allí verá el historial cronológico de compras y el código de seguimiento provisto por el correo.
+    *   Haga click en su nombre en la esquina superior para acceder a "Mi Cuenta". Allí verá su historial de compras organizado en dos pestañas/secciones: "Pendientes" (para compras en curso o esperando pago) e "Historial" (para compras finalizadas, entregadas, canceladas o rechazadas).
+    *   Las compras canceladas o rechazadas por la pasarela de pago figurarán con la etiqueta `'Rechazado'` en su historial personal.
+    *   Podrá ver detalles de seguimiento y copiar el código de seguimiento de envío provisto por el correo.
     *   En la vista de cada producto que haya comprado, se desbloqueará el formulario de calificación. Puede escribir una reseña, calificar el producto de 1 a 5 estrellas, y elegir si prefiere publicarlo de forma anónima.
 
 ---
@@ -793,8 +808,10 @@ Guía paso a paso para el operador del Backoffice/Panel de Control:
     *   Vaya a "Promociones". Haga click en "Nueva Promoción".
     *   Defina una descripción corta, el porcentaje de descuento (ej: 15%), la fecha de inicio y finalización del beneficio, y asóciela opcionalmente a un producto individual o a una categoría completa de juguetes.
 4.  **Auditoría y Despacho de Pedidos:**
-    *   Ingrese a "Pedidos". Se listará cada compra registrada en la base de datos Supabase con la hora, email del comprador y total facturado.
-    *   Al despachar el paquete físico por el correo, haga click en "Editar" sobre el pedido del cliente, cambie el estado a "Enviado" e introduzca el código de seguimiento impreso por la empresa postal.
+    *   Ingrese a "Pedidos". Se listará cada compra registrada en la base de datos con la hora, email del comprador, total facturado y estado del pedido.
+    *   Las compras con estado `'Cancelado'` o `'Rechazado'` (mostradas como `'Rechazado'`) no podrán ser modificadas (el botón de edición de estado se oculta).
+    *   El operador administrador no está autorizado a cambiar manualmente el estado de una compra a `'Cancelado'` o `'Rechazado'` desde el Backoffice (esta acción arroja un error y no está disponible en las opciones del menú de selección).
+    *   Al despachar el paquete físico por el correo, haga click en "Editar" sobre el pedido del cliente (siempre que el estado sea elegible), cambie el estado a "Pedido despachado" (o valor de correo equivalente) e introduzca el código de seguimiento impreso por la empresa postal.
 
 ---
 
