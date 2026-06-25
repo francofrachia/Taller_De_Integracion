@@ -58,7 +58,7 @@ A continuación se detalla la priorización de requerimientos funcionales utiliz
 | **#S-01** | Should Have | Cliente | **Autenticación federada:** Inicio de sesión ágil con cuentas de Google, integrando el SDK correspondiente y persistiendo el perfil del usuario en la base de datos unificada si es la primera vez que ingresa. |
 | **#S-02** | Should Have | Sistema / Cliente | **Sincronización de Stock en Vivo (SSE):** El inventario disponible en el catálogo se debe actualizar en tiempo real mediante Server-Sent Events (SSE) cuando ocurran compras aprobadas o reservas temporales de otros usuarios, previniendo decepciones al clickear un producto sin stock disponible real. |
 | **#S-03** | Should Have | Cliente | **Gestión de Direcciones y Localidades:** El usuario debe poder vincular a su cuenta su dirección de entrega (Calle, Número) asociada a una localidad preexistente con su Código Postal respectivo para validar zonas de despacho. |
-| **#C-01** | Could Have | Cliente | **Elegibilidad estricta de Reseñas:** Un cliente solo puede calificar y comentar un producto si lo ha comprado previamente (compra en estado distinto de 'Esperando Pago' o 'Cancelado') y la cantidad de reseñas que ya realizó de ese producto es menor a la cantidad total de unidades adquiridas de dicho producto. |
+| **#C-01** | Could Have | Cliente | **Elegibilidad estricta de Reseñas:** Un cliente solo puede calificar y comentar un producto si lo ha comprado previamente (compra en estado distinto de 'Pendiente' o 'Rechazado') y la cantidad de reseñas que ya realizó de ese producto es menor a la cantidad total de unidades adquiridas de dicho producto. |
 | **#C-02** | Could Have | Administrador | **Estadísticas en Backoffice:** Dashboard con reportes dinámicos de ranking de ventas y recaudación general a partir de las vistas agregadas de PostgreSQL. |
 | **#W-01** | Won't Have | Sistema / Logística | **Cálculo dinámico de tarifa de envío:** Integración con la API de Correo Argentino para cotizar costos de envío en tiempo real basados en volumen, peso y CP de destino. |
 
@@ -139,11 +139,11 @@ A continuación se especifican las interacciones críticas de negocio del sistem
     12. El backend responde HTTP 200 a Mercado Pago.
 *   **Flujos Alternativos / Excepciones:**
     *   **Pago ya procesado (Idempotencia):** Si el `id_pago_mp` ya existe en la base de datos, el backend registra el evento en logs, omite duplicar compras u operaciones de stock y retorna HTTP 200 inmediatamente a Mercado Pago.
-    *   **Pago fallido, rechazado o cancelado (Procesamiento de Pago Fallido):** Si el estado del pago reportado por la pasarela es `rejected` o `cancelled` (recibido por webhook o reportado de forma síncrona por el frontend en la redirección de fallo al endpoint `/api/mercadopago/procesar-pago-fallido`):
+    *   **Pago fallido o rechazado (Procesamiento de Pago Fallido):** Si el estado del pago reportado por la pasarela es `rejected` o `cancelled` (recibido por webhook o reportado de forma síncrona por el frontend en la redirección de fallo al endpoint `/api/mercadopago/procesar-pago-fallido`):
         1. Se valida la idempotencia buscando si ya existe el ID de pago en la tabla `compra`.
         2. El backend obtiene el detalle del pago utilizando la API de Mercado Pago.
         3. El backend elimina las reservas asociadas en `reserva_stock` para liberar el stock disponible y emite las notificaciones SSE de stock correspondientes.
-        4. Para registrar la transacción en el historial de compras de auditoría, se inserta el pedido con estado `'Esperando Pago'` (descontando el stock físico mediante triggers) y, acto seguido, se actualiza su estado a `'Cancelado'` (provocando la restauración del stock físico en base de datos de manera limpia, dejando el registro como Cancelado/Rechazado).
+        4. Para registrar la transacción en el historial de compras de auditoría, se inserta el pedido con estado `'Pendiente'` (descontando el stock físico mediante triggers) y, acto seguido, se actualiza su estado a `'Rechazado'` (provocando la restauración del stock físico en base de datos de manera limpia, dejando el registro como Rechazado).
 *   **Postcondiciones:** La compra se registra en base de datos, el stock físico del producto queda disminuido, la reserva temporal es eliminada de forma limpia y el cliente recibe su comprobante por correo.
 
 ---
@@ -439,7 +439,7 @@ Cabecera histórica de pedidos consolidados.
 | `id_usuario` | INTEGER | No | - | FK ref `usuario` | FK | Cliente comprador. |
 | `fecha` | TIMESTAMP | No | NOW() | - | - | Fecha de transacción consolidada. |
 | `metodo_pago` | VARCHAR(50) | No | 'mercado_pago' | - | - | Pasarela seleccionada. |
-| `estado` | estado_compra (ENUM) | No | 'Esperando Pago' | - | - | Estado del pedido. Valores: 'Pendiente', 'Pago aprobado', 'En proceso', 'Pedido despachado', 'Finalizado', 'Cancelado', 'Rechazado' (y sus equivalentes heredados). |
+| `estado` | estado_compra (ENUM) | No | 'Pendiente' | - | - | Estado del pedido. Valores: 'Pendiente', 'Pago aprobado', 'En proceso', 'Pedido despachado', 'Finalizado', 'Rechazado'. |
 | `subtotal` | NUMERIC(10,2) | No | 0.00 | >= 0.00 | - | Suma neta de ítems. |
 | `total_descuento`| NUMERIC(10,2) | No | 0.00 | >= 0.00 | - | Descuento total aplicado. |
 | `total` | NUMERIC(10,2) | No | - | >= 0.00 | - | Pago total del pedido. |
@@ -776,8 +776,8 @@ Experiencia secuencial de navegación para el cliente final de BloqueMundo:
     *   Haga click en "Proceder al Pago". Se le redirigirá al formulario seguro de Mercado Pago. En este punto, los identificadores de los ítems de compra se almacenan temporalmente en la sesión (`sessionStorage` bajo `purchased_item_ids`) para realizar una limpieza selectiva de los productos comprados de su carrito local una vez confirmado el pago.
     *   Rellene las credenciales de tarjeta de crédito. Al confirmarse el pago, Mercado Pago lo devolverá de forma automática a la pantalla de éxito de BloqueMundo.
 5.  **Post-Venta y Reseñas:**
-    *   Haga click en su nombre en la esquina superior para acceder a "Mi Cuenta". Allí verá su historial de compras organizado en dos pestañas/secciones: "Pendientes" (para compras en curso o esperando pago) e "Historial" (para compras finalizadas, entregadas, canceladas o rechazadas).
-    *   Las compras canceladas o rechazadas por la pasarela de pago figurarán con la etiqueta `'Rechazado'` en su historial personal.
+    *   Haga click en su nombre en la esquina superior para acceder a "Mi Cuenta". Allí verá su historial de compras organizado en dos pestañas/secciones: "Pendientes" (para compras en curso) e "Historial" (para compras finalizadas o rechazadas).
+    *   Las compras rechazadas por la pasarela de pago figurarán con la etiqueta `'Rechazado'` en su historial personal.
     *   Podrá ver detalles de seguimiento y copiar el código de seguimiento de envío provisto por el correo.
     *   En la vista de cada producto que haya comprado, se desbloqueará el formulario de calificación. Puede escribir una reseña, calificar el producto de 1 a 5 estrellas, y elegir si prefiere publicarlo de forma anónima.
 
@@ -799,8 +799,8 @@ Guía paso a paso para el operador del Backoffice/Panel de Control:
     *   Defina una descripción corta, el porcentaje de descuento (ej: 15%), la fecha de inicio y finalización del beneficio, y asóciela opcionalmente a un producto individual o a una categoría completa de juguetes.
 4.  **Auditoría y Despacho de Pedidos:**
     *   Ingrese a "Pedidos". Se listará cada compra registrada en la base de datos con la hora, email del comprador, total facturado y estado del pedido.
-    *   Las compras con estado `'Cancelado'` o `'Rechazado'` (mostradas como `'Rechazado'`) no podrán ser modificadas (el botón de edición de estado se oculta).
-    *   El operador administrador no está autorizado a cambiar manualmente el estado de una compra a `'Cancelado'` o `'Rechazado'` desde el Backoffice (esta acción arroja un error y no está disponible en las opciones del menú de selección).
+    *   Las compras con estado `'Rechazado'` no podrán ser modificadas (el botón de edición de estado se oculta).
+    *   El operador administrador no está autorizado a cambiar manualmente el estado de una compra a `'Rechazado'` desde el Backoffice (esta acción arroja un error y no está disponible en las opciones del menú de selección).
     *   Al despachar el paquete físico por el correo, haga click en "Editar" sobre el pedido del cliente (siempre que el estado sea elegible), cambie el estado a "Pedido despachado" (o valor de correo equivalente) e introduzca el código de seguimiento impreso por la empresa postal.
 
 ---

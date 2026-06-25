@@ -1,5 +1,5 @@
 import React, { useEffect, useContext } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -28,20 +28,25 @@ const PaymentStatus = ({ type }) => {
       if (usuario && usuario.id_usuario) {
         const isDirectPurchase = searchParams.get('direct_purchase') === 'true';
         if (!isDirectPurchase) {
-          console.log("[PaymentStatus] User session loaded. Clearing purchased items locally for user:", usuario.id_usuario);
           const purchasedIdsStr = sessionStorage.getItem('purchased_item_ids');
-          let purchasedIds = null;
           if (purchasedIdsStr) {
+            console.log("[PaymentStatus] User session loaded. Clearing purchased items locally for user:", usuario.id_usuario);
+            let purchasedIds = null;
             try {
               purchasedIds = JSON.parse(purchasedIdsStr);
             } catch (e) {
               console.error("Error parsing purchased_item_ids:", e);
             }
+            if (purchasedIds && Array.isArray(purchasedIds)) {
+              vaciarCarrito(true, purchasedIds);
+            }
+            sessionStorage.removeItem('purchased_item_ids');
+            
+            // Sincronizar el carrito del backend después de 1 segundo para dar tiempo a la base de datos
+            setTimeout(() => {
+              obtenerCarrito(token);
+            }, 1000);
           }
-          vaciarCarrito(true, purchasedIds);
-          // Sincronizar el carrito del backend por si acaso
-          obtenerCarrito(token);
-          sessionStorage.removeItem('purchased_item_ids');
         } else {
           console.log("[PaymentStatus] User session loaded. Direct purchase detected, not clearing cart.");
         }
@@ -105,7 +110,7 @@ const PaymentStatus = ({ type }) => {
             )}
             <p className="status-subtext">Te enviamos los detalles del envío y facturación a tu correo registrado.</p>
             <div className="status-actions">
-              <Link to="/" className="primary-btn">Volver al catálogo</Link>
+              <a href="/" className="primary-btn">Volver al catálogo</a>
             </div>
           </div>
         );
@@ -136,7 +141,7 @@ const PaymentStatus = ({ type }) => {
               </div>
             )}
             <div className="status-actions">
-              <Link to="/checkout" className="primary-btn-outline">Volver a intentar</Link>
+              <a href="/checkout" className="primary-btn-outline">Volver a intentar</a>
             </div>
           </div>
         );
@@ -169,7 +174,7 @@ const PaymentStatus = ({ type }) => {
             )}
             <p className="status-subtext">Te notificaremos vía correo electrónico en cuanto el estado de tu pago cambie.</p>
             <div className="status-actions">
-              <Link to="/" className="primary-btn">Volver al inicio</Link>
+              <a href="/" className="primary-btn">Volver al inicio</a>
             </div>
           </div>
         );

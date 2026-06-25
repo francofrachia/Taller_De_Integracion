@@ -118,10 +118,10 @@ const Compra = {
         try {
             await client.query('BEGIN');
             
-            // Si el estado es Cancelado o Rechazado, deberíamos restaurar el stock
-            if (estado === 'Cancelado' || estado === 'Rechazado') {
+            // Si el estado es Rechazado, deberíamos restaurar el stock
+            if (estado === 'Rechazado') {
                 const checkEstado = await client.query('SELECT estado FROM compra WHERE id_compra = $1', [id_compra]);
-                if (checkEstado.rows.length > 0 && checkEstado.rows[0].estado !== 'Cancelado' && checkEstado.rows[0].estado !== 'Rechazado') {
+                if (checkEstado.rows.length > 0 && checkEstado.rows[0].estado !== 'Rechazado') {
                     // Restaurar stock
                     const lineas = await client.query('SELECT id_producto, cantidad FROM linea_compra WHERE id_compra = $1', [id_compra]);
                     for (const linea of lineas.rows) {

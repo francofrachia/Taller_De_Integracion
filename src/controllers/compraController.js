@@ -37,15 +37,7 @@ const updateCompraEstado = async (req, res) => {
             'En proceso',
             'Pedido despachado',
             'Finalizado',
-            'Cancelado',
-            'Rechazado',
-            // Legacy / alternate statuses support
-            'Esperando Pago',
-            'Pago confirmado',
-            'Preparando Pedido',
-            'En manos del correo',
-            'Enviado',
-            'Entregado'
+            'Rechazado'
         ];
         if (!validStates.includes(estado)) {
             return res.status(400).json({ error: `Estado inválido. Valores permitidos: ${validStates.join(', ')}` });
@@ -60,14 +52,14 @@ const updateCompraEstado = async (req, res) => {
         const normalizedCurrentEstado = compraExistente.estado ? compraExistente.estado.trim().toLowerCase() : '';
         const normalizedNewEstado = estado.trim().toLowerCase();
 
-        // 1. No permitir cambiar el estado si la compra ya está Cancelada o Rechazada
-        if (normalizedCurrentEstado === 'cancelado' || normalizedCurrentEstado === 'rechazado') {
-            return res.status(400).json({ error: 'No se puede modificar el estado de una compra ya cancelada o rechazada.' });
+        // 1. No permitir cambiar el estado si la compra ya está Rechazada
+        if (normalizedCurrentEstado === 'rechazado') {
+            return res.status(400).json({ error: 'No se puede modificar el estado de una compra ya rechazada.' });
         }
 
-        // 2. No permitir cambiar el estado a Cancelado o Rechazado
-        if (normalizedNewEstado === 'cancelado' || normalizedNewEstado === 'rechazado') {
-            return res.status(400).json({ error: 'No está permitido cancelar o rechazar una venta desde la administración.' });
+        // 2. No permitir cambiar el estado a Rechazado
+        if (normalizedNewEstado === 'rechazado') {
+            return res.status(400).json({ error: 'No está permitido rechazar una venta desde la administración.' });
         }
 
         const compraActualizada = await Compra.updateEstado(id_compra, estado);

@@ -35,8 +35,8 @@ const AdminOrders = () => {
     const handleStatusChange = async (id_compra, newStatus, currentStatus) => {
         if (!newStatus || newStatus === currentStatus) return;
 
-        if (newStatus === 'Cancelado' || newStatus === 'Rechazado') {
-            toast.error('No está permitido cancelar ni rechazar compras.');
+        if (newStatus === 'Rechazado') {
+            toast.error('No está permitido rechazar compras.');
             return;
         }
 
@@ -172,16 +172,16 @@ const AdminOrders = () => {
                                             <span style={{ 
                                                 padding: '0.25rem 0.5rem', 
                                                 borderRadius: '4px',
-                                                backgroundColor: (o.estado === 'Cancelado' || o.estado === 'Rechazado') ? '#fee2e2' : '#dcfce7',
-                                                color: (o.estado === 'Cancelado' || o.estado === 'Rechazado') ? '#991b1b' : '#166534',
+                                                backgroundColor: o.estado === 'Rechazado' ? '#fee2e2' : '#dcfce7',
+                                                color: o.estado === 'Rechazado' ? '#991b1b' : '#166534',
                                                 fontSize: '0.85rem',
                                                 minWidth: '150px',
                                                 display: 'inline-block',
                                                 textAlign: 'center'
                                             }}>
-                                                {o.estado === 'Cancelado' || o.estado === 'cancelado' ? 'Rechazado' : o.estado}
+                                                {o.estado}
                                             </span>
-                                            {o.estado !== 'Cancelado' && o.estado !== 'Rechazado' && (
+                                            {o.estado !== 'Rechazado' && (
                                                 <button 
                                                     onClick={(e) => {
                                                         e.stopPropagation();

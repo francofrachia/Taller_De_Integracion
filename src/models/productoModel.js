@@ -24,7 +24,7 @@ const Producto = {
                     SELECT SUM(lc.cantidad) 
                     FROM linea_compra lc 
                     JOIN compra com ON lc.id_compra = com.id_compra 
-                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
+                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Pendiente', 'Rechazado')
                 ), 0) AS ventas_totales
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
@@ -121,7 +121,7 @@ const Producto = {
             JOIN linea_compra lc ON c.id_compra = lc.id_compra
             WHERE c.id_usuario = $1 
               AND lc.id_producto = $2
-              AND c.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
+              AND c.estado::text NOT IN ('Pendiente', 'Rechazado')
         `;
         const purchasedRes = await pool.query(purchasedQuery, [id_usuario, id_producto]);
         const totalComprado = parseInt(purchasedRes.rows[0].total_comprado, 10);
@@ -326,7 +326,7 @@ const Producto = {
                     SELECT SUM(lc.cantidad) 
                     FROM linea_compra lc 
                     JOIN compra com ON lc.id_compra = com.id_compra 
-                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Esperando Pago', 'Cancelado', 'Rechazado')
+                    WHERE lc.id_producto = p.id_producto AND com.estado::text NOT IN ('Pendiente', 'Rechazado')
                 ), 0) AS ventas_totales
             FROM producto p
             LEFT JOIN categoria c ON p.id_categoria = c.id_categoria

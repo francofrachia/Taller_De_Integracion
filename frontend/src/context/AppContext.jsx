@@ -51,7 +51,7 @@ export function AppProvider({ children }) {
     }
 
     // 5. Cerrar sesión (definida arriba para poder invocarla desde init y otros métodos)
-    function logout() {
+    const logout = useCallback(() => {
         setUsuario(null);
         setToken(null);
         setCart(null);
@@ -63,7 +63,7 @@ export function AppProvider({ children }) {
         localStorage.removeItem('token_bloquemundo');
         sessionStorage.removeItem('token_bloquemundo');
         console.log("Sesión cerrada y limpiada.");
-    }
+    }, []);
 
     // 1. Cargar datos del localStorage / sessionStorage e inicializar sesión al montar
     useEffect(() => {
@@ -477,17 +477,18 @@ export function AppProvider({ children }) {
             return { success: false, error: error.message || 'Error de red' };
         }
     }
-
-    async function vaciarCarrito(localOnly = false, productIds = null) {
+    const vaciarCarrito = useCallback(async (localOnly = false, productIds = null) => {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
             return { success: false, requireLogin: true };
         }
         if (localOnly) {
-            if (productIds && Array.isArray(productIds) && cart && cart.items) {
-                const remainingItems = cart.items.filter(item => !productIds.includes(String(item.id_producto)));
-                const newTotal = remainingItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
-                setCart({ ...cart, total: newTotal, items: remainingItems });
-                setCartCount(remainingItems.reduce((acc, item) => acc + item.cantidad, 0));
+            if (productIds && Array.isArray(productIds)) {
+                if (cart && cart.items) {
+                    const remainingItems = cart.items.filter(item => !productIds.includes(String(item.id_producto)));
+                    const newTotal = remainingItems.reduce((sum, item) => sum + (parseFloat(item.precio) * item.cantidad), 0);
+                    setCart({ ...cart, total: newTotal, items: remainingItems });
+                    setCartCount(remainingItems.reduce((acc, item) => acc + item.cantidad, 0));
+                }
             } else {
                 setCart({ id_carrito: cart?.id_carrito, total: 0, items: [] });
                 setCartCount(0);
@@ -517,7 +518,7 @@ export function AppProvider({ children }) {
             console.error(error);
             return { success: false, error: error.message || 'Error de red' };
         }
-    }
+    }, [usuario, token, cart, API_URL, logout]);
 
     // 4. Favoritos
     async function obtenerFavoritos(tokenHeaderVal) {

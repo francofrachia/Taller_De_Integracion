@@ -351,8 +351,6 @@ function PurchaseCard({ compra, isActive }) {
             progressWidth = '100%';
             currentStepIndex = 3;
             break;
-        case 'Cancelado':
-        case 'cancelado':
         case 'Rechazado':
         case 'rechazado':
             progressWidth = '0%';
@@ -373,7 +371,7 @@ function PurchaseCard({ compra, isActive }) {
                 </div>
                 <div className="purchase-status-container">
                     <span className={`purchase-status-badge ${statusClass}`}>
-                        {compra.estado === 'Cancelado' || compra.estado === 'cancelado' ? 'Rechazado' : compra.estado}
+                        {compra.estado}
                     </span>
                 </div>
             </div>
@@ -558,8 +556,8 @@ export default function Account() {
     const [compras, setCompras] = useState([]);
     const [loadingCompras, setLoadingCompras] = useState(true);
 
-    const comprasPendientes = useMemo(() => compras.filter(c => c.estado !== 'Finalizado' && c.estado !== 'Entregado' && c.estado !== 'Cancelado' && c.estado !== 'Rechazado'), [compras]);
-    const comprasHistorial = useMemo(() => compras.filter(c => c.estado === 'Finalizado' || c.estado === 'Entregado' || c.estado === 'Cancelado' || c.estado === 'Rechazado'), [compras]);
+    const comprasPendientes = useMemo(() => compras.filter(c => c.estado !== 'Finalizado' && c.estado !== 'Entregado' && c.estado !== 'Rechazado'), [compras]);
+    const comprasHistorial = useMemo(() => compras.filter(c => c.estado === 'Finalizado' || c.estado === 'Entregado' || c.estado === 'Rechazado'), [compras]);
 
     const fetchCompras = useCallback(async () => {
         if (!token) return;

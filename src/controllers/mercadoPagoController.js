@@ -246,12 +246,12 @@ const procesarPagoFallido = async (paymentId) => {
                     const total_descuento = Math.max(0, originalSubtotal - subtotal);
                     const total = subtotal;
                     
-                    // Creamos la compra en 'Esperando Pago' (que descuenta el stock físico) 
-                    // e inmediatamente la cancelamos (que devuelve el stock y la deja marcada como Cancelado en la BD)
-                    const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Esperando Pago', String(paymentId));
+                    // Creamos la compra en 'Pendiente' (que descuenta el stock físico) 
+                    // e inmediatamente la rechazamos (que devuelve el stock y la deja marcada como Rechazado en la BD)
+                    const resultCompra = await Compra.create(idUsuario, itemsConPrecio, originalSubtotal, total_descuento, total, 'mercado_pago', 'Pendiente', String(paymentId));
                     if (resultCompra.success) {
-                        await Compra.updateEstado(resultCompra.id_compra, 'Cancelado');
-                        console.log(`Compra fallida registrada correctamente (ID compra: ${resultCompra.id_compra}, estado: Cancelado/Rechazado)`);
+                        await Compra.updateEstado(resultCompra.id_compra, 'Rechazado');
+                        console.log(`Compra fallida registrada correctamente (ID compra: ${resultCompra.id_compra}, estado: Rechazado)`);
                     }
                 }
             }
@@ -369,7 +369,11 @@ const receiveWebhook = async (req, res) => {
                             }
                         }
                     } catch (e) {
-                        console.error('Error al actualizar stock o registrar la compra:', e);
+                        if (e.code === '23505') {
+                            console.log(`Pago ${paymentId} ya registrado mediante otra solicitud concurrente. Ignorando de forma segura.`);
+                        } else {
+                            console.error('Error al actualizar stock o registrar la compra:', e);
+                        }
                     }
                 }
             } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
