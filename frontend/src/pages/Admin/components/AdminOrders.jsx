@@ -181,7 +181,7 @@ const AdminOrders = () => {
                                             }}>
                                                 {o.estado}
                                             </span>
-                                            {o.estado !== 'Rechazado' && (
+                                            {o.estado !== 'Rechazado' && o.estado !== 'Finalizado' && (
                                                 <button 
                                                     onClick={(e) => {
                                                         e.stopPropagation();

@@ -90,20 +90,23 @@ const Compra = {
         `;
         const resCompras = await pool.query(queryCompras);
         
-        const compras = [];
-        for (const compra of resCompras.rows) {
-            const queryLineas = `
-                SELECT lc.*, p.nombre
-                FROM linea_compra lc
-                JOIN producto p ON lc.id_producto = p.id_producto
-                WHERE lc.id_compra = $1
-            `;
-            const resLineas = await pool.query(queryLineas, [compra.id_compra]);
-            compras.push({
-                ...compra,
-                lineas: resLineas.rows
-            });
-        }
+        if (resCompras.rows.length === 0) return [];
+
+        const idCompras = resCompras.rows.map(c => c.id_compra);
+
+        const queryLineas = `
+            SELECT lc.*, p.nombre
+            FROM linea_compra lc
+            JOIN producto p ON lc.id_producto = p.id_producto
+            WHERE lc.id_compra = ANY($1)
+        `;
+        const resLineas = await pool.query(queryLineas, [idCompras]);
+
+        const compras = resCompras.rows.map(compra => ({
+            ...compra,
+            lineas: resLineas.rows.filter(l => l.id_compra === compra.id_compra)
+        }));
+
         return compras;
     },
 
