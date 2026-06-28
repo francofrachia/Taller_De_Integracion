@@ -76,8 +76,11 @@ const ProductCard = ({ product }) => {
             {product.stock > 5 && product.stock <= 10 && (
               <span className="last-units-badge">Últimas unidades</span>
             )}
-            {product.stock > 0 && product.stock <= 5 && (
+            {Number(product.stock) > 1 && Number(product.stock) <= 5 && (
               <span className="last-units-badge" style={{ backgroundColor: '#d32f2f' }}>¡Últimas {product.stock}!</span>
+            )}
+            {Number(product.stock) === 1 && (
+              <span className="last-units-badge" style={{ backgroundColor: '#d32f2f' }}>¡Última unidad!</span>
             )}
             {product.stock > 0 && product.discount ? (
               <span className="discount-badge">-{Math.round(Number(product.discount))}%</span>
