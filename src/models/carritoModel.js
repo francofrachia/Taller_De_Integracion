@@ -31,9 +31,9 @@ class Carrito {
     }
 
     // Añadir un producto al carrito
-    static async addItem(id_carrito, id_producto, cantidad, precio) {
+    static async addItem(id_carrito, id_producto, cantidad, precio, client = pool) {
         // Verificar si el producto ya está en el carrito
-        const check = await pool.query(
+        const check = await client.query(
             'SELECT cantidad FROM linea_carrito WHERE id_carrito = $1 AND id_producto = $2',
             [id_carrito, id_producto]
         );
@@ -41,14 +41,14 @@ class Carrito {
         if (check.rows.length > 0) {
             // Si ya existe, actualizar la cantidad y el precio
             const newCantidad = check.rows[0].cantidad + cantidad;
-            const result = await pool.query(
+            const result = await client.query(
                 'UPDATE linea_carrito SET cantidad = $1, precio = $2 WHERE id_carrito = $3 AND id_producto = $4 RETURNING *',
                 [newCantidad, precio, id_carrito, id_producto]
             );
             return result.rows[0];
         } else {
             // Si no existe, insertar nueva línea
-            const result = await pool.query(
+            const result = await client.query(
                 'INSERT INTO linea_carrito (id_carrito, id_producto, cantidad, precio) VALUES ($1, $2, $3, $4) RETURNING *',
                 [id_carrito, id_producto, cantidad, precio]
             );
@@ -57,8 +57,8 @@ class Carrito {
     }
 
     // Actualizar cantidad de un item y su precio
-    static async updateItemQuantity(id_producto, id_carrito, cantidad, precio) {
-        const result = await pool.query(
+    static async updateItemQuantity(id_producto, id_carrito, cantidad, precio, client = pool) {
+        const result = await client.query(
             'UPDATE linea_carrito SET cantidad = $1, precio = $2 WHERE id_producto = $3 AND id_carrito = $4 RETURNING *',
             [cantidad, precio, id_producto, id_carrito]
         );

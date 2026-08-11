@@ -56,46 +56,61 @@ const addProducto = async (req, res) => {
         const pool = require('../config/db');
         const carrito = await Carrito.getOrCreateByUserId(id_usuario);
 
-        // Obtener cantidad actual en el carrito
-        const checkCart = await pool.query(
-            'SELECT cantidad FROM linea_carrito WHERE id_carrito = $1 AND id_producto = $2',
-            [carrito.id_carrito, id_producto]
-        );
-        const currentQtyInCart = checkCart.rows.length > 0 ? parseInt(checkCart.rows[0].cantidad, 10) : 0;
-        const targetQty = currentQtyInCart + qtyToAdd;
+        const dbClient = await pool.connect();
+        try {
+            await dbClient.query('BEGIN');
 
-        // Obtener reservas activas de este usuario para este producto
-        const reservasResult = await pool.query(
-            'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
-            [id_usuario, id_producto]
-        );
-        const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+            // Lockear fila del producto para evitar race condition entre requests simultáneos
+            const { rows: stockRows } = await dbClient.query(
+                'SELECT stock FROM producto WHERE id_producto = $1 FOR UPDATE',
+                [id_producto]
+            );
+            const stockFisico = parseInt(stockRows[0].stock, 10);
 
-        const availableStock = parseInt(producto.stock, 10) || 0;
-        const realStockLimit = availableStock + userReservations;
+            const checkCart = await dbClient.query(
+                'SELECT cantidad FROM linea_carrito WHERE id_carrito = $1 AND id_producto = $2',
+                [carrito.id_carrito, id_producto]
+            );
+            const currentQtyInCart = checkCart.rows.length > 0 ? parseInt(checkCart.rows[0].cantidad, 10) : 0;
+            const targetQty = currentQtyInCart + qtyToAdd;
 
-        if (targetQty > realStockLimit) {
-            return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
+            const reservasResult = await dbClient.query(
+                'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
+                [id_usuario, id_producto]
+            );
+            const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+            const realStockLimit = stockFisico + userReservations;
+
+            if (targetQty > realStockLimit) {
+                await dbClient.query('ROLLBACK');
+                return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
+            }
+
+            const originalPrice = parseFloat(producto.precio) || 0;
+            const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
+            const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
+
+            await Carrito.addItem(carrito.id_carrito, id_producto, qtyToAdd, finalPrice, dbClient);
+
+            await dbClient.query('COMMIT');
+        } catch (err) {
+            await dbClient.query('ROLLBACK');
+            throw err;
+        } finally {
+            dbClient.release();
         }
 
-        const originalPrice = parseFloat(producto.precio) || 0;
-        const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
-        const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
-
-        await Carrito.addItem(carrito.id_carrito, id_producto, qtyToAdd, finalPrice);
-        
         // Devolvemos el estado actualizado
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);
-        
-        // Obtener reservas activas del usuario
-        const allReservasResult = await pool.query(
+
+        const allReservasResult = await require('../config/db').query(
             'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
             [id_usuario]
         );
         const misReservas = {};
         allReservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
-        
+
         res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items, mis_reservas: misReservas });
     } catch (error) {
         console.error(error);
@@ -125,39 +140,55 @@ const updateCantidad = async (req, res) => {
         }
 
         const pool = require('../config/db');
+        const carrito = await Carrito.getOrCreateByUserId(id_usuario);
 
-        // Obtener reservas activas de este usuario para este producto
-        const reservasResult = await pool.query(
-            'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
-            [id_usuario, id_producto]
-        );
-        const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+        const dbClient = await pool.connect();
+        try {
+            await dbClient.query('BEGIN');
 
-        const availableStock = parseInt(producto.stock, 10) || 0;
-        const realStockLimit = availableStock + userReservations;
+            // Lockear fila del producto para evitar race condition entre requests simultáneos
+            const { rows: stockRows } = await dbClient.query(
+                'SELECT stock FROM producto WHERE id_producto = $1 FOR UPDATE',
+                [id_producto]
+            );
+            const stockFisico = parseInt(stockRows[0].stock, 10);
 
-        if (newQty > realStockLimit) {
-            return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
+            const reservasResult = await dbClient.query(
+                'SELECT COALESCE(SUM(cantidad), 0) as reservado FROM reserva_stock WHERE id_usuario = $1 AND id_producto = $2 AND fecha_expiracion > NOW()',
+                [id_usuario, id_producto]
+            );
+            const userReservations = parseInt(reservasResult.rows[0].reservado || 0, 10);
+            const realStockLimit = stockFisico + userReservations;
+
+            if (newQty > realStockLimit) {
+                await dbClient.query('ROLLBACK');
+                return res.status(400).json({ error: `Stock insuficiente. El stock máximo disponible es de ${realStockLimit} unidades.` });
+            }
+
+            const originalPrice = parseFloat(producto.precio) || 0;
+            const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
+            const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
+
+            await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, newQty, finalPrice, dbClient);
+
+            await dbClient.query('COMMIT');
+        } catch (err) {
+            await dbClient.query('ROLLBACK');
+            throw err;
+        } finally {
+            dbClient.release();
         }
 
-        const originalPrice = parseFloat(producto.precio) || 0;
-        const discountPct = producto.descuento ? parseFloat(producto.descuento) : null;
-        const finalPrice = discountPct ? (originalPrice * (1 - discountPct / 100)).toFixed(2) : originalPrice.toFixed(2);
-
-        const carrito = await Carrito.getOrCreateByUserId(id_usuario);
-        await Carrito.updateItemQuantity(id_producto, carrito.id_carrito, newQty, finalPrice);
-        
         const carritoActualizado = await Carrito.getOrCreateByUserId(id_usuario);
         const items = await Carrito.getItems(carritoActualizado.id_carrito);
-        
-        // Obtener reservas activas del usuario
-        const allReservasResult = await pool.query(
+
+        const allReservasResult = await require('../config/db').query(
             'SELECT id_producto, SUM(cantidad) as reservado FROM reserva_stock WHERE id_usuario = $1 AND fecha_expiracion > NOW() GROUP BY id_producto',
             [id_usuario]
         );
         const misReservas = {};
         allReservasResult.rows.forEach(r => misReservas[r.id_producto] = parseInt(r.reservado, 10));
-        
+
         res.json({ id_carrito: carritoActualizado.id_carrito, total: carritoActualizado.total, items, mis_reservas: misReservas });
     } catch (error) {
         console.error(error);
