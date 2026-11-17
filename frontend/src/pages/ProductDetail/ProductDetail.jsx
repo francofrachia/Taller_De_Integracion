@@ -480,8 +480,10 @@ const ProductDetail = () => {
                   <span style={{ color: '#2e7d32' }}>En stock</span>
                 ) : getRealStock() > 5 ? (
                   <span style={{ color: '#f57c00' }}>Últimas unidades</span>
-                ) : getRealStock() > 0 ? (
+                ) : getRealStock() > 1 ? (
                   <span style={{ color: '#d32f2f' }}>¡Últimas {getRealStock()} unidades!</span>
+                ) : getRealStock() === 1 ? (
+                  <span style={{ color: '#d32f2f' }}>¡Última unidad!</span>
                 ) : (
                   <span style={{ color: '#d32f2f' }}>Agotado</span>
                 )}
