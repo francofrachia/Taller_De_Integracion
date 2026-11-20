@@ -1,8 +1,8 @@
-import React, { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import './Navbar.css';
-import { FiSearch, FiHeart, FiShoppingCart, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiSearch, FiHeart, FiShoppingCart, FiLogOut, FiUser, FiArrowRight, FiX } from 'react-icons/fi';
 
 const Navbar = () => {
   const { busqueda, setBusqueda, productos, cartCount, favoritos, usuario, logout, loginTooltipVisible, setLoginTooltipVisible } = useContext(AppContext);
@@ -15,6 +15,21 @@ const Navbar = () => {
   useEffect(() => {
     setLocalSearch(busqueda || '');
   }, [busqueda]);
+
+  useEffect(() => {
+    setLoginTooltipVisible(false);
+  }, [location.pathname, setLoginTooltipVisible]);
+
+  useEffect(() => {
+    if (!loginTooltipVisible) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setLoginTooltipVisible(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [loginTooltipVisible, setLoginTooltipVisible]);
 
   const filteredProducts = (localSearch && localSearch.trim().length > 0 && Array.isArray(productos)) 
     ? productos.filter(p => {
@@ -238,9 +253,44 @@ const Navbar = () => {
                     className="login-overlay-backdrop" 
                     onClick={() => setLoginTooltipVisible(false)}
                   />
-                  <div className="login-tooltip-bubble">
-                    Debes iniciar sesión para realizar esta acción
+                  <div className="login-tooltip-bubble" role="dialog" aria-label="Iniciar sesión requerido">
                     <div className="login-tooltip-arrow"></div>
+                    <div className="login-tooltip-top">
+                      <div className="login-tooltip-icon" aria-hidden="true">
+                        <FiHeart size={18} />
+                      </div>
+                      <div className="login-tooltip-text">
+                        <p className="login-tooltip-title">Iniciar sesión</p>
+                        <p className="login-tooltip-desc">
+                          Iniciá sesión en tu cuenta para guardar productos en tus favoritos.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="login-tooltip-close"
+                        onClick={() => setLoginTooltipVisible(false)}
+                        aria-label="Cerrar aviso"
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                    <Link
+                      to="/login"
+                      className="login-tooltip-cta"
+                      onClick={() => setLoginTooltipVisible(false)}
+                    >
+                      <span>Iniciar sesión</span>
+                      <FiArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                    <p className="login-tooltip-register">
+                      ¿No tenés cuenta?{' '}
+                      <Link to="/register" onClick={() => setLoginTooltipVisible(false)}>
+                        Registrate
+                      </Link>
+                    </p>
+                    <div className="login-tooltip-progress-track" aria-hidden="true">
+                      <div className="login-tooltip-progress" />
+                    </div>
                   </div>
                 </>
               )}

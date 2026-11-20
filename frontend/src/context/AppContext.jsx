@@ -1,10 +1,34 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getRealStock } from '../utils/stockHelpers';
 
 export const AppContext = createContext();
 
+const CACHE_KEYS = {
+    productos: 'bm_cache_productos',
+    promociones: 'bm_cache_promociones',
+};
+
+function readSessionCache(key, fallback) {
+    try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function writeSessionCache(key, value) {
+    try {
+        sessionStorage.setItem(key, JSON.stringify(value));
+    } catch {
+        // Ignore storage quota errors
+    }
+}
+
 export function AppProvider({ children }) {
-    const [productos, setProductos] = useState([]);
+    const [productos, setProductos] = useState(() => readSessionCache(CACHE_KEYS.productos, []));
     const [busqueda, setBusqueda] = useState('');
     const [fetchError, setFetchError] = useState(false);
     const [cart, setCart] = useState(null); // Objeto de carrito del backend: { id_carrito, total, items }
@@ -13,10 +37,11 @@ export function AppProvider({ children }) {
     const [favoritosData, setFavoritosData] = useState([]);
     const [usuario, setUsuario] = useState(null);
     const [token, setToken] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => readSessionCache(CACHE_KEYS.productos, []).length === 0);
     const [isInitialized, setIsInitialized] = useState(false); // true cuando usuario+carrito+productos ya cargaron
     const [loginTooltipVisible, setLoginTooltipVisible] = useState(false);
-    const [promociones, setPromociones] = useState([]);
+    const loginTooltipTimerRef = useRef(null);
+    const [promociones, setPromociones] = useState(() => readSessionCache(CACHE_KEYS.promociones, []));
     const [toasts, setToasts] = useState([]);
 
     const addToast = (titulo, mensaje, tipo = 'success') => {
@@ -89,9 +114,9 @@ export function AppProvider({ children }) {
                     try {
                         const user = JSON.parse(usuarioGuardado);
                         setUsuario(user);
-                        // Esperamos tanto productos como carrito antes de marcar como inicializado
+                        // Esperamos tanto productos como promociones y carrito antes de apagar loading
                         await Promise.all([
-                            obtenerProductos().catch(err => console.error("Error init productos:", err)),
+                            obtenerProductos(true).catch(err => console.error("Error init productos:", err)),
                             obtenerPromociones().catch(err => console.error("Error init promos:", err)),
                             obtenerCarrito(loadedToken).catch(err => console.error("Error init carrito:", err)),
                             obtenerFavoritos(loadedToken).catch(err => console.error("Error init favoritos:", err))
@@ -99,7 +124,7 @@ export function AppProvider({ children }) {
                     } catch (e) {
                         console.error("Error al parsear el usuario guardado:", e);
                         await Promise.all([
-                            obtenerProductos().catch(err => console.error("Error init productos fallback:", err)),
+                            obtenerProductos(true).catch(err => console.error("Error init productos fallback:", err)),
                             obtenerPromociones().catch(err => console.error("Error init promos fallback:", err))
                         ]);
                     }
@@ -109,13 +134,14 @@ export function AppProvider({ children }) {
                     setCartCount(0);
                     setFavoritos([]);
                     await Promise.all([
-                        obtenerProductos().catch(err => console.error("Error init productos guest:", err)),
+                        obtenerProductos(true).catch(err => console.error("Error init productos guest:", err)),
                         obtenerPromociones().catch(err => console.error("Error init promos guest:", err))
                     ]);
                 }
             } catch (err) {
                 console.error("Error crítico en inicialización de AppContext:", err);
             } finally {
+                setLoading(false);
                 setIsInitialized(true);
             }
         };
@@ -126,11 +152,14 @@ export function AppProvider({ children }) {
     useEffect(() => {
         const evtSource = new EventSource(`${API_URL}/stream/stock`);
 
-        evtSource.addEventListener('stock_update', (e) => {
+        evtSource.addEventListener('stock_update', () => {
             console.log('SSE: Actualización de stock recibida, sincronizando catálogo...');
             fetch(`${API_URL}/productos`)
                 .then(res => res.json())
-                .then(data => setProductos(data))
+                .then(data => {
+                    setProductos(data);
+                    writeSessionCache(CACHE_KEYS.productos, data);
+                })
                 .catch(err => console.error("Error sincronizando catálogo:", err));
         });
 
@@ -186,6 +215,7 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 const data = await response.json();
                 setProductos(data);
+                writeSessionCache(CACHE_KEYS.productos, data);
                 setFetchError(false);
             } else {
                 console.error("Error en la respuesta de la API de productos");
@@ -206,6 +236,7 @@ export function AppProvider({ children }) {
             if (response.ok) {
                 const data = await response.json();
                 setPromociones(data);
+                writeSessionCache(CACHE_KEYS.promociones, data);
             }
         } catch (error) {
             console.error("Error obteniendo promociones:", error);
@@ -546,10 +577,14 @@ export function AppProvider({ children }) {
 
     async function toggleFavorito(id_producto) {
         if (!usuario || !usuario.id_usuario || !token || token === 'null' || token === 'undefined') {
+            if (loginTooltipTimerRef.current) {
+                clearTimeout(loginTooltipTimerRef.current);
+            }
             setLoginTooltipVisible(true);
-            // Ocultarlo automáticamente después de unos segundos
-            setTimeout(() => setLoginTooltipVisible(false), 2500);
-            addToast('Iniciar Sesión', 'Debes iniciar sesión para agregar productos a tus favoritos.', 'warning');
+            loginTooltipTimerRef.current = setTimeout(() => {
+                setLoginTooltipVisible(false);
+                loginTooltipTimerRef.current = null;
+            }, 4500);
             return;
         }
 

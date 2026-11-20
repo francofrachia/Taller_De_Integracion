@@ -58,26 +58,36 @@ const Compra = {
         `;
         const resCompras = await pool.query(queryCompras, [id_usuario]);
 
-        const compras = [];
-        for (const compra of resCompras.rows) {
-            const queryLineas = `
-                SELECT lc.*, p.nombre, (
-                    SELECT i.url 
-                    FROM imagen i 
-                    WHERE i.id_producto = p.id_producto 
-                    LIMIT 1
-                ) AS imagen_url
-                FROM linea_compra lc
-                JOIN producto p ON lc.id_producto = p.id_producto
-                WHERE lc.id_compra = $1
-            `;
-            const resLineas = await pool.query(queryLineas, [compra.id_compra]);
-            compras.push({
-                ...compra,
-                lineas: resLineas.rows
-            });
+        if (resCompras.rows.length === 0) return [];
+
+        const idCompras = resCompras.rows.map(c => c.id_compra);
+
+        // Fetch all line items in one batch query to avoid N+1 round-trips to Supabase
+        const queryLineas = `
+            SELECT lc.*, p.nombre, (
+                SELECT i.url
+                FROM imagen i
+                WHERE i.id_producto = p.id_producto
+                LIMIT 1
+            ) AS imagen_url
+            FROM linea_compra lc
+            JOIN producto p ON lc.id_producto = p.id_producto
+            WHERE lc.id_compra = ANY($1)
+        `;
+        const resLineas = await pool.query(queryLineas, [idCompras]);
+
+        const lineasPorCompra = new Map();
+        for (const linea of resLineas.rows) {
+            if (!lineasPorCompra.has(linea.id_compra)) {
+                lineasPorCompra.set(linea.id_compra, []);
+            }
+            lineasPorCompra.get(linea.id_compra).push(linea);
         }
-        return compras;
+
+        return resCompras.rows.map(compra => ({
+            ...compra,
+            lineas: lineasPorCompra.get(compra.id_compra) || []
+        }));
     },
 
     // --- Admin Methods ---

@@ -1,16 +1,178 @@
-import React, { useEffect, useContext } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useContext, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FiArrowRight, FiRefreshCw, FiShoppingBag } from 'react-icons/fi';
 import { AppContext } from '../../context/AppContext';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import sealLogo from '../../assets/logo_cera_bloque_mundo_removed.webp';
 import './PaymentStatus.css';
 
+const PAYMENT_TYPE_LABELS = {
+  credit_card: 'Tarjeta de crédito',
+  debit_card: 'Tarjeta de débito',
+  account_money: 'Dinero en cuenta',
+  ticket: 'Efectivo / Cupón',
+  bank_transfer: 'Transferencia bancaria',
+};
+
+const formatPaymentType = (paymentType) => PAYMENT_TYPE_LABELS[paymentType] || null;
+
+const STATUS_CONFIG = {
+  success: {
+    kicker: 'Orden confirmada',
+    title: '¡Gracias por tu compra!',
+    lead: 'El pago fue aprobado y tu pedido ya quedó registrado en Bloque Mundo.',
+    statusLabel: 'Aprobado',
+    getFootnote: (userEmail) =>
+      userEmail
+        ? `Enviamos el comprobante y el detalle del pedido a ${userEmail}.`
+        : 'Enviamos los detalles de facturación y seguimiento a tu correo registrado.',
+    primaryAction: {
+      to: '/productos',
+      label: 'Seguir explorando',
+      iconAfter: FiArrowRight,
+    },
+    secondaryAction: {
+      to: '/cuenta',
+      state: { section: 'pendientes' },
+      label: 'Ver en Mi Cuenta',
+      iconBefore: FiShoppingBag,
+    },
+  },
+  failure: {
+    kicker: 'Transacción no completada',
+    title: 'No pudimos procesar tu pago',
+    lead: 'La entidad emisora o Mercado Pago rechazó la operación. No se realizó ningún cargo.',
+    statusLabel: 'Rechazado',
+    getFootnote: () =>
+      'Podés intentar nuevamente con otra tarjeta o medio de pago desde el checkout.',
+    primaryAction: {
+      to: '/checkout',
+      label: 'Reintentar pago',
+      iconBefore: FiRefreshCw,
+    },
+    secondaryAction: {
+      to: '/carrito',
+      label: 'Volver al carrito',
+    },
+  },
+  pending: {
+    kicker: 'Pago en verificación',
+    title: 'Tu pago está pendiente',
+    lead: 'Estamos esperando la confirmación final de acreditación por parte del medio de pago.',
+    statusLabel: 'En proceso de acreditación',
+    getFootnote: () =>
+      'Te notificaremos por correo electrónico apenas se acredite el pago.',
+    primaryAction: {
+      to: '/cuenta',
+      state: { section: 'pendientes' },
+      label: 'Ver estado del pedido',
+      iconBefore: FiShoppingBag,
+    },
+    secondaryAction: {
+      to: '/',
+      label: 'Volver al inicio',
+    },
+  },
+};
+
+const PaymentStatusView = ({
+  type,
+  transactionId,
+  merchantOrderId,
+  paymentMethodLabel,
+  formattedDate,
+  userEmail,
+}) => {
+  const variant = STATUS_CONFIG[type] ? type : 'pending';
+  const config = STATUS_CONFIG[variant];
+  const PrimaryIconBefore = config.primaryAction.iconBefore;
+  const PrimaryIconAfter = config.primaryAction.iconAfter;
+  const SecondaryIconBefore = config.secondaryAction.iconBefore;
+
+  const ledgerRows = [
+    { label: 'Estado', value: config.statusLabel, valueClass: variant },
+    transactionId && { label: 'Operación', value: `#${transactionId}` },
+    merchantOrderId && { label: 'Orden', value: `#${merchantOrderId}` },
+    paymentMethodLabel && { label: 'Medio de pago', value: paymentMethodLabel },
+    { label: 'Fecha', value: formattedDate },
+  ].filter(Boolean);
+
+  return (
+    <article className={`status-editorial ${variant}`}>
+      <header className="status-header">
+        <div className="status-seal-wrap">
+          <img
+            src={sealLogo}
+            alt="Sello Bloque Mundo"
+            className="status-seal-img"
+          />
+        </div>
+        <div className="status-kicker">
+          <span className={`status-dot ${variant}`} aria-hidden="true" />
+          <span>{config.kicker}</span>
+        </div>
+        <h1 className="status-title">{config.title}</h1>
+        <p className="status-lead">{config.lead}</p>
+      </header>
+
+      <section className="status-ledger" aria-label="Detalle de la operación">
+        {ledgerRows.map((row) => (
+          <div className="ledger-row" key={row.label}>
+            <span className="ledger-label">{row.label}</span>
+            <span className={`ledger-value ${row.valueClass || ''}`}>
+              {row.value}
+            </span>
+          </div>
+        ))}
+      </section>
+
+      <p className="status-footnote">{config.getFootnote(userEmail)}</p>
+
+      <div className="status-actions">
+        <Link
+          to={config.primaryAction.to}
+          state={config.primaryAction.state}
+          className="status-btn-primary"
+        >
+          {PrimaryIconBefore && <PrimaryIconBefore aria-hidden="true" />}
+          <span>{config.primaryAction.label}</span>
+          {PrimaryIconAfter && <PrimaryIconAfter aria-hidden="true" />}
+        </Link>
+        <Link
+          to={config.secondaryAction.to}
+          state={config.secondaryAction.state}
+          className="status-btn-secondary"
+        >
+          {SecondaryIconBefore && <SecondaryIconBefore aria-hidden="true" />}
+          <span>{config.secondaryAction.label}</span>
+        </Link>
+      </div>
+    </article>
+  );
+};
+
 const PaymentStatus = ({ type }) => {
   const { vaciarCarrito, obtenerCarrito, token, usuario, loading, API_URL } = useContext(AppContext);
   const [searchParams] = useSearchParams();
-  const paymentId = searchParams.get('payment_id');
-  const status = searchParams.get('status');
+
+  const rawPaymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
+  const paymentId = rawPaymentId && rawPaymentId !== 'null' ? rawPaymentId : null;
+  const rawMerchantOrder = searchParams.get('merchant_order_id');
+  const merchantOrderId = rawMerchantOrder && rawMerchantOrder !== 'null' ? rawMerchantOrder : null;
+  const paymentMethodLabel = formatPaymentType(searchParams.get('payment_type'));
+
+  const formattedDate = useMemo(
+    () =>
+      new Intl.DateTimeFormat('es-AR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date()),
+    []
+  );
 
   // Scroll to top strictly ONCE on mount to prevent scroll tugging/snapping on subsequent re-renders
   useEffect(() => {
@@ -41,7 +203,7 @@ const PaymentStatus = ({ type }) => {
               vaciarCarrito(true, purchasedIds);
             }
             sessionStorage.removeItem('purchased_item_ids');
-            
+
             // Sincronizar el carrito del backend después de 1 segundo para dar tiempo a la base de datos
             setTimeout(() => {
               obtenerCarrito(token);
@@ -80,112 +242,18 @@ const PaymentStatus = ({ type }) => {
     }
   }, [type, loading, usuario, vaciarCarrito, obtenerCarrito, token, searchParams, paymentId, API_URL]);
 
-  const renderContent = () => {
-    switch (type) {
-      case 'success':
-        return (
-          <div className="status-card success">
-            <div className="status-icon status-seal success-glow">
-              <img src={sealLogo} alt="Sello Bloque Mundo" className="status-seal-img" />
-            </div>
-            <h1>¡Gracias por tu compra!</h1>
-            <p className="status-message">Tu pago ha sido aprobado de manera exitosa y hemos registrado tu orden.</p>
-            {paymentId && (
-              <div className="status-details">
-                <div className="details-header">
-                  <span className="details-title">Detalle de transacción</span>
-                  <span className="details-badge success">Completado</span>
-                </div>
-                <div className="details-body">
-                  <div className="details-row">
-                    <span className="details-label">ID de Pago</span>
-                    <span className="details-value">{paymentId}</span>
-                  </div>
-                  <div className="details-row">
-                    <span className="details-label">Estado</span>
-                    <span className="details-value status-success-text">Aprobado</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <p className="status-subtext">Te enviamos los detalles del envío y facturación a tu correo registrado.</p>
-            <div className="status-actions">
-              <a href="/" className="primary-btn">Volver al catálogo</a>
-            </div>
-          </div>
-        );
-      case 'failure':
-        return (
-          <div className="status-card failure">
-            <div className="status-icon status-seal failure-glow">
-              <img src={sealLogo} alt="Sello Bloque Mundo" className="status-seal-img" />
-            </div>
-            <h1>Pago Rechazado</h1>
-            <p className="status-message">Lamentablemente no pudimos procesar tu pago. Por favor intenta con otro medio o ponte en contacto con tu banco.</p>
-            {paymentId && (
-              <div className="status-details">
-                <div className="details-header">
-                  <span className="details-title">Detalle de transacción</span>
-                  <span className="details-badge failure">Rechazado</span>
-                </div>
-                <div className="details-body">
-                  <div className="details-row">
-                    <span className="details-label">ID de Transacción</span>
-                    <span className="details-value">{paymentId}</span>
-                  </div>
-                  <div className="details-row">
-                    <span className="details-label">Estado</span>
-                    <span className="details-value status-failure-text">Rechazado / Fallido</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="status-actions">
-              <a href="/checkout" className="primary-btn-outline">Volver a intentar</a>
-            </div>
-          </div>
-        );
-      case 'pending':
-      default:
-        return (
-          <div className="status-card pending">
-            <div className="status-icon pending-glow">
-              <span className="pending-emoji-pulse">⌛</span>
-            </div>
-            <h1>Pago Pendiente</h1>
-            <p className="status-message">Tu pago se encuentra en proceso de aprobación por parte del proveedor del servicio.</p>
-            {paymentId && (
-              <div className="status-details">
-                <div className="details-header">
-                  <span className="details-title">Detalle de transacción</span>
-                  <span className="details-badge pending">Pendiente</span>
-                </div>
-                <div className="details-body">
-                  <div className="details-row">
-                    <span className="details-label">ID de Pago</span>
-                    <span className="details-value">{paymentId}</span>
-                  </div>
-                  <div className="details-row">
-                    <span className="details-label">Estado</span>
-                    <span className="details-value status-pending-text">Pendiente de acreditación</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <p className="status-subtext">Te notificaremos vía correo electrónico en cuanto el estado de tu pago cambie.</p>
-            <div className="status-actions">
-              <a href="/" className="primary-btn">Volver al inicio</a>
-            </div>
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="payment-status-page">
       <Navbar />
       <main className="container status-container">
-        {renderContent()}
+        <PaymentStatusView
+          type={type}
+          transactionId={paymentId}
+          merchantOrderId={merchantOrderId}
+          paymentMethodLabel={paymentMethodLabel}
+          formattedDate={formattedDate}
+          userEmail={usuario?.email || usuario?.correo || null}
+        />
       </main>
       <Footer />
     </div>

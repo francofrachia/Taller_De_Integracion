@@ -8,33 +8,15 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
-  50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
-}
-
 .animate-fade-in-up {
   opacity: 0;
   animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
 .delay-1 { animation-delay: 0.1s; }
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
-
-.stagger-up {
-  opacity: 0;
-  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
+.delay-5 { animation-delay: 0.5s; }
 
 /* ==========================================================================
    Hero Section
@@ -43,15 +25,15 @@
   width: 100%;
 }
 
-/* Fondo fijo que reacciona al scroll */
+/* Fondo fijo */
 .fixed-background {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100vh;
   z-index: -2;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  pointer-events: none;
+  transform: translateZ(0);
 }
-
-/* Fondo fijo removido la opacidad dark-active */
 
 .hero-section-custom {
   position: relative;
@@ -100,15 +82,6 @@
   font-size: 4.5rem;
 }
 
-.hero-custom-subtitle {
-  font-size: 1.15rem;
-  color: #374151;
-  line-height: 1.6;
-  font-weight: 500;
-  margin-bottom: 30px;
-  max-width: 480px;
-}
-
 .btn-hero-yellow {
   display: inline-flex;
   align-items: center;
@@ -148,31 +121,7 @@
   padding: 0;
 }
 
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.feature-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-}
-
-.feature-text {
-  font-size: 0.95rem;
-  color: #4b5563;
-  line-height: 1.3;
-  font-weight: 600;
-}
-
-.feature-separator {
-  width: 1px;
-  height: 40px;
-  background: #e5e7eb;
-}
-
-/* Responsividad */
+/* Responsividad Hero */
 @media (max-width: 992px) {
   .hero-custom-title { font-size: 4rem; }
   .hero-custom-title .colorful-mundo { font-size: 4.5rem; }
@@ -183,8 +132,6 @@
     width: 100%;
     padding: 0 20px;
   }
-  .feature-separator { display: none; }
-  .feature-item { width: 45%; }
 }
 
 @media (max-width: 768px) {
@@ -192,7 +139,6 @@
   .hero-custom-bg { background-position: center; opacity: 0.6; } /* Para que se lea el texto en móvil */
   .hero-custom-title { font-size: 3rem; }
   .hero-custom-title .colorful-mundo { font-size: 3.5rem; }
-  .feature-item { width: 100%; }
   .hero-floating-bar {
     position: relative;
     bottom: auto;
@@ -200,108 +146,9 @@
   }
 }
 
-.hero-content {
-  flex: 1;
-  max-width: 600px;
-  z-index: 1;
-}
-
-.hero-badge {
-  display: inline-block;
-  background: rgba(255, 77, 77, 0.15);
-  color: #ff3333;
-  padding: 8px 16px;
-  border-radius: 30px;
-  font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 20px;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 77, 77, 0.2);
-}
-
-.hero-title {
-  font-size: 3.2rem;
-  font-weight: 900;
-  line-height: 1.1;
-  color: var(--text-dark);
-  margin-bottom: 20px;
-}
-
-.highlight-text {
-  color: #ffcf00; /* Amarillo LEGO */
-  text-shadow: none;
-}
-
-.hero-subtitle {
-  font-size: 1.25rem;
-  color: var(--text-gray);
-  line-height: 1.6;
-  margin-bottom: 40px;
-}
-
-.btn-primary-glow {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background: #111827; /* Dark button */
-  color: white;
-  padding: 16px 36px;
-  border-radius: 50px;
-  font-size: 18px;
-  font-weight: 800;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-  border: none;
-}
-
-.btn-primary-glow:hover {
-  transform: translateY(-3px) scale(1.05);
-  background: #000000;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.25);
-}
-
-.btn-primary-glow .arrow {
-  transition: transform 0.3s;
-}
-
-.btn-primary-glow:hover .arrow {
-  transform: translateX(5px);
-}
-
-.hero-image-wrapper {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  z-index: 1;
-  perspective: 1000px;
-}
-
-.hero-3d-image {
-  width: 100%;
-  max-width: 650px;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
-  transition: transform 0.5s;
-}
-
-.hero-image-wrapper:hover .hero-3d-image {
-  transform: rotateY(0deg) rotateX(0deg) scale(1.1);
-}
-
 /* ==========================================================================
-   Collections Nav
+   Collections Grid & Category Cards
    ========================================================================== */
-.collections-nav-section {
-  padding: 50px 0 10px 0; /* Más espacio arriba para que no choque con la barra flotante de arriba */
-  background: transparent;
-  border-bottom: none; /* Quitamos la línea de corte */
-}
-
 .collections-grid {
   display: flex;
   justify-content: center;
@@ -368,6 +215,8 @@
   position: relative;
   overflow: hidden;
   z-index: 1;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @keyframes levitate {
@@ -381,13 +230,6 @@
 
 .collection-card:nth-child(even) {
   animation: fadeInUp 0.6s forwards, levitate 5s ease-in-out 3.1s infinite !important;
-}
-
-.home-page.dark-theme .collection-card {
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(180, 130, 50, 0.25);
-  color: #3a2a0a;
-  box-shadow: 0 4px 0 rgba(150, 100, 20, 0.1), 0 10px 25px rgba(150, 100, 20, 0.1);
 }
 
 /* Glossy Shine Swipe Effect */
@@ -410,12 +252,6 @@
   z-index: 2;
 }
 
-.collection-card:hover {
-  animation-play-state: paused !important;
-  transform: translateY(-12px) scale(1.05) !important;
-  border-color: transparent !important;
-}
-
 .collection-card:hover::after {
   left: 100%;
 }
@@ -436,18 +272,10 @@
   filter: opacity(0.8);
 }
 
-.home-page.dark-theme .col-icon-svg {
-  filter: opacity(0.9);
-}
-
 .col-name {
   font-weight: 700;
   font-size: 14px;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.home-page.dark-theme .col-name {
-  color: #4a3010;
 }
 
 .col-emoji {
@@ -458,7 +286,6 @@
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Dynamic Brand Category Hover states with 3D Bevel depth and glowing color shadow */
 /* Dynamic Brand Category Hover states using CSS Custom Variables */
 .collection-card:hover {
   animation-play-state: paused !important;
@@ -500,11 +327,6 @@
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.home-page.dark-theme .col-icon-react {
-  color: #4a3010;
-  opacity: 0.9;
-}
-
 .collection-card:hover .col-icon-react {
   color: var(--cat-hover-text, #ffffff) !important;
   opacity: 1 !important;
@@ -513,11 +335,11 @@
 }
 
 /* ==========================================================================
-   Flash Deals (Dark & Glassmorphic)
+   Flash Deals & Carousels
    ========================================================================== */
 .flash-deals-modern {
   background: transparent;
-  padding: 0 0 40px 0; /* Padding superior quitado porque el difuminado ya cubre el espacio visual */
+  padding: 0 0 40px 0;
   margin: 0;
   color: #111827;
   position: relative;
@@ -527,11 +349,9 @@
 
 .best-sellers-dark-wrapper {
   background: transparent;
-  padding: 100px 0 60px 0; /* Mayor espacio superior para separarlo de la sección anterior */
+  padding: 100px 0 60px 0;
   width: 100%;
 }
-
-/* Fondo radial oscuro eliminado para mantener consistencia limpia */
 
 .flash-header {
   display: flex;
@@ -545,36 +365,12 @@
 .flash-title-group h2,
 .section-title-highlight {
   font-size: 42px;
-  color: #ff5722; /* Rojo medio naranja */
+  color: #ff5722;
   font-weight: 900;
-  text-transform: none; /* Como el hero */
+  text-transform: none;
   letter-spacing: normal;
   margin-bottom: 8px;
   text-shadow: none;
-}
-
-.neon-timer {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  font-size: 24px;
-  font-weight: 900;
-  color: #ff3366;
-  text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
-}
-
-.time-block {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 10px 15px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-.time-block small {
-  font-size: 14px;
-  opacity: 0.8;
-  margin-left: 2px;
 }
 
 .flash-carousel-container {
@@ -642,8 +438,8 @@
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
   text-decoration: none;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #ffffff; /* Fondo blanco limpio */
-  color: #111827; /* Texto oscuro */
+  background-color: #ffffff;
+  color: #111827;
   border: 1px solid rgba(0,0,0,0.05);
 }
 
@@ -653,7 +449,7 @@
 }
 
 .apple-card.dark {
-  background-color: #f8f9fa; /* Gris claro en vez de oscuro */
+  background-color: #f8f9fa;
   color: #111827;
 }
 
@@ -797,7 +593,7 @@
 }
 
 /* ==========================================================================
-   Best Sellers
+   Best Sellers Header
    ========================================================================== */
 .modern-header {
   display: flex;
@@ -832,223 +628,7 @@
 }
 
 /* ==========================================================================
-   Coverflow Carousel (Best Sellers)
-   ========================================================================== */
-.coverflow-carousel-container {
-  position: relative;
-  width: 100%;
-  padding: 40px 0;
-  overflow: hidden;
-}
-
-/* Difuminados en los bordes para ocultar la entrada y salida de las tarjetas */
-.coverflow-carousel-container::before,
-.coverflow-carousel-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 25%; /* Ancho del difuminado */
-  z-index: 10;
-  pointer-events: none;
-}
-
-.coverflow-carousel-container::before {
-  left: 0;
-  background: linear-gradient(to right, #ffffff 0%, rgba(255,255,255,0) 100%);
-}
-
-.coverflow-carousel-container::after {
-  right: 0;
-  background: linear-gradient(to left, #ffffff 0%, rgba(255,255,255,0) 100%);
-}
-
-.bestsellers-swiper {
-  width: 100%;
-  padding-top: 20px;
-  padding-bottom: 50px;
-  position: relative;
-}
-
-/* Estilos de las flechas de navegación de Swiper */
-.bestsellers-swiper .swiper-button-next,
-.bestsellers-swiper .swiper-button-prev {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
-
-.bestsellers-swiper .swiper-button-next:hover,
-.bestsellers-swiper .swiper-button-prev:hover {
-  background: rgba(255, 204, 0, 0.9);
-  color: #111;
-  border-color: rgba(255, 204, 0, 1);
-  transform: scale(1.1);
-}
-
-.bestsellers-swiper .swiper-button-next::after,
-.bestsellers-swiper .swiper-button-prev::after {
-  font-size: 20px;
-  font-weight: 900;
-}
-
-.bestseller-slide {
-  width: 320px;
-  height: 480px;
-}
-
-/* Oscurecer las tarjetas de fondo y quitarles la interacción principal visual, pero permitiendo clicks */
-.bestseller-slide:not(.swiper-slide-active) .elite-card {
-  filter: brightness(0.6);
-  cursor: pointer;
-}
-
-.bestseller-slide.swiper-slide-active .elite-card {
-  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-  border-color: rgba(255, 204, 0, 0.3);
-}
-
-/* CRÍTICO: Esto hace que el autoplay de Swiper sea 100% continuo sin frenos entre tarjetas */
-.bestsellers-swiper .swiper-wrapper {
-  transition-timing-function: linear !important;
-}
-
-@media (max-width: 768px) {
-  .bestseller-slide { width: 260px; height: 420px; }
-}
-
-.elite-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 30px 20px;
-  position: relative;
-  text-decoration: none;
-  color: #111;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.02);
-  height: 100%;
-}
-
-.elite-card:hover {
-  transform: translateY(-15px);
-  box-shadow: 0 25px 50px rgba(0,0,0,0.12);
-}
-
-.elite-rank {
-  position: absolute;
-  top: -10px;
-  left: -5px;
-  font-size: 140px;
-  font-weight: 900;
-  color: rgba(0,0,0,0.03);
-  line-height: 1;
-  z-index: 0;
-  pointer-events: none;
-  transition: color 0.4s;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: -5px;
-}
-
-.elite-card:hover .elite-rank {
-  color: rgba(255, 204, 0, 0.15); /* Cambia al amarillo lego en hover */
-}
-
-.elite-image-wrapper {
-  width: 100%;
-  height: 200px;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  transition: transform 0.5s ease;
-}
-
-.bestseller-slide.swiper-slide-active .elite-image-wrapper:hover {
-  transform: scale(1.1) translateY(-10px);
-}
-
-.elite-image {
-  max-width: 90%;
-  max-height: 90%;
-  object-fit: contain;
-  transition: transform 0.5s ease;
-  filter: drop-shadow(0 15px 15px rgba(0,0,0,0.15));
-}
-
-.elite-info {
-  text-align: center;
-  z-index: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-}
-
-.elite-category {
-  font-size: 11px;
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #888;
-  margin-bottom: 8px;
-}
-
-.elite-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 10px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.elite-price {
-  font-size: 22px;
-  font-weight: 900;
-  color: #111;
-  margin-top: auto;
-}
-
-.elite-action {
-  margin-top: 20px;
-  width: 100%;
-  background: var(--primary-yellow);
-  color: #000;
-  border: none;
-  border-radius: 30px;
-  padding: 12px 0;
-  font-weight: 700;
-  font-size: 14px;
-  text-transform: uppercase;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s;
-  z-index: 2;
-  box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
-}
-
-.elite-card:hover .elite-action {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Modo oscuro removido para mantener la consistencia blanca */
-
-/* ==========================================================================
-   Parallax Banner (Star Wars)
+   Parallax Banners (Star Wars & Marvel)
    ========================================================================== */
 .parallax-banner-section.full-width {
   margin: 100px 0;
@@ -1063,51 +643,47 @@
   margin-bottom: 0;
 }
 
-/* Banner Marvel Grande pero fluido */
 .cinematic-marvel-banner {
   margin-bottom: 0;
 }
 
 .parallax-container.cinematic-theme.large-banner {
-  height: 80vh; /* Altura impactante, pero permite fluir al scrollear */
+  height: 80vh;
   width: 100%;
 }
-
-
-
 
 .dark-marvel-bg {
   background: transparent;
   width: 100%;
   padding-bottom: 80px;
 }
+
 .parallax-container.star-wars-theme,
 .parallax-container.cinematic-theme {
   position: relative;
   height: 750px;
   border-radius: 0;
   overflow: hidden;
+  clip-path: inset(0);
   display: flex;
-  align-items: center; /* Centrado en altura */
+  align-items: center;
   justify-content: flex-start;
   text-align: left;
 }
 
-/* Los fades viejos se borraron, se usan divs internos */
-
-
-
 .parallax-container.star-wars-theme .parallax-bg,
 .parallax-container.cinematic-theme .parallax-bg {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-attachment: fixed;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background-position: center right;
   background-repeat: no-repeat;
   background-size: cover;
   filter: brightness(0.9) contrast(1.1);
   z-index: 0;
-  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .parallax-container.star-wars-theme::before,
@@ -1124,7 +700,7 @@
   position: relative;
   z-index: 2;
   color: white;
-  padding: 0 10%; /* Espaciado normal */
+  padding: 0 10%;
   max-width: 100%;
 }
 
@@ -1144,14 +720,12 @@
   justify-content: flex-end;
 }
 
-/* Cinematic Marvel Banner (fondo adaptado) */
-
 .parallax-container.cinematic-theme.marvel-style .parallax-bg {
   background-position: center 20%;
 }
 
 .star-wars-title {
-  font-size: 44px; /* Más pequeño para que no se corte por el line-height */
+  font-size: 44px;
   font-weight: 900;
   margin-bottom: 10px;
   line-height: 1.2;
@@ -1161,7 +735,7 @@
   background: linear-gradient(to bottom, #ffffff 0%, #b3b3b3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  padding-right: 10px; /* Prevenir corte horizontal */
+  padding-right: 10px;
 }
 
 .star-wars-subtitle {
@@ -1218,7 +792,7 @@
    New Arrivals (Masonry Grid)
    ========================================================================== */
 .new-arrivals-modern {
-  padding-top: 60px; /* Padding en vez de margin para no colapsar con el wrapper */
+  padding-top: 60px;
   margin-bottom: 0;
   position: relative;
   z-index: 5;
@@ -1259,15 +833,15 @@
   border-radius: 24px;
   overflow: hidden;
   background: #ffffff;
-  border: 1px solid #e0e0e0; /* Mini marco gris tenue pedido por el usuario */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.04); /* Resalte sutil sobre el fondo blanco */
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
 }
 
 .masonry-item img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Para que la imagen del producto no se recorte */
-  padding: 30px; /* Margen interno para que respire */
+  object-fit: contain;
+  padding: 30px;
   box-sizing: border-box;
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -1351,17 +925,8 @@
 }
 
 .tall-span {
-  grid-row: span 2;
-}
-
-.tall-span {
   grid-column: span 1;
   grid-row: span 2;
-}
-
-.wide-span {
-  grid-column: span 2;
-  grid-row: span 1;
 }
 
 /* Animaciones de entrada escalonada para la grilla */
@@ -1388,20 +953,11 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .hero-title { font-size: 3rem; }
-  .hero-section-modern { min-height: 60vh; padding: 40px 5%; }
   .masonry-grid { grid-template-columns: repeat(2, 1fr); }
   .large-span { grid-column: span 2; }
 }
 
 @media (max-width: 768px) {
-  .hero-section-modern {
-    flex-direction: column;
-    text-align: center;
-    padding-top: 100px;
-  }
-  .hero-image-wrapper { display: none; }
-  .hero-title { font-size: 2.5rem; }
   .flash-header { flex-direction: column; align-items: flex-start; gap: 20px; }
   .parallax-banner-section { height: 300px; }
   .parallax-content h2 { font-size: 32px; }

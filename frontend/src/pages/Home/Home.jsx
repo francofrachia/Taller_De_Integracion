@@ -1,13 +1,9 @@
-import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
-const MarqueeComponent = (typeof Marquee === 'object' && Marquee.default) ? Marquee.default : Marquee;
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { FiGift, FiShield, FiTruck, FiStar } from 'react-icons/fi';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
-import ProductCard from '../../components/ProductCard/ProductCard';
-import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import ServerError from '../../components/ServerError/ServerError';
 import { AppContext } from '../../context/AppContext';
 import { displayCategoryName, getCategoryClass, getCategoryVisuals } from '../../utils/categoryHelpers';
@@ -18,11 +14,8 @@ import starWarsBanner from '../../assets/starWars.webp';
 import newHeroBanner from '../../assets/imagen_home_arriba.webp';
 import hulkBanner from '../../assets/Home.superheroe.webp';
 import placeholderProduct from '../../assets/imagen no existente BM.webp';
-import logoBm from '../../assets/BM logo recortado.webp';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-
+const MarqueeComponent = (typeof Marquee === 'object' && Marquee.default) ? Marquee.default : Marquee;
 
 const ProductCardSkeleton = () => (
   <div className="product-card" style={{ height: '100%' }}>
@@ -46,16 +39,51 @@ const ProductCardSkeleton = () => (
 
 const Home = () => {
   const navigate = useNavigate();
-  const [productos, setProductos] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [serverError, setServerError] = useState(false);
-  const { favoritos, toggleFavorito, promociones, agregarAlCarrito } = useContext(AppContext);
+  const {
+    productos: rawProductos,
+    loading,
+    fetchError: serverError,
+    favoritos,
+    toggleFavorito,
+    promociones,
+    agregarAlCarrito,
+    API_URL
+  } = useContext(AppContext);
+
+  const productos = useMemo(() => {
+    if (!Array.isArray(rawProductos)) return [];
+    return rawProductos.map(item => {
+      const originalPrice = parseFloat(item.precio) || 0;
+      const discountPct = item.descuento ? parseFloat(item.descuento) : null;
+      const finalPrice = discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
+      return {
+        id: item.id_producto,
+        title: item.nombre || item.titulo || 'Producto sin nombre',
+        description: item.descripcion || '',
+        categoryName: item.categoria_nombre || '',
+        price: finalPrice,
+        oldPrice: discountPct ? originalPrice : null,
+        discount: discountPct ? Math.round(discountPct) : null,
+        rating: parseFloat(item.calificacion) || 5,
+        reviews: parseInt(item.resenas || item.reseñas) || 0,
+        image: item.imagen_url,
+        collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
+        stock: item.stock || 0,
+        activo: item.activo !== false,
+        isComingSoon: !!item.ultimo_lanzamiento,
+        ventasTotales: parseInt(item.ventas_totales) || 0
+      };
+    });
+  }, [rawProductos]);
 
   const [comingSoonStartIndex, setComingSoonStartIndex] = useState(0);
 
   // Filtrar productos coming soon para la rotación
-  const comingSoonProducts = productos.filter(p => p.isComingSoon);
+  const comingSoonProducts = useMemo(
+    () => productos.filter(p => p.isComingSoon),
+    [productos]
+  );
 
   useEffect(() => {
     if (comingSoonProducts.length <= 4) return;
@@ -65,15 +93,16 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [comingSoonProducts.length]);
 
-  const visibleComingSoon = (() => {
+  const visibleComingSoon = useMemo(() => {
     if (comingSoonProducts.length <= 4) return comingSoonProducts;
+    const safeStartIndex = comingSoonStartIndex % comingSoonProducts.length;
     const visible = [];
     for (let i = 0; i < 4; i++) {
-      const idx = (comingSoonStartIndex + i) % comingSoonProducts.length;
+      const idx = (safeStartIndex + i) % comingSoonProducts.length;
       visible.push(comingSoonProducts[idx]);
     }
     return visible;
-  })();
+  }, [comingSoonProducts, comingSoonStartIndex]);
 
   const flashCarouselRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -83,40 +112,23 @@ const Home = () => {
   const [canScrollBsLeft, setCanScrollBsLeft] = useState(false);
   const [canScrollBsRight, setCanScrollBsRight] = useState(true);
 
-  const hulkRef = useRef(null);
   const newArrivalsRef = useRef(null);
   const bestSellersRef = useRef(null);
-  const transitionRef = useRef(null);
-  const darkSectionRef = useRef(null);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsDarkTheme(entry.isIntersecting || entry.boundingClientRect.top <= 0);
-      },
-      { rootMargin: '-250px 0px 0px 0px', threshold: 0 }
-    );
-
-    if (darkSectionRef.current) {
-      observer.observe(darkSectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-  const [transitionState, setTransitionState] = useState(0);
   const [showGridItems, setShowGridItems] = useState(false);
   const [showBestSellers, setShowBestSellers] = useState(false);
 
   useEffect(() => {
-    // Observer para animaciones on scroll
+    // Observer para animaciones on scroll (desconecta cada elemento una vez visible)
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.target === newArrivalsRef.current && entry.isIntersecting) {
+        if (!entry.isIntersecting) return;
+        if (entry.target === newArrivalsRef.current) {
           setShowGridItems(true);
+          observer.unobserve(entry.target);
         }
-        if (entry.target === bestSellersRef.current && entry.isIntersecting) {
+        if (entry.target === bestSellersRef.current) {
           setShowBestSellers(true);
+          observer.unobserve(entry.target);
         }
       });
     }, { threshold: 0.1 });
@@ -124,28 +136,7 @@ const Home = () => {
     if (newArrivalsRef.current) observer.observe(newArrivalsRef.current);
     if (bestSellersRef.current) observer.observe(bestSellersRef.current);
 
-    const handleScroll = () => {
-      if (!transitionRef.current) return;
-      const rect = transitionRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      // Si la cinta asoma por la parte inferior de la pantalla (hasta un 60%)
-      if (rect.top < windowHeight * 0.9 && rect.top >= windowHeight * 0.5) {
-        setTransitionState(1); // Muestra primera parte
-      }
-      // Si la cinta sube a la mitad superior de la pantalla
-      else if (rect.top < windowHeight * 0.5 && rect.bottom > 0) {
-        setTransitionState(2); // Muestra ambas partes
-      } else if (rect.top >= windowHeight * 0.9) {
-        setTransitionState(0); // Oculta todo si scrollea para arriba
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    // Disparamos una vez para revisar el estado inicial
-    handleScroll();
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
     };
   }, []);
@@ -184,51 +175,14 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    // Conectando con tu backend existente (Express + PostgreSQL)
-    fetch(`${API_URL}/productos`)
-      .then(res => {
-        if (!res.ok) throw new Error('Server response not ok');
-        return res.json();
-      })
-      .then(data => {
-        // Mapeamos los datos de la DB al formato que espera nuestro ProductCard
-        const productosMapeados = data.map(item => {
-          const originalPrice = parseFloat(item.precio) || 0;
-          const discountPct = item.descuento ? parseFloat(item.descuento) : null;
-          const finalPrice = discountPct ? originalPrice * (1 - discountPct / 100) : originalPrice;
-          return {
-            id: item.id_producto,
-            title: item.nombre || item.titulo || 'Producto sin nombre',
-            description: item.descripcion || '',
-            categoryName: item.categoria_nombre || '',
-            price: finalPrice,
-            oldPrice: discountPct ? originalPrice : null,
-            discount: discountPct ? Math.round(discountPct) : null,
-            rating: parseFloat(item.calificacion) || 5,
-            reviews: parseInt(item.resenas || item.reseñas) || 0,
-            image: item.imagen_url, // URL que viene del JOIN de la BD
-            collection: item.categoria_nombre ? item.categoria_nombre.toLowerCase().trim() : 'otros',
-            age: item.edad_recomendada || null,
-            stock: item.stock || 0,
-            // Exclusivo: Si es para mayores de 16 años, vale más de 30000 o es de Star Wars
-            isExclusive: (item.edad_recomendada && item.edad_recomendada >= 16) || finalPrice > 35000 || (item.categoria_nombre && item.categoria_nombre.toLowerCase().includes('star wars')),
-            // Próximamente: Lógica escalable desde BDD
-            isComingSoon: !!item.ultimo_lanzamiento,
-            // Ventas reales desde BDD
-            ventasTotales: parseInt(item.ventas_totales) || 0
-          };
-        });
-
-        setProductos(productosMapeados);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-        setServerError(true);
-        setLoading(false);
-      });
-  }, []);
+  const handleAddToCart = async (e, productId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const res = await agregarAlCarrito(productId, 1);
+    if (res && res.requireLogin) {
+      navigate('/login');
+    }
+  };
 
   useEffect(() => {
     fetch(`${API_URL}/productos/categorias`)
@@ -242,7 +196,7 @@ const Home = () => {
       .catch(error => {
         console.error('Error fetching categories:', error);
       });
-  }, []);
+  }, [API_URL]);
 
   const promoItems = (promociones || []).map(promo => {
     const p = productos.find(pr => pr.id === promo.id_producto);
@@ -261,8 +215,8 @@ const Home = () => {
     .slice(0, 10);
 
   return (
-    <div className={`home-page ${isDarkTheme ? 'dark-theme' : ''}`}>
-      <div className={`fixed-background ${isDarkTheme ? 'dark-active' : ''}`}></div>
+    <div className="home-page">
+      <div className="fixed-background"></div>
       <Navbar />
 
       <main className="home-main">
@@ -272,110 +226,109 @@ const Home = () => {
           <>
             {/* Nuevo Hero Section Moderno */}
             <section className="hero-section-custom">
-          {/* Fondo usando la imagen original sin el gradiente blanco */}
-          <div className="hero-custom-bg" style={{ backgroundImage: `url(${newHeroBanner})` }}></div>
+              {/* Fondo usando la imagen original sin el gradiente blanco */}
+              <div className="hero-custom-bg" style={{ backgroundImage: `url(${newHeroBanner})` }}></div>
 
-          <div className="container">
-            <div className="hero-custom-content">
-              {/* Title */}
-              <h1 className="hero-custom-title animate-fade-in-up delay-2">
-                <span className="dark-blue">Construye tu</span><br />
-                <span className="colorful-mundo" style={{ color: '#ffcf00' }}>
-                  mundo
-                </span>
-              </h1>
+              <div className="container">
+                <div className="hero-custom-content">
+                  {/* Title */}
+                  <h1 className="hero-custom-title animate-fade-in-up delay-2">
+                    <span className="dark-blue">Construye tu</span><br />
+                    <span className="colorful-mundo" style={{ color: '#ffcf00' }}>
+                      mundo
+                    </span>
+                  </h1>
 
-              <div className="animate-fade-in-up delay-3" style={{ marginTop: '20px' }}>
-                <Link to="/productos" className="btn-hero-yellow">
-                  Ver productos <span style={{ marginLeft: '10px' }}>→</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-
-          {/* Floating Categories Bar */}
-          <div className="hero-floating-bar animate-fade-in-up delay-5">
-            {dbCategories.length > 5 ? (
-              <MarqueeComponent gradient={false} speed={35} pauseOnHover={true} style={{ width: '100%', overflow: 'visible' }}>
-                <div className="collections-grid marquee-mode" style={{ gap: '25px', paddingRight: '25px' }}>
-                  {dbCategories.map((cat) => {
-                    const displayName = displayCategoryName(cat.nombre);
-                    const visuals = getCategoryVisuals(cat.nombre);
-                    const classFriendlyName = getCategoryClass(cat.nombre);
-                    return (
-                      <Link
-                        to="/productos"
-                        state={{ theme: cat.nombre }}
-                        className={`collection-card cat-${classFriendlyName}`}
-                        key={cat.id_categoria}
-                        style={{
-                          '--cat-hover-bg': visuals.hoverBg,
-                          '--cat-hover-text': visuals.hoverTextColor,
-                          '--cat-hover-shadow': visuals.shadowColor,
-                          '--cat-hover-shadow-glow': visuals.shadowGlow,
-                          '--cat-hover-icon-filter': visuals.iconFilter
-                        }}
-                      >
-                        <div className="col-icon">
-                          {visuals.icon ? (
-                            <img src={visuals.icon} alt="" className="col-icon-svg" />
-                          ) : visuals.vectorComponent ? (
-                            <visuals.vectorComponent className="col-icon-react" />
-                          ) : (
-                            <span className="col-emoji">{visuals.emoji}</span>
-                          )}
-                        </div>
-                        <span className="col-name">{displayName}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </MarqueeComponent>
-            ) : (
-              <div className="collections-grid">
-                {dbCategories.map((cat, index) => {
-                  const displayName = displayCategoryName(cat.nombre);
-                  const visuals = getCategoryVisuals(cat.nombre);
-                  const classFriendlyName = getCategoryClass(cat.nombre);
-                  return (
-                    <Link
-                      to="/productos"
-                      state={{ theme: cat.nombre }}
-                      className={`collection-card cat-${classFriendlyName}`}
-                      key={cat.id_categoria}
-                      style={{
-                        animationDelay: `${index * 0.1}s`,
-                        '--cat-hover-bg': visuals.hoverBg,
-                        '--cat-hover-text': visuals.hoverTextColor,
-                        '--cat-hover-shadow': visuals.shadowColor,
-                        '--cat-hover-shadow-glow': visuals.shadowGlow,
-                        '--cat-hover-icon-filter': visuals.iconFilter
-                      }}
-                    >
-                      <div className="col-icon">
-                        {visuals.icon ? (
-                          <img src={visuals.icon} alt="" className="col-icon-svg" />
-                        ) : visuals.vectorComponent ? (
-                          <visuals.vectorComponent className="col-icon-react" />
-                        ) : (
-                          <span className="col-emoji">{visuals.emoji}</span>
-                        )}
-                      </div>
-                      <span className="col-name">{displayName}</span>
+                  <div className="animate-fade-in-up delay-3" style={{ marginTop: '20px' }}>
+                    <Link to="/productos" className="btn-hero-yellow">
+                      Ver productos <span style={{ marginLeft: '10px' }}>→</span>
                     </Link>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </section>
+
+              {/* Floating Categories Bar */}
+              <div className="hero-floating-bar animate-fade-in-up delay-5">
+                {dbCategories.length > 5 ? (
+                  <MarqueeComponent gradient={false} speed={35} pauseOnHover={true} style={{ width: '100%', overflow: 'visible' }}>
+                    <div className="collections-grid marquee-mode" style={{ gap: '25px', paddingRight: '25px' }}>
+                      {dbCategories.map((cat) => {
+                        const displayName = displayCategoryName(cat.nombre);
+                        const visuals = getCategoryVisuals(cat.nombre);
+                        const classFriendlyName = getCategoryClass(cat.nombre);
+                        return (
+                          <Link
+                            to="/productos"
+                            state={{ theme: cat.nombre }}
+                            className={`collection-card cat-${classFriendlyName}`}
+                            key={cat.id_categoria}
+                            style={{
+                              '--cat-hover-bg': visuals.hoverBg,
+                              '--cat-hover-text': visuals.hoverTextColor,
+                              '--cat-hover-shadow': visuals.shadowColor,
+                              '--cat-hover-shadow-glow': visuals.shadowGlow,
+                              '--cat-hover-icon-filter': visuals.iconFilter
+                            }}
+                          >
+                            <div className="col-icon">
+                              {visuals.icon ? (
+                                <img src={visuals.icon} alt="" className="col-icon-svg" />
+                              ) : visuals.vectorComponent ? (
+                                <visuals.vectorComponent className="col-icon-react" />
+                              ) : (
+                                <span className="col-emoji">{visuals.emoji}</span>
+                              )}
+                            </div>
+                            <span className="col-name">{displayName}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </MarqueeComponent>
+                ) : (
+                  <div className="collections-grid">
+                    {dbCategories.map((cat, index) => {
+                      const displayName = displayCategoryName(cat.nombre);
+                      const visuals = getCategoryVisuals(cat.nombre);
+                      const classFriendlyName = getCategoryClass(cat.nombre);
+                      return (
+                        <Link
+                          to="/productos"
+                          state={{ theme: cat.nombre }}
+                          className={`collection-card cat-${classFriendlyName}`}
+                          key={cat.id_categoria}
+                          style={{
+                            animationDelay: `${index * 0.1}s`,
+                            '--cat-hover-bg': visuals.hoverBg,
+                            '--cat-hover-text': visuals.hoverTextColor,
+                            '--cat-hover-shadow': visuals.shadowColor,
+                            '--cat-hover-shadow-glow': visuals.shadowGlow,
+                            '--cat-hover-icon-filter': visuals.iconFilter
+                          }}
+                        >
+                          <div className="col-icon">
+                            {visuals.icon ? (
+                              <img src={visuals.icon} alt="" className="col-icon-svg" />
+                            ) : visuals.vectorComponent ? (
+                              <visuals.vectorComponent className="col-icon-react" />
+                            ) : (
+                              <span className="col-emoji">{visuals.emoji}</span>
+                            )}
+                          </div>
+                          <span className="col-name">{displayName}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
 
             <div style={{ height: '40px' }}></div> {/* Espaciador reducido */}
 
-            {/* Ofertas Relámpago con Glassmorphism */}
+            {/* Ofertas Relámpago */}
             {(loading || promoItems.length > 0) && (
-              <section className="flash-deals-modern" ref={darkSectionRef}>
+              <section className="flash-deals-modern">
                 <div className="container">
                   <div className="flash-header">
                     <div className="flash-title-group">
@@ -429,18 +382,17 @@ const Home = () => {
                               src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image}
                               alt={product.title}
                               className="apple-card-image"
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => { e.target.onerror = null; e.target.src = placeholderProduct; }}
                             />
                             <div className="apple-card-actions">
                               <button
                                 className="apple-add-to-cart-btn"
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  await agregarAlCarrito(product.id, 1);
-                                }}
+                                disabled={product.stock <= 0 || product.activo === false}
+                                onClick={(e) => handleAddToCart(e, product.id)}
                               >
-                                Agregar al Carrito
+                                {product.stock <= 0 ? 'Sin stock' : 'Agregar al Carrito'}
                               </button>
                             </div>
                           </Link>
@@ -536,6 +488,8 @@ const Home = () => {
                                 src={(!product.image || product.image.includes('legostore.com')) ? placeholderProduct : product.image}
                                 alt={product.title}
                                 className="apple-card-image"
+                                loading="lazy"
+                                decoding="async"
                                 onError={(e) => {
                                   e.target.onerror = null;
                                   e.target.src = placeholderProduct;
@@ -544,13 +498,10 @@ const Home = () => {
                               <div className="apple-card-actions">
                                 <button
                                   className="apple-add-to-cart-btn"
-                                  onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    await agregarAlCarrito(product.id, 1);
-                                  }}
+                                  disabled={product.stock <= 0 || product.activo === false}
+                                  onClick={(e) => handleAddToCart(e, product.id)}
                                 >
-                                  Agregar al Carrito
+                                  {product.stock <= 0 ? 'Sin stock' : 'Agregar al Carrito'}
                                 </button>
                               </div>
                             </Link>
@@ -570,7 +521,7 @@ const Home = () => {
             )}
 
             {/* Banner Parallax (Marvel - Superhéroe) */}
-            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom cinematic-marvel-banner" ref={hulkRef}>
+            <section className="parallax-banner-section full-width no-margin-top no-margin-bottom cinematic-marvel-banner">
               <div className="parallax-container cinematic-theme marvel-style large-banner">
                 <div className="parallax-bg" style={{ backgroundImage: `url(${hulkBanner})` }}></div>
                 <div className="parallax-content right-aligned">
@@ -600,7 +551,6 @@ const Home = () => {
             <div className="dark-marvel-bg">
               {/* Nuevos Ingresos (Grid Asimétrico Masonry) */}
               <section className="new-arrivals-modern container" ref={newArrivalsRef}>
-
                 <div className={`section-header-modern ${showGridItems ? 'animate-item' : 'hidden-item'}`} style={{ animationDelay: '0s' }}>
                   <h2>Últimos Lanzamientos</h2>
                   <p>Explora nuestras novedades más recientes y expande tu colección con las piezas exclusivas que acaban de aterrizar.</p>
@@ -622,9 +572,9 @@ const Home = () => {
                         const delays = ['0.1s', '0.3s', '0.5s', '0.7s'];
 
                         return (
-                          <div 
-                            key={product.id} 
-                            className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`} 
+                          <div
+                            key={product.id}
+                            className={`masonry-item ${spans[index]} ${showGridItems ? 'animate-item' : 'hidden-item'} ${product.stock <= 0 ? 'out-of-stock' : ''}`}
                             style={{ animationDelay: delays[index], cursor: 'pointer' }}
                             onClick={() => navigate(`/producto/${product.id}`)}
                           >
@@ -641,6 +591,8 @@ const Home = () => {
                             <img
                               src={product.image || placeholderProduct}
                               alt={product.title}
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = placeholderProduct;
@@ -648,7 +600,12 @@ const Home = () => {
                             />
                             <div className="masonry-overlay">
                               <h3 style={{ fontSize: '18px' }}>{product.title} {product.stock <= 0 && <span style={{ color: '#ff4d4d', fontSize: '14px', fontWeight: 'bold' }}>(Agotado)</span>}</h3>
-                              <Link to={`/producto/${product.id}`}>{product.stock <= 0 ? 'Ver detalles' : 'Explorar'}</Link>
+                              <Link
+                                to={`/producto/${product.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {product.stock <= 0 ? 'Ver detalles' : 'Explorar'}
+                              </Link>
                             </div>
                           </div>
                         );
